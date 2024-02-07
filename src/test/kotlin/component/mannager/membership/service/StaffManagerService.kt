@@ -7,7 +7,7 @@ import component.mannager.membership.contract.CustomerManager
 import component.mannager.membership.contract.StaffManager
 
 
-class MembershipManagerService(val proxyFactory: ProxyFactory) : StaffManager, CustomerManager, ServiceBase() {
+class MembershipManagerService(private val proxyFactory: ProxyFactory) : StaffManager, CustomerManager, ServiceBase() {
     private val personAccess: PersonAccess
         get() = proxyFactory.create<PersonAccess>()
 

@@ -1,6 +1,5 @@
 package arve.ifx
 
-import arve.host.Host
 import ifx.Naming
 import io.grpc.CallOptions
 import io.grpc.Channel
@@ -42,7 +41,5 @@ class ProxyFactory(port: Int) {
             throw Exception(e.targetException)
         }
     }
-
-    companion object
 }
 

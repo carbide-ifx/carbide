@@ -1,5 +1,6 @@
 package arve.ifx
 
+import arve.ifx.MethodDescriptors.isSerializable
 import io.grpc.MethodDescriptor
 import io.grpc.ServerCallHandler
 import io.grpc.ServerServiceDefinition
@@ -7,6 +8,7 @@ import io.grpc.ServiceDescriptor
 import io.grpc.stub.ServerCalls
 import io.grpc.stub.StreamObserver
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
@@ -15,20 +17,19 @@ import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.javaType
 
 object MethodDescriptors {
-
     fun createClientDefinition(cls: KClass<*>): ServiceDescriptor {
         val serviceName = cls.qualifiedName
             ?: throw IllegalArgumentException("Could not retrieve contract qualified name")
         return ServiceDescriptor(serviceName, validate(cls).map { createDescriptor(it, serviceName) })
     }
 
-    inline fun <reified T : Any> createServiceDefinition(instance: T): ServerServiceDefinition {
-        val SERVICE_NAME = T::class.qualifiedName
-            ?: throw IllegalArgumentException("Could not retrieve contract qualified name")
-        val ssd = ServerServiceDefinition.builder(SERVICE_NAME)
+    fun <T : Any> createServiceDefinition(instance: T, cls: KClass<out T>): ServerServiceDefinition {
+        val serviceName =
+            cls.qualifiedName ?: throw IllegalArgumentException("Could not retrieve contract qualified name")
+        val ssd = ServerServiceDefinition.builder(serviceName)
 
-        validate(T::class).forEach { method ->
-            val descriptor: MethodDescriptor<*, *> = createDescriptor(method, SERVICE_NAME)
+        validate(cls).forEach { method ->
+            val descriptor: MethodDescriptor<*, *> = createDescriptor(method, serviceName)
             val handler: ServerCallHandler<*, *> = createHandler(method, instance)
             val addMethod = ssd::class.declaredFunctions.single { it.name == "addMethod" && it.parameters.size == 3 }
             addMethod.call(ssd, descriptor, handler)
@@ -36,7 +37,7 @@ object MethodDescriptors {
         return ssd.build()
     }
 
-    fun createHandler(method: KFunction<*>, instance: Any): ServerCallHandler<*, *> {
+    private fun createHandler(method: KFunction<*>, instance: Any): ServerCallHandler<*, *> {
         val args = { request: Any, responseObserver: StreamObserver<Any> ->
             responseObserver.onNext(method.call(instance, request))
             responseObserver.onCompleted()
@@ -44,7 +45,7 @@ object MethodDescriptors {
         return ServerCalls.asyncUnaryCall(args)
     }
 
-    fun createDescriptor(method: KFunction<*>, serviceName: String): MethodDescriptor<*, *> {
+    private fun createDescriptor(method: KFunction<*>, serviceName: String): MethodDescriptor<*, *> {
         val paramType = method.valueParameters.single().type.javaType
         val returnType = method.returnType.javaType
         return MethodDescriptor
@@ -53,7 +54,7 @@ object MethodDescriptors {
             .setType(MethodDescriptor.MethodType.UNARY).setSampledToLocalTracing(true).build()
     }
 
-    fun validate(cls: KClass<*>): Collection<KFunction<*>> {
+    private fun validate(cls: KClass<*>): Collection<KFunction<*>> {
         require(cls.java.isInterface) {
             "Contract must be an interface"
         }

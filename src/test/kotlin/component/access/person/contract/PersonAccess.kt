@@ -6,6 +6,12 @@ import kotlinx.serialization.Serializable
 interface PersonAccess {
     fun store(request: StorePersonRequest): StorePersonResponse
     fun filter(request: PersonCriteria): List<Person>
+//    fun filter(number: NumberCriteria): Number
+
+    @Serializable
+    data class NumberCriteria(val number: Int)
+    @Serializable
+    data class Number(val number: Int)
 
     @Serializable
     data class Person(val name: String, val age: Int, val fired: Boolean = false)

@@ -9,24 +9,24 @@ import component.mannager.membership.contract.CustomerManager
 import component.mannager.membership.contract.StaffManager
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import kotlin.concurrent.thread
 
 class InvocationTest : StringSpec({
     val port = Host.randomFreePort()
     val proxyFactory = ProxyFactory(port)
     beforeSpec {
         Host(port)
-            .addService<StaffManager>(MembershipManagerService(proxyFactory))
-            .addService<CustomerManager>(MembershipManagerService(proxyFactory))
+            .addService(MembershipManagerService(proxyFactory))
             .addService<PersonAccess>(PersonAccessService())
             .start()
     }
     "A service can invoke another service" {
         val customerManager = proxyFactory.create<CustomerManager>()
-        val staffManager = proxyFactory.create<StaffManager>()
-        val personAccess = proxyFactory.create<PersonAccess>()
         val registered = customerManager.register(CustomerManager.RegisterRequest("John", 30))
-        staffManager.fire(StaffManager.FireStaffRequest(registered.id)).success shouldBe true
-        personAccess.filter(PersonAccess.PersonCriteria()).size shouldBe 1
+        proxyFactory.create<StaffManager>().fire(StaffManager.FireStaffRequest(registered.id)).success shouldBe true
+        proxyFactory.create<PersonAccess>().filter(PersonAccess.PersonCriteria()).size shouldBe 1
     }
+//
+//    "Overloads are supported" {
+//        proxyFactory.create<PersonAccess>().filter(PersonAccess.NumberCriteria(3)) shouldBe PersonAccess.Number(3)
+//    }
 })

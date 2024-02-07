@@ -19,4 +19,6 @@ class PersonAccessService : PersonAccess, ServiceBase() {
             .values
             .toList()
     }
+
+//    override fun filter(number: PersonAccess.NumberCriteria) = PersonAccess.Number(number.number)
 }
