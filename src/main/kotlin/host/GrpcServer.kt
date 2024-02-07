@@ -13,7 +13,7 @@ class GrpcServer<T : Any>(
     context: CoroutineContext = EmptyCoroutineContext
 ) : AbstractCoroutineServerImpl(context) {
     init {
-        require(type.isInstance(instance)) { "Service must be an interface" }
+        require(type.isInstance(instance)) { "Service must implement given contract" }
     }
 
     override fun bindService(): ServerServiceDefinition =

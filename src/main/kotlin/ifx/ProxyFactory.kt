@@ -1,10 +1,10 @@
 package arve.ifx
 
-import ifx.Naming
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
 import io.grpc.stub.ClientCalls
+import naming.Naming
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -28,7 +28,7 @@ class ProxyFactory(port: Int) {
     class GrpcHandler(private val chan: Channel, cls: KClass<*>) : InvocationHandler {
         private val serviceDescriptor = MethodDescriptors.createClientDefinition(cls)
         override fun invoke(proxy: Any?, method: Method?, args: Array<out Any>?): Any? = try {
-            val descriptor = serviceDescriptor.methods.single { it.bareMethodName == method?.name }
+            val descriptor = serviceDescriptor.methods.single { it.fullMethodName == Naming.generateFullMethodName(serviceDescriptor.name, method!!) }
             val clientCall = chan.newCall(descriptor, CallOptions.DEFAULT)
             val arg: Any = args?.first() ?: throw IllegalArgumentException("No arguments provided")
             val blockingUnaryCall = ClientCalls::class.java.getDeclaredMethod(

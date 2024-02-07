@@ -1,5 +1,7 @@
 package arve.test
 
+import component.access.polymorphism.contract.PolymorphicAccess
+import component.access.polymorphism.service.JavaEchoService
 import arve.host.Host
 import arve.ifx.ProxyFactory
 import arve.service.PersonAccessService
@@ -17,6 +19,7 @@ class InvocationTest : StringSpec({
         Host(port)
             .addService(MembershipManagerService(proxyFactory))
             .addService<PersonAccess>(PersonAccessService())
+            .addService<PolymorphicAccess>(JavaEchoService())
             .start()
     }
     "A service can invoke another service" {
@@ -25,8 +28,15 @@ class InvocationTest : StringSpec({
         proxyFactory.create<StaffManager>().fire(StaffManager.FireStaffRequest(registered.id)).success shouldBe true
         proxyFactory.create<PersonAccess>().filter(PersonAccess.PersonCriteria()).size shouldBe 1
     }
-//
-//    "Overloads are supported" {
-//        proxyFactory.create<PersonAccess>().filter(PersonAccess.NumberCriteria(3)) shouldBe PersonAccess.Number(3)
-//    }
+
+    "Overloads are supported" {
+        proxyFactory.create<PersonAccess>().filter(PersonAccess.NumberCriteria(3)) shouldBe PersonAccess.Number(3)
+    }
+
+    "Polymorphism" {
+        proxyFactory.create<PolymorphicAccess>().echo(
+            PolymorphicAccess.RecordRequest.Please(3)) shouldBe PolymorphicAccess.RecordResponse.Yes(3)
+        proxyFactory.create<PolymorphicAccess>().echo(
+            PolymorphicAccess.RecordRequest.Thanks("Hello")) shouldBe PolymorphicAccess.RecordResponse.No("Hello")
+    }
 })

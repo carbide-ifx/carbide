@@ -12,6 +12,7 @@ interface StaffManager {
     data class FireStaffRequest(val id: Int)
 
 }
+
 interface CustomerManager {
     fun register(request: RegisterRequest): RegisterResponse
 

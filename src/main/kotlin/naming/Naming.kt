@@ -1,7 +1,13 @@
 package naming
 
 
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
+import java.lang.reflect.Method
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.full.valueParameters
+import kotlin.reflect.jvm.javaType
 
 private const val s = "Invalid class name"
 //   <Company>.<Concept>.<Volatility>.<Aspect>[.<Context>]
@@ -55,6 +61,23 @@ object Naming {
     fun String.asComponent() = Component(this);
     fun KClass<*>.asComponent() = Component(this);
 
+
+    fun generateFullMethodName(fullServiceName: String, method: KFunction<*>): String {
+        val paramType = method.valueParameters.single().type.javaType.typeName
+        println(paramType)
+        return "$fullServiceName/${method.name}#$paramType"
+    }
+
+    fun generateFullMethodName(fullServiceName: String, method: Method): String {
+        val paramType = method.parameterTypes.single().typeName
+        return "$fullServiceName/${method.name}#$paramType"
+    }
+
+
+    fun defautlChannel(port: Int): ManagedChannel = ManagedChannelBuilder
+        .forAddress("localhost", port)
+        .usePlaintext()
+        .build()
 
 }
 
