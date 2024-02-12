@@ -1,14 +1,14 @@
 package arve.test
 
-import component.access.polymorphism.contract.PolymorphicAccess
-import component.access.polymorphism.service.JavaEchoService
 import arve.host.Host
 import arve.ifx.ProxyFactory
-import arve.service.PersonAccessService
-import arve.test.component.mannager.membership.service.MembershipManagerService
 import component.access.person.contract.PersonAccess
-import component.mannager.membership.contract.CustomerManager
-import component.mannager.membership.contract.StaffManager
+import component.access.person.service.PersonAccessService
+import component.access.polymorphism.contract.PolymorphicAccess
+import component.access.polymorphism.service.JavaEchoService
+import component.manager.membership.contract.CustomerManager
+import component.manager.membership.contract.StaffManager
+import component.manager.membership.service.MembershipManagerService
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
@@ -35,8 +35,14 @@ class InvocationTest : StringSpec({
 
     "Polymorphism" {
         proxyFactory.create<PolymorphicAccess>().echo(
-            PolymorphicAccess.RecordRequest.Please(3)) shouldBe PolymorphicAccess.RecordResponse.Yes(3)
+            PolymorphicAccess.RecordRequest.Please(3)
+        ) shouldBe PolymorphicAccess.RecordResponse.Yes(3)
         proxyFactory.create<PolymorphicAccess>().echo(
-            PolymorphicAccess.RecordRequest.Thanks("Hello")) shouldBe PolymorphicAccess.RecordResponse.No("Hello")
+            PolymorphicAccess.RecordRequest.Thanks("Hello")
+        ) shouldBe PolymorphicAccess.RecordResponse.No("Hello")
+    }
+
+    "Context passing" {
+
     }
 })

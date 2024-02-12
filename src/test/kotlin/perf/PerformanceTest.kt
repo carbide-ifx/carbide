@@ -18,7 +18,7 @@ class PerformanceTest : StringSpec({
         .start()
     val echoService = ProxyFactory(host.port).create<Echo>()
 
-    "Handles over 1000 requests per second" {
+    "!Handles over 1000 requests per second" {
         val durationSeconds = 3
         var count = 0
         runBlocking {

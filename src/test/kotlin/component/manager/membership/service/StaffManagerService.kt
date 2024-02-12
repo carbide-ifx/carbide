@@ -1,10 +1,10 @@
-package arve.test.component.mannager.membership.service
+package component.manager.membership.service
 
 import arve.ifx.ProxyFactory
 import arve.service.ServiceBase
 import component.access.person.contract.PersonAccess
-import component.mannager.membership.contract.CustomerManager
-import component.mannager.membership.contract.StaffManager
+import component.manager.membership.contract.CustomerManager
+import component.manager.membership.contract.StaffManager
 
 
 class MembershipManagerService(private val proxyFactory: ProxyFactory) : StaffManager, CustomerManager, ServiceBase() {

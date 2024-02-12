@@ -1,5 +1,6 @@
-package arve.service
+package component.access.person.service
 
+import arve.service.ServiceBase
 import component.access.person.contract.PersonAccess
 
 

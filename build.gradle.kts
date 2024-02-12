@@ -26,9 +26,10 @@ dependencies {
     val kotlinSerialization = "1.6.0"
     val kotlinDatetime = "0.3.2"
     val kotlinLogging = "6.0.3"
-    val grpc = "1.61.0"
+    val grpc = "1.57.2"
     val grpcKotlin = "1.4.1"
     runtimeOnly("io.grpc:grpc-netty:$grpc")
+//    runtimeOnly("io.grpc:grpc-core:$grpc")
     implementation("io.grpc:grpc-kotlin-stub:$grpcKotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines")

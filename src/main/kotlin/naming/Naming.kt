@@ -4,9 +4,11 @@ package naming
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import java.lang.reflect.Method
+import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.valueParameters
+import kotlin.reflect.jvm.javaMethod
 import kotlin.reflect.jvm.javaType
 
 private const val s = "Invalid class name"
@@ -35,7 +37,7 @@ object Naming {
 
 
     data class Component(val cls: String) {
-        constructor(cls: KClass<*>) : this(cls.qualifiedName ?: throw IllegalArgumentException(s))
+        constructor(cls: KClass<*>) : this(cls.qualifiedName ?: throw IllegalArgumentException("Invalid class name: ${cls.qualifiedName}"))
 
         val company: String
         val concept: String
@@ -45,7 +47,7 @@ object Naming {
         val component: String
 
         init {
-            val match = namingConvention.matchEntire(cls) ?: throw IllegalArgumentException(s)
+            val match = namingConvention.matchEntire(cls) ?: throw IllegalArgumentException("Invalid class name: $cls")
             val (company, concept, volatility, aspect, context, component) = match.destructured
             this.company = company
             this.concept = concept
@@ -62,23 +64,17 @@ object Naming {
     fun KClass<*>.asComponent() = Component(this);
 
 
-    fun generateFullMethodName(fullServiceName: String, method: KFunction<*>): String {
-        val paramType = method.valueParameters.single().type.javaType.typeName
-        println(paramType)
-        return "$fullServiceName/${method.name}#$paramType"
-    }
+
 
     fun generateFullMethodName(fullServiceName: String, method: Method): String {
-        val paramType = method.parameterTypes.single().typeName
+        val isSingleParam = method.parameterTypes.size == 1
+        val isSingleSuspendParam = method.parameterTypes.size == 2 && method.parameterTypes[1] == Continuation::class.java
+        require(isSingleParam || isSingleSuspendParam) { "Method must have exactly one parameter or one parameter and a continuation" }
+        val paramType = method.parameterTypes.first().typeName
         return "$fullServiceName/${method.name}#$paramType"
     }
-
-
-    fun defautlChannel(port: Int): ManagedChannel = ManagedChannelBuilder
-        .forAddress("localhost", port)
-        .usePlaintext()
-        .build()
-
+    fun generateFullMethodName(fullServiceName: String, method: KFunction<*>): String =
+        generateFullMethodName(fullServiceName, method.javaMethod!!)
 }
 
 

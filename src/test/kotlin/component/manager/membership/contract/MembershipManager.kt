@@ -1,4 +1,4 @@
-package component.mannager.membership.contract
+package component.manager.membership.contract
 
 import kotlinx.serialization.Serializable
 

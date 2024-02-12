@@ -3,6 +3,7 @@ package arve.host
 import arve.service.ServiceBase
 import host.GrpcServer
 import io.grpc.ServerBuilder
+import io.grpc.ServerServiceDefinition
 import naming.Naming.isContract
 import java.net.ServerSocket
 import kotlin.reflect.cast
@@ -21,11 +22,14 @@ class Host(port: Int = 0) {
     }
     fun addService(instance: ServiceBase): Host {
         instance.facets().forEach {
+            println("adding facet ${it.simpleName}")
             val grpc = GrpcServer(it, it.cast(instance))
             builder.addService(grpc)
         }
         return this
     }
+
+    fun listServices(): List<ServerServiceDefinition> = server.services
 
 //    fun <TContract : Any> addService(service: TContract, cls: KClass<TContract>): Host {
 //        require(service::class.isSubclassOf(ServiceBase::class)) {
@@ -44,6 +48,7 @@ class Host(port: Int = 0) {
 
     fun start(): Host {
         server = builder.build().start()
+        println("Starting server on port $port with services: [${server.services.joinToString { it.serviceDescriptor.name }}]")
         return this;
     }
 
