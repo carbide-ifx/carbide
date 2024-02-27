@@ -17,7 +17,7 @@ class SuspendTest : StringSpec({
     val proxyFactory = ProxyFactory(port)
     beforeSpec {
         Host(port)
-            .addService<IExceptionAccess>(ExceptionAccess())
+            .addService(ExceptionAccess())
             .start()
     }
     "Blocking" {
@@ -29,16 +29,24 @@ class SuspendTest : StringSpec({
         val client = proxyFactory.create<IExceptionAccess>()
         shouldThrow<WrappedTestException> { client.testException(1) }
     }
+
     "Suspend" {
         val client = proxyFactory.create<IExceptionAccess>()
         runBlocking {
             client.testSuspend(1) shouldBe StringResult("testSuspend result")
         }
     }
-    "Suspend exception" {
+
+     "Context: Suspend function" {
         val client = proxyFactory.create<IExceptionAccess>()
-        shouldThrow<WrappedTestException> { client.testExceptionSuspend(1) }
+        runBlocking() {
+            client.suspendContext() shouldBe StringResult("arve context")
+        }
     }
 
 
+    "!Suspend exception" {
+        val client = proxyFactory.create<IExceptionAccess>()
+        shouldThrow<WrappedTestException> { client.testExceptionSuspend(1) }
+    }
 })

@@ -1,17 +1,19 @@
 package arve.ifx
 
+import ctx.Context
 import io.grpc.*
 import io.grpc.kotlin.ClientCalls
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.runBlocking
 import naming.Naming
 import java.lang.reflect.InvocationHandler
-import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KClass
-import io.grpc.Metadata as Grpcmetadata
+import io.grpc.Metadata as GrpcMetadata
 
 
 class ProxyFactory(val port: Int) {
@@ -36,14 +38,13 @@ class GrpcHandler(private val chan: ManagedChannel, cls: KClass<*>) : Invocation
     // TODO investigate call options, especially credentials
     private val serviceDescriptor = MethodDescriptors.createServiceDescriptor(cls)
 
-    @Throws(InvocationTargetException::class)
     override fun invoke(proxy: Any?, method: Method?, callArgs: Array<out Any>?): Any? = try {
         require(method != null) { "Call method must not be null" }
         require(callArgs != null) { "Call arguments must not be null" }
         val descriptor = serviceDescriptor.methodDescriptorFor(method)
         val (arg, originalContinuation) = extractArg(callArgs)
-        runBlocking {
-            ClientCalls.unaryRpc(chan, descriptor, arg, CallOptions.DEFAULT, getHeaders(originalContinuation?.context))
+        runBlocking(originalContinuation?.context ?: EmptyCoroutineContext){
+            ClientCalls.unaryRpc(chan, descriptor, arg, CallOptions.DEFAULT, getHeaders())
         }
     } catch (se: Exception) {
         throw WrappedTestException(se)
@@ -59,12 +60,16 @@ class GrpcHandler(private val chan: ManagedChannel, cls: KClass<*>) : Invocation
         }
     }
 
-    private fun getHeaders(context: CoroutineContext?): Grpcmetadata = if (context == null) Grpcmetadata() else {
-        // TODO investigate how to get headers from context
-        Grpcmetadata()
+    private suspend fun getHeaders(): GrpcMetadata {
+        val context = currentCoroutineContext()[Context]
+        val key = Context.CUSTOM_HEADER_KEY
+        val meta = GrpcMetadata()
+        meta.put(key, context ?: Context.EMPTY)
+        return meta
     }
 
     companion object {
+        @Suppress("UNCHECKED_CAST")
         private fun ServiceDescriptor.methodDescriptorFor(method: Method): MethodDescriptor<Any, Any> =
             methods.singleOrNull {
                 it.fullMethodName == Naming.generateFullMethodName(name, method)

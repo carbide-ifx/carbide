@@ -1,8 +1,10 @@
 package arve.host
 
+import arve.ctx.ArveInterceptor
+import arve.ctx.ServerLogInterceptor
 import arve.service.ServiceBase
-import host.GrpcServer
 import io.grpc.ServerBuilder
+import io.grpc.ServerInterceptors
 import io.grpc.ServerServiceDefinition
 import naming.Naming.isContract
 import java.net.ServerSocket
@@ -20,16 +22,38 @@ class Host(port: Int = 0) {
         builder.addService(GrpcServer<TContract>(service))
         return this
     }
+
     fun addService(instance: ServiceBase): Host {
         instance.facets().forEach {
             println("adding facet ${it.simpleName}")
             val grpc = GrpcServer(it, it.cast(instance))
-            builder.addService(grpc)
+            builder.addService(ServerInterceptors.intercept(grpc, ArveInterceptor, ServerLogInterceptor()))
         }
         return this
     }
 
     fun listServices(): List<ServerServiceDefinition> = server.services
+
+    private fun ServiceBase.facets() = this::class.java.interfaces.map { it.kotlin }.filter { it.isContract() }
+
+    fun start(): Host {
+        server = builder.build().start()
+        println("Starting server on port $port with services: [${server.services.joinToString { it.serviceDescriptor.name }}]")
+        Runtime.getRuntime().addShutdownHook(
+            Thread {
+                println("*** shutting down gRPC server since JVM is shutting down")
+                this.stop()
+                println("*** server shut down")
+            },
+        )
+        return this;
+    }
+
+    fun stop(): Host {
+        server.shutdown()
+        return this;
+    }
+
 
 //    fun <TContract : Any> addService(service: TContract, cls: KClass<TContract>): Host {
 //        require(service::class.isSubclassOf(ServiceBase::class)) {
@@ -44,19 +68,6 @@ class Host(port: Int = 0) {
 //        return this
 //    }
 
-    private fun ServiceBase.facets() = this::class.java.interfaces.map { it.kotlin }.filter { it.isContract() }
-
-    fun start(): Host {
-        server = builder.build().start()
-        println("Starting server on port $port with services: [${server.services.joinToString { it.serviceDescriptor.name }}]")
-        return this;
-    }
-
-    fun stop(): Host {
-        server.shutdown()
-        return this;
-    }
-
     companion object {
         fun randomFreePort(): Int {
             val socket = ServerSocket(0)
@@ -65,5 +76,7 @@ class Host(port: Int = 0) {
             return port
         }
     }
+
+
 }
 
