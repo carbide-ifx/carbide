@@ -1,6 +1,6 @@
-package arve.host
+package ifx.host
 
-import arve.ifx.MethodDescriptors
+import ifx.proxy.MethodDescriptors
 import io.grpc.MethodDescriptor
 import io.grpc.ServerServiceDefinition
 import io.grpc.kotlin.AbstractCoroutineServerImpl
@@ -27,10 +27,9 @@ class GrpcServer<T : Any>(
     override fun bindService(): ServerServiceDefinition {
         val serviceName =
             contract.qualifiedName ?: throw IllegalArgumentException("Could not retrieve contract qualified name")
-//        val ssd = ServerServiceDefinition.builder(MethodDescriptors.createServiceDescriptor(cls))
         val ssd = ServerServiceDefinition.builder(serviceName)
 
-        contract.methods().forEach { method ->
+        contract.validatedMethods().forEach { method ->
             val descriptor = MethodDescriptors.methodDescriptor(method, serviceName) as MethodDescriptor<Any, Any>
             val handler = ServerCalls.unaryServerMethodDefinition(context, descriptor) { req: Any ->
                 method.callSuspend(instance, req) as Any
@@ -45,7 +44,7 @@ class GrpcServer<T : Any>(
             GrpcServer(T::class, instance, context)
 
         // Todo not GRPC specific. Find a home for this
-        fun KClass<*>.methods(): Collection<KFunction<*>> {
+        fun KClass<*>.validatedMethods(): Collection<KFunction<*>> {
             require(java.isInterface) { "Contract $simpleName must be an interface" }
             val members = declaredFunctions
             members.forEach { method ->
@@ -58,7 +57,7 @@ class GrpcServer<T : Any>(
             return members
         }
 
-        fun KType.isSerializable(): Boolean = runCatching { serializer(this) }.isSuccess
+        private fun KType.isSerializable(): Boolean = runCatching { serializer(this) }.isSuccess
     }
 
 }

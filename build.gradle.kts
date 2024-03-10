@@ -1,12 +1,12 @@
 import org.jetbrains.gradle.ext.packagePrefix
 import org.jetbrains.gradle.ext.settings
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.serialization") version "1.9.22"
     idea
     id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.7"
-
     id("application")
 }
 
@@ -53,12 +53,17 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+    }
+}
 
 idea {
     module {
         settings {
-            packagePrefix["main"] = "arve"
-            packagePrefix["test"] = "arve"
+            packagePrefix["src/main/kotlin"] = "ifx"
+            packagePrefix["src/test/kotlin"] = "ifx"
         }
     }
 }

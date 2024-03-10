@@ -1,23 +1,17 @@
-package ctx
+package ifx.ctx
 
 import io.grpc.Metadata
-import io.grpc.Metadata.AsciiMarshaller
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlin.coroutines.CoroutineContext
+import io.grpc.Context as GrpcContext
 
 @Serializable
-data class Context(val data: String) : CoroutineContext.Element {
+data class Context(val data: String="", val number: Int = 0 ) : CoroutineContext.Element {
     override val key: CoroutineContext.Key<Context> get() = Key
-
     companion object Key : CoroutineContext.Key<Context> {
-        val CUSTOM_HEADER_KEY: Metadata.Key<Context> = Metadata.Key.of("custom_server_header_key", ContextStringMarshaller)
-        val EMPTY = Context("")
-    }
-    object ContextStringMarshaller : AsciiMarshaller<Context> {
-        override fun toAsciiString(value: Context): String = Json.encodeToString(value)
-        override fun parseAsciiString(serialized: String): Context = Json.decodeFromString(serialized)
-    }
+        val BLOCKING_CONTEXT_KEY = GrpcContext.key<Context>("ifx.context")
+        val METADATA_KEY: Metadata.Key<Context> = Metadata.Key.of("ifx.context", ContextStringMarshaller)
 
+    }
 }
+

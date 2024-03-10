@@ -1,40 +1,50 @@
-package arve.host
+package ifx.host
 
-import arve.ctx.ArveInterceptor
-import arve.ctx.ServerLogInterceptor
-import arve.service.ServiceBase
+import ifx.ctx.BlockingContextInterceptor
+import ifx.ctx.CourotineContextInterceptor
+import ifx.ctx.ServerLogInterceptor
+import ifx.naming.Naming.isContract
+import ifx.service.ServiceBase
 import io.grpc.ServerBuilder
 import io.grpc.ServerInterceptors
-import io.grpc.ServerServiceDefinition
-import naming.Naming.isContract
 import java.net.ServerSocket
 import kotlin.reflect.cast
 
 
 class Host(port: Int = 0) {
     val port: Int = if (port == 0) randomFreePort() else port
-
     val builder: ServerBuilder<*> = ServerBuilder.forPort(this.port)
     private lateinit var server: io.grpc.Server
 
-    //    inline fun <reified TContract : Any> addService(service: TContract) = this.addService(service, TContract::class)
-    inline fun <reified TContract : Any> addService(service: TContract): Host {
-        builder.addService(GrpcServer<TContract>(service))
+    val serverInterceptors = listOf(
+        CourotineContextInterceptor,
+        BlockingContextInterceptor,
+        ServerLogInterceptor()
+    )
+
+    /**
+     * Add a service to the host, binding it to the given service contract
+     */
+    inline fun <reified TContract : Any> addService(instance: TContract): Host {
+        val grpc = GrpcServer<TContract>(instance)
+        builder.addService(ServerInterceptors.intercept(grpc, serverInterceptors))
         return this
     }
 
+    /**
+     * Add a service to the host, binding it to each service contract the service implements
+     */
     fun addService(instance: ServiceBase): Host {
         instance.facets().forEach {
-            println("adding facet ${it.simpleName}")
             val grpc = GrpcServer(it, it.cast(instance))
-            builder.addService(ServerInterceptors.intercept(grpc, ArveInterceptor, ServerLogInterceptor()))
+            builder.addService(ServerInterceptors.intercept(grpc, serverInterceptors))
         }
         return this
     }
 
-    fun listServices(): List<ServerServiceDefinition> = server.services
-
-    private fun ServiceBase.facets() = this::class.java.interfaces.map { it.kotlin }.filter { it.isContract() }
+    private fun ServiceBase.facets() = this::class.java.interfaces
+        .map { it.kotlin }
+        .filter { it.isContract() }
 
     fun start(): Host {
         server = builder.build().start()

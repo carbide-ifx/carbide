@@ -1,15 +1,15 @@
-package naming
+package ifx.naming
 
 
-import io.grpc.ManagedChannel
-import io.grpc.ManagedChannelBuilder
+import ifx.naming.Naming.Aspect.Contract
+import ifx.naming.Naming.Aspect.Service
+import ifx.naming.Naming.Concept.Manager
 import java.lang.reflect.Method
+import java.util.Locale
 import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.javaMethod
-import kotlin.reflect.jvm.javaType
 
 private const val s = "Invalid class name"
 //   <Company>.<Concept>.<Volatility>.<Aspect>[.<Context>]
@@ -22,43 +22,44 @@ private const val s = "Invalid class name"
 
 object Naming {
     val namingConvention =
-        """^(?<company>\w+)\.(?<concept>\w+)\.(?<volatility>\w+)\.(?<aspect>\w+)\.?(?<context>\w+)?\.(?<component>\w+)${'$'}""".toRegex()
+        """(?<prefix>.+)\.(?<concept>access|manager|engine|utility)\.(?<volatility>\w+)\.(?<aspect>contract|service)\.?(?<facet>\w+)?\.(?<component>\w+)${'$'}""".toRegex()
 
-    fun String.isContract(): Boolean = Component(this).aspect == "contract"
-    fun String.isService(): Boolean = Component(this).aspect == "service"
-    fun String.isManager(): Boolean = Component(this).concept == "manager"
+    fun String.isContract(): Boolean = Component(this).aspect == Contract
+    fun String.isService(): Boolean = Component(this).aspect == Service
+    fun String.isManager(): Boolean = Component(this).concept == Manager
 
     fun String.getComponent(): String = Component(this).component
 
 
-    fun KClass<*>.isContract(): Boolean = Component(this).aspect == "contract"
-    fun KClass<*>.isService(): Boolean = Component(this).aspect == "service"
-    fun KClass<*>.isManager(): Boolean = Component(this).concept == "manager"
+    fun KClass<*>.isContract(): Boolean = Component(this).aspect == Contract
+    fun KClass<*>.isService(): Boolean = Component(this).aspect == Service
+    fun KClass<*>.isManager(): Boolean = Component(this).concept == Manager
 
 
     data class Component(val cls: String) {
         constructor(cls: KClass<*>) : this(cls.qualifiedName ?: throw IllegalArgumentException("Invalid class name: ${cls.qualifiedName}"))
 
-        val company: String
-        val concept: String
+        val prefix: String
+        val concept: Concept
         val volatility: String
-        val aspect: String
-        val context: String
+        val aspect: Aspect
+        val facet: String
         val component: String
 
         init {
             val match = namingConvention.matchEntire(cls) ?: throw IllegalArgumentException("Invalid class name: $cls")
-            val (company, concept, volatility, aspect, context, component) = match.destructured
-            this.company = company
-            this.concept = concept
+            val (company, concept, volatility, aspect, facet, component) = match.destructured
+            this.prefix = company
+            this.concept = Concept.valueOf(concept.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
             this.volatility = volatility
-            this.aspect = aspect
-            this.context = context
+            this.aspect = Aspect.valueOf(aspect.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
+            this.facet = facet
             this.component = component
         }
-
-
     }
+
+    enum class Aspect { Contract, Service}
+    enum class Concept { Manager, Engine, Access, Utility }
 
     fun String.asComponent() = Component(this);
     fun KClass<*>.asComponent() = Component(this);
