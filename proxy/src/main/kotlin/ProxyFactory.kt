@@ -13,12 +13,13 @@ class ProxyFactory(val port: Int) {
     inline fun <reified T : Any> create(context: Context? = null): T = Proxy.newProxyInstance(
         T::class.java.classLoader,
         arrayOf<Class<*>>(T::class.java),
-        GrpcHandler(defautlChannel(port), context ?: EmptyCoroutineContext, T::class)
+        GrpcClientHandler(defautlChannel(port), context ?: EmptyCoroutineContext, T::class)
     ) as T
 
     fun defautlChannel(port: Int): ManagedChannel = ManagedChannelBuilder
         .forAddress("localhost", port)
         .usePlaintext()
+
         .build()
 }
 

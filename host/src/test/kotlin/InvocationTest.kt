@@ -69,15 +69,21 @@ class InvocationTest : FreeSpec({
         }
         "Client exception - Serialization" {}
         "Client exception - Server not found" {
-            val echoAccess = proxyFactory.create<EchoAccess>()
+
+            val notfound = proxyFactory.create<NotExistingService>()
+            shouldThrow<InvocationException> {
+                notfound.a(4)
+            }
+
         }
     }
 
     "Context" - {
-        val myContext = Context(number = 42)
-        val customerManager = proxyFactory.create<CustomerManager>(myContext)
 
         "Context automatically propagates through call chains" {
+            val myContext = Context(number = 42)
+            val customerManager = proxyFactory.create<CustomerManager>(myContext)
+
             // forwardContext calls EchoAccess.echoContext, without passing any parameters, and returns the result.
             // EchoAccess.echoContext returns the number from the context.
             customerManager.forwardContext(CustomerManager.Empty) shouldBe myContext.number
@@ -85,8 +91,8 @@ class InvocationTest : FreeSpec({
         "Parallel safety: Suspend" {
             (1..50).map { n ->
                 async {
-                    val echoAccess = proxyFactory.create<EchoAccess>(Context(number = n))
-                    echoAccess.echoContext(EmptyEmpty).number shouldBe n
+                    val proxyWithContext = proxyFactory.create<EchoAccess>(Context(number = n))
+                    proxyWithContext.echoContext(EmptyEmpty).number shouldBe n
                 }
             }.awaitAll()
         }
@@ -108,3 +114,6 @@ class InvocationTest : FreeSpec({
 })
 
 
+interface NotExistingService {
+    suspend fun a(i: Int) = i
+}

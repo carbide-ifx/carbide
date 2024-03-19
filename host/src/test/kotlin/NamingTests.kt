@@ -3,14 +3,14 @@ package ifx
 import ifx.naming.Naming.Aspect.Contract
 import ifx.naming.Naming.Concept.Manager
 import ifx.naming.Naming.asComponent
-import io.kotest.core.spec.style.StringSpec
 import ifx.naming.Naming.getComponent
 import ifx.naming.Naming.isContract
 import ifx.naming.Naming.isManager
 import ifx.naming.Naming.isService
 import io.kotest.assertions.assertSoftly
+import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.assertAll
+
 
 class NamingTests : StringSpec({
     val types = listOf(
@@ -46,15 +46,15 @@ class NamingTests : StringSpec({
     }
 
     "prefix" {
-        assertSoftly("no.sonat.manager.sales.contract.customer.ISalesManager".asComponent()){
-            assertAll(
-                { it.prefix shouldBe "no.sonat" },
-                { it.concept shouldBe Manager },
-                { it.volatility shouldBe "sales" },
-                { it.aspect shouldBe Contract },
-                { it.facet shouldBe "customer" },
-                { it.component shouldBe "ISalesManager" }
-            )
+        assertSoftly("no.sonat.manager.sales.contract.customer.ISalesManager".asComponent()) {
+            assertSoftly {
+                it.prefix shouldBe "no.sonat"
+                it.concept shouldBe Manager
+                it.volatility shouldBe "sales"
+                it.aspect shouldBe Contract
+                it.facet shouldBe "customer"
+                it.component shouldBe "ISalesManager"
+            }
         }
 
     }

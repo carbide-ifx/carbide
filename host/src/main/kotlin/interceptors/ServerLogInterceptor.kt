@@ -18,7 +18,7 @@ class ServerLogInterceptor : ServerInterceptor {
         val listener: ServerCall<ReqT, RespT> = object : SimpleForwardingServerCall<ReqT, RespT>(call) {
             private val log = KotlinLogging.logger { }
             override fun sendMessage(message: RespT) {
-                log.info { "Server: Sending Response to client: $message" }
+                log.debug { "Server: Sending Response to client: $message" }
                 super.sendMessage(message)
             }
         }
@@ -26,7 +26,7 @@ class ServerLogInterceptor : ServerInterceptor {
         return object : SimpleForwardingServerCallListener<ReqT>(next.startCall(listener, headers)) {
             private val log = KotlinLogging.logger { }
             override fun onMessage(message: ReqT) {
-                log.info{"Server: Received request from client: $message (Headers: $headers)"}
+                log.debug{"Server: Received request from client: $message (Headers: $headers)"}
                 super.onMessage(message)
             }
         }

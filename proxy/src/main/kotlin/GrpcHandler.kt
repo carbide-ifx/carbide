@@ -2,12 +2,14 @@ package ifx.proxy
 
 import ifx.context.Context
 import ifx.naming.Naming
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.CallOptions
 import io.grpc.ManagedChannel
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.ServiceDescriptor
 import io.grpc.kotlin.ClientCalls
+import kotlinx.coroutines.runBlocking
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
@@ -17,27 +19,31 @@ import kotlin.reflect.KClass
 /**
  * Invocation handler for GRPC services.
  */
-class GrpcHandler(private val chan: ManagedChannel, private val context: CoroutineContext, private val cls: KClass<*>) :
-    InvocationHandler {
+class GrpcClientHandler(
+    private val chan: ManagedChannel, private val context: CoroutineContext, private val cls: KClass<*>
+) : InvocationHandler {
 
+    private val log = KotlinLogging.logger { }
 
     @SuppressWarnings("kotlin:S6311")
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>): Any = try {
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any = try {
+        requireNotNull(args) { "Method must have exactly one parameter" }
+        require((args.size == 2 && args.last() is Continuation<*>)) {
+            "Method must have exactly one parameter and be suspending"
+        }
         val descriptor = MethodDescriptors.createServiceDescriptor(cls).methodDescriptorFor(method)
-        val (arg, originalContinuation) = extractArg(args)
-        originalContinuation.invokeSuspendFunction {
+        val arg = args.first()
+        val originalContinuation = args.last() as Continuation<*>
+        runBlocking {
             val headers = headersFromContext(originalContinuation.context + context)
             ClientCalls.unaryRpc(chan, descriptor, arg, CallOptions.DEFAULT, headers)
         }
     } catch (se: Throwable) {
-        throw InvocationException("yes")
+        val msg = "Error invoking method: ${cls.simpleName}.${method.name} via proxy: ${se.message}"
+        log.warn(se) { msg }
+        throw InvocationException(msg, se)
     }
 
-    private fun <T> Continuation<*>.invokeSuspendFunction(block: suspend () -> T): T {
-        @Suppress("UNCHECKED_CAST") return try { (block as (Continuation<*>) -> T)(this)} catch (e: Throwable) {
-            throw e
-        }
-    }
 
     private fun headersFromContext(ctx: CoroutineContext): Metadata {
         val context = ctx[Context]
@@ -46,13 +52,6 @@ class GrpcHandler(private val chan: ManagedChannel, private val context: Corouti
         meta.put(key, context ?: Context())
         return meta
     }
-
-    private fun extractArg(callArgs: Array<out Any>): Pair<Any, Continuation<*>> =
-        if (callArgs.size == 2 && callArgs.last() is Continuation<*>) {
-            callArgs.first() to callArgs.last() as Continuation<*>
-        } else {
-            throw IllegalArgumentException("Method must have exactly one parameter or one parameter and a continuation")
-        }
 
     companion object {
         @Suppress("UNCHECKED_CAST")
