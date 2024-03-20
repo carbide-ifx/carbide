@@ -13,35 +13,42 @@ import io.kotest.matchers.shouldBe
 
 
 class NamingTests : StringSpec({
-    val types = listOf(
-        "company.manager.content.contract.delivery.DeliveryManager",
-        "company.manager.content.contract.flow.FlowManager",
-        "company.engine.validation.contract.IValidationEngine",
-        "company.manager.content.service.ContentManager",
-        "company.engine.validation.service.ValidationEngine",
-        "company.engine.validation.service.ValidationEngine",
-    )
-
 
     "isContract" {
-        types.forEach {
-            println("$it -> ${it.isContract()}")
+        assertSoftly{
+            deliveryManager.isContract() shouldBe true
+            flowManager.isContract() shouldBe true
+            iValidationEngine.isContract() shouldBe true
+            contentManager.isContract() shouldBe false
+            validationEngine.isContract() shouldBe false
         }
     }
 
     "isService" {
-        types.forEach {
-            println("$it -> ${it.isService()}")
+        assertSoftly{
+            deliveryManager.isService() shouldBe false
+            flowManager.isService() shouldBe false
+            iValidationEngine.isService() shouldBe false
+            contentManager.isService() shouldBe true
+            validationEngine.isService() shouldBe true
         }
     }
     "isManager" {
-        types.forEach {
-            println("$it -> ${it.isManager()}")
+        assertSoftly{
+            deliveryManager.isManager() shouldBe true
+            flowManager.isManager() shouldBe true
+            iValidationEngine.isManager() shouldBe false
+            contentManager.isManager() shouldBe true
+            validationEngine.isManager() shouldBe false
         }
     }
     "getComponent" {
-        types.forEach {
-            println("$it -> ${it.getComponent()}")
+        assertSoftly{
+            deliveryManager.getComponent() shouldBe "DeliveryManager"
+            flowManager.getComponent() shouldBe "FlowManager"
+            iValidationEngine.getComponent() shouldBe "IValidationEngine"
+            contentManager.getComponent() shouldBe "ContentManager"
+            validationEngine.getComponent() shouldBe "ValidationEngine"
         }
     }
 
@@ -58,4 +65,14 @@ class NamingTests : StringSpec({
         }
 
     }
-})
+}) {
+    companion object {
+        const val deliveryManager = "company.manager.content.contract.delivery.DeliveryManager"
+        const val flowManager = "company.manager.content.contract.flow.FlowManager"
+        const val iValidationEngine = "company.engine.validation.contract.IValidationEngine"
+
+        const val contentManager = "company.manager.content.service.ContentManager"
+        const val validationEngine = "company.engine.validation.service.ValidationEngine"
+    }
+
+}

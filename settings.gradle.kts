@@ -3,7 +3,6 @@ plugins {
 }
 rootProject.name = "ifx-kotlin"
 
-include(":config")
 include(":context")
 include(":host")
 include(":naming")

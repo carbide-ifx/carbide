@@ -1,4 +1,4 @@
-package ifx.testsystem.access.echo.service
+package testcomponents.access.echo.service
 
 import ifx.service.ServiceBase
 import ifx.testsystem.access.echo.contract.EchoAccess
@@ -15,5 +15,11 @@ class EchoAccessService : EchoAccess, ServiceBase() {
         throw IllegalArgumentException(e.number.toString())
 //        TODO("Not yet implemented")
     }
+
     override suspend fun echoContext(e: EmptyEmpty) = EchoResponse(getContext().number)
+    override fun init() = Unit
+
+    override fun isReady() = true
+
+    override fun isLive() = true
 }

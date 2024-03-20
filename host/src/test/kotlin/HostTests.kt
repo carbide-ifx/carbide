@@ -1,10 +1,7 @@
 package ifx
 
-import ifx.proxy.ContractPolicyViolation
 import ifx.proxy.validatedMethods
-import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldNotThrowAny
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
 import kotlinx.serialization.Serializable
 

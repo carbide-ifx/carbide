@@ -27,5 +27,6 @@ class PersonAccessService : PersonAccess, ServiceBase() {
         .values
         .toList()
 
-    override suspend fun filter(number: NumberCriteria) = Number(number.number) // Completely unrelated, just to test overloads
+    override suspend fun filter(number: NumberCriteria) =
+        Number(number.number) // Completely unrelated, just to test overloads
 }

@@ -19,7 +19,6 @@ class ProxyFactory(val port: Int) {
     fun defautlChannel(port: Int): ManagedChannel = ManagedChannelBuilder
         .forAddress("localhost", port)
         .usePlaintext()
-
         .build()
 }
 

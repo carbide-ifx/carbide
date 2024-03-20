@@ -7,7 +7,7 @@ import ifx.proxy.ProxyFactory
 import ifx.testsystem.access.echo.contract.EchoAccess
 import ifx.testsystem.access.echo.contract.EchoAccess.EchoRequest
 import ifx.testsystem.access.echo.contract.EchoAccess.EmptyEmpty
-import ifx.testsystem.access.echo.service.EchoAccessService
+import testcomponents.access.echo.service.EchoAccessService
 import ifx.testsystem.access.person.contract.Dto.Number
 import ifx.testsystem.access.person.contract.Dto.NumberCriteria
 import ifx.testsystem.access.person.contract.Dto.PersonCriteria
