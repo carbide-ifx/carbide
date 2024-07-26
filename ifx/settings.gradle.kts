@@ -1,0 +1,10 @@
+rootProject.name = "ifx"
+include(":context")
+include(":host")
+include(":naming")
+include(":logging")
+include(":proxy")
+include(":service")
+include(":transport")
+include(":stdlib")
+include(":test")
