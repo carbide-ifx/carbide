@@ -6,6 +6,6 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":context"))
-    api("org.jetbrains.kotlinx:kotlinx-rpc-core:0.4.0")
+    api(project(":context"))
+    api("org.jetbrains.kotlinx:kotlinx-rpc-core:0.5.1")
 }

@@ -11,7 +11,7 @@ import acme.manager.membership.contract.IStaffManager
 import acme.manager.membership.contract.RegisterRequest
 import acme.manager.membership.service.MembershipManager
 import ifx.host.RpcHost
-import ifx.proxy.ProxyFactory
+import ifx.proxy.KrpcProxyFactory
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
@@ -26,7 +26,7 @@ class SubsystemTest : FreeSpec({
 
     "Invocation" - {
         "Direct invocation" {
-            val personAccess = ProxyFactory.create<IPersonAccess>()
+            val personAccess = KrpcProxyFactory.create<IPersonAccess>()
             val storedJohn = personAccess.store(StorePersonRequest.Parent(name = "John", age = 30, employed = true))
             val storedPeter = personAccess.store(StorePersonRequest.Child(name = "Peter", age = 10))
 
@@ -35,18 +35,21 @@ class SubsystemTest : FreeSpec({
         }
 
         "Call chain" {
-            val customerManager = ProxyFactory.create<ICustomerManager>()
+            val customerManager = KrpcProxyFactory.create<ICustomerManager>()
             val request = RegisterRequest("Eric", 30)
             val response = customerManager.register(request)
 
 
         }
 
-        "Context propagation" {
-            val customerManager = ProxyFactory.create<ICustomerManager>()
-
-            val response = customerManager.forwardContext(Empty)
+        "Context via proxy" {
+            val customerManager = KrpcProxyFactory.create<ICustomerManager>()
+            customerManager.forwardContext(Empty)
+            customerManager.forwardContext(Empty)
+            customerManager.forwardContext(Empty)
         }
+
+        "!Context Propagation" {}
     }
 })
 

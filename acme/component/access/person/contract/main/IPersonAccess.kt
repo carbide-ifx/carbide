@@ -9,11 +9,11 @@ import kotlinx.serialization.Serializable
 interface IPersonAccess : RemoteService {
     suspend fun store(request: StorePersonRequest): Person
     suspend fun filter(request: PersonCriteria): List<Person>
-    suspend fun echoContext(): Number
+    suspend fun echoContext(): PersonNumber
 }
 
 @Serializable
-data class Number(val number: Int)
+data class PersonNumber(val number: Int)
 
 @Serializable
 sealed interface Person {

@@ -2,7 +2,7 @@ package acme.manager.membership.service
 
 import ifx.service.ErrorCode
 
-enum class MembershipError(override val description: String): ErrorCode {
+enum class MembershipError(override val message: String): ErrorCode {
     StaffNotFound("Staff not found")
     ;
 

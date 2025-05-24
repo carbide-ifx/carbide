@@ -40,7 +40,7 @@ fun <T : Any, U : Any> Response<T>.assertSuccess(extractor: (T) -> U, assertions
 }
 
 
-fun concatErrors(errors: List<ErrorCode>) = errors.joinToString { it.description }
+fun concatErrors(errors: List<ErrorCode>) = errors.joinToString { it.message }
 
 fun <T> assertSuccess(block: () -> Response<T>): T = block().assertSuccess()
 fun <T> assertFailure(block: () -> Response<T>): List<ErrorCode> = block().assertFailure()

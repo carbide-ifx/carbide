@@ -4,12 +4,13 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     gradlePluginPortal() // so that external plugins can be resolved in dependencies section
 }
 
 dependencies {
-    val kotlinVersion = "2.0.21"
-    val kotlinRpcVersion = "0.4.0"
+    val kotlinVersion = "2.1.0"
+    val kotlinRpcVersion = "0.5.0"
     val jibVersion = "3.4.3"
     val ideaExtVersion = "1.1.7"
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")

@@ -1,7 +1,10 @@
 package acme.access.person.service
 
 import acme.access.person.contract.*
-import acme.access.person.contract.Number
+import acme.access.person.contract.PersonNumber
+import ifx.context.Context
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.currentCoroutineContext
 import kotlin.coroutines.CoroutineContext
 
 
@@ -22,9 +25,13 @@ class PersonAccess(override val coroutineContext: CoroutineContext) : IPersonAcc
         .toList()
 
     // Completely unrelated, just to test overloads
-//    override suspend fun filter(number: NumberCriteria) = Number(number.number)
+//    override suspend fun filter(number: NumberCriteria) = PersonNumber(number.number)
 
-    override suspend fun echoContext(): Number = Number(1)
+    override suspend fun echoContext(): PersonNumber {
+        println("Received context: ${currentCoroutineContext()[Context]}")
+        println("Coroutine name: ${currentCoroutineContext()[CoroutineName]}")
+        return PersonNumber(1)
+    }
 }
 
 fun StorePersonRequest.toPerson(): Person = when (this) {

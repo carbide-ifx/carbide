@@ -7,7 +7,7 @@ plugins {
 
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-client")
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-krpc-client:0.5.1")
     implementation(project(":component:access:person:contract"))
     implementation(project(":component:access:person:service"))
     api(project(":component:manager:membership:contract"))

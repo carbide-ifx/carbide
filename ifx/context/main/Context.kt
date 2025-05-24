@@ -3,18 +3,19 @@ package ifx.context
 import kotlinx.serialization.Serializable
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 
+@OptIn(ExperimentalUuidApi::class)
 @Serializable
-data class Context(val data: String = "", val number: Int = 0) : CoroutineContext.Element {
+data class Context(
+    val traceId: String = Uuid.random().toString(),
+    val number: Int = 0
+) : CoroutineContext.Element {
     override val key: CoroutineContext.Key<Context> get() = Key
-    companion object Key : CoroutineContext.Key<Context>
+    companion object Key : CoroutineContext.Key<Context> {
+        val HEADER_KEY = "ifx.context"
+    }
+
 }
-//
-//@Serializable
-//data class ProxyFactoryConfig(val port: Int = 31337, val serviceMap: Map<KClass<>, String> = mapOf()) :
-//    CoroutineContext.Element {
-//    override val key: CoroutineContext.Key<ProxyFactoryConfig> = Key
-//
-//    companion object Key : CoroutineContext.Key<ProxyFactoryConfig>
-//}
