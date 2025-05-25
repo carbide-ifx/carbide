@@ -1,14 +1,4 @@
-description = "test"
-plugins {
-    `java-library`
-}
-dependencies {
-    project(":context")
-    project(":host")
-    project(":logging")
-    project(":naming")
-    project(":proxy")
-    project(":service")
-    project(":stdlib")
-    project(":test")
+allprojects {
+    group = "sonat.ifx"
+    version = "0.1.0"
 }

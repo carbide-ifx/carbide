@@ -5,17 +5,15 @@ import acme.access.person.contract.Person
 import acme.access.person.contract.PersonCriteria
 import acme.access.person.contract.StorePersonRequest
 import acme.manager.membership.contract.*
-import ifx.proxy.KrpcProxyFactory
 import ifx.service.Response
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.CoroutineContext
 
 
-class MembershipManager(override val coroutineContext: CoroutineContext) : IStaffManager, ICustomerManager {
+class MembershipManager() : IStaffManager, ICustomerManager {
 
     override suspend fun fire(request: FireStaffRequest): Response<FireStaffResponse> {
 
-        val personAccess = KrpcProxyFactory.create<IPersonAccess>()
+        val personAccess = ProxyFactory().create<IPersonAccess>()
         val existing = personAccess
             .filter(PersonCriteria.ofId(request.id))
             .mapNotNull { it as? Person.Parent }

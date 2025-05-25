@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies{
-    implementation("ifx:service")
-    implementation("ifx:stdlib")
+    implementation("sonat.ifx:service")
+    implementation("sonat.ifx:stdlib")
 }

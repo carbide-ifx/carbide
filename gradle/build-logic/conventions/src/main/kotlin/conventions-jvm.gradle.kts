@@ -67,5 +67,5 @@ tasks.withType<Test>().configureEach {
 
 tasks.jar {
     // Avoid jar collision when multiple projects have same name
-    archiveBaseName = project.name+project.parent!!.name
+    archiveBaseName = project.name + project.parent?.name
 }

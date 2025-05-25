@@ -1,8 +1,9 @@
 package ifx.rsocket.rsocket
 
+import ifx.contract.InvocationException
 import ifx.protocol.rsocket.RSocketProtocol
-import ifx.proxy.rsocket.InvocationException
-import ifx.proxy.rsocket.ProxyFactory
+
+import ifx.proxy.DynamicProxy
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -10,11 +11,11 @@ import io.rsocket.kotlin.RSocketError
 import kotlinx.coroutines.flow.toList
 
 
-class RsocketServerTest : FreeSpec({
+class RSocketProtocolTest : FreeSpec({
     val instance: IMyService = MyService()
-    RSocketProtocol().bind(instance).start()
+    val protocol = RSocketProtocol().bind(instance).start()
     "Invocations" - {
-        val proxy = ProxyFactory.create<IMyService>()
+        val proxy = DynamicProxy(protocol).create<IMyService>()
         "Fire and forget" - {
             "fun hello()" {
                 proxy.hello() shouldBe Unit

@@ -1,10 +1,10 @@
-package ifx.proxy.rsocket
+package ifx.proxy
 
+import ifx.contract.InvocationException
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 
 class InstanceHandler(val instance: Any) : InvocationHandler {
     @Throws(Exception::class)
@@ -46,18 +46,8 @@ class InstanceHandler(val instance: Any) : InvocationHandler {
 
                 val newArgs = argumentsWithoutContinuation + wrappedContinuation
 
-                try {
-                    val result = method.invoke(instance, *newArgs.toTypedArray())
-
-                    if (result == COROUTINE_SUSPENDED) {
-                        // this can happen if the method we are proxying is a suspending.
-                        // when that is the case, just return result / COROUTINE_SUSPENDED since they are the same thing
-                        result
-                    } else {
-                        // here is where we could inspect result. In this
-                        result
-                    }
-                } catch (invocationTargetException: Throwable) {
+                try { method.invoke(instance, *newArgs.toTypedArray()) }
+                catch (invocationTargetException: Throwable) {
                     throw InvocationException(invocationTargetException.cause ?: invocationTargetException)
                 }
             }

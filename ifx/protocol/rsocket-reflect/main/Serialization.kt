@@ -10,9 +10,7 @@ import io.rsocket.kotlin.payload.Payload
 import io.rsocket.kotlin.payload.buildPayload
 import io.rsocket.kotlin.payload.data
 import kotlinx.io.Buffer
-import kotlinx.io.readString
 import kotlinx.serialization.StringFormat
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
@@ -23,10 +21,6 @@ val format: StringFormat = Json { encodeDefaults = true }
 
 fun Payload.route(): String = metadata?.read(RoutingMetadata)?.tags?.firstOrNull()
     ?: error("Request Payload contains no route!")
-
-inline fun <reified T : Any> Payload.read(): T = format.decodeFromString<T>(data.readString())
-
-fun Payload.read(type: KType): Any? = format.decodeFromString(serializer(type), data.readString())
 
 
 inline fun <reified T : Any> T.toPayload() = buildPayload {

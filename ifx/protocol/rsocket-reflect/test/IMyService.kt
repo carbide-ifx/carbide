@@ -8,6 +8,19 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
+// Ensure we test the following (both blocking and suspend)
+// 1. Fire and forget
+//        - no args
+//        - with args
+// 2. Request-Response
+//        - no args
+//        - with args
+//        - exception handling
+//        - generic return types
+// 3. Request-Stream
+//        - no args
+//        - with args
+
 
 interface IMyService : IService {
     suspend fun exception(): Boolean
@@ -33,19 +46,6 @@ data class FloatPair(val a: Float, val b: Float)
 class CustomException(override val message: String) : Exception(message)
 
 class MyService() : IMyService {
-
-    // TODO Ensure we test the following (both blocking and suspend)
-    // 1. Fire and forget
-//        - no args
-//        - with args
-    // 2. Request-Response
-//        - no args
-//        - with args
-    // 3. Request-Stream
-//        - no args
-//        - with args
-
-
     override suspend fun add(pair: IntPair) = withContext(Dispatchers.IO) {
         delay(1000)
         pair.a + pair.b
@@ -59,7 +59,7 @@ class MyService() : IMyService {
     }
 
     override suspend fun hello() = println("Service says: Hello World")
-    override suspend fun stream(): Flow<List<Int>> = flowOf(listOf(1,2), listOf(2, 3))
+    override suspend fun stream(): Flow<List<Int>> = flowOf(listOf(1, 2), listOf(2, 3))
 
     override fun blockingAdd(pair: IntPair) = pair.a + pair.b
 
@@ -67,7 +67,7 @@ class MyService() : IMyService {
 
     override fun blockingHello() = println("Service says: Hello World")
 
-    override fun blockingStream(): Flow<List<Int>> = flowOf(listOf(1,2), listOf(2, 3))
+    override fun blockingStream(): Flow<List<Int>> = flowOf(listOf(1, 2), listOf(2, 3))
 
     override fun blockingList(): List<Int> = listOf(1, 2, 3)
 

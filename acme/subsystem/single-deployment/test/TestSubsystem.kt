@@ -10,23 +10,24 @@ import acme.manager.membership.contract.ICustomerManager
 import acme.manager.membership.contract.IStaffManager
 import acme.manager.membership.contract.RegisterRequest
 import acme.manager.membership.service.MembershipManager
-import ifx.host.RpcHost
-import ifx.proxy.KrpcProxyFactory
+import ifx.host.Host
+
+import ifx.host.registerService
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 
 class SubsystemTest : FreeSpec({
 
-    RpcHost()
-        .registerService<IPersonAccess> { ctx -> PersonAccess(ctx) }
-        .registerService<IStaffManager> { ctx -> MembershipManager(ctx) }
-        .registerService<ICustomerManager> { ctx -> MembershipManager(ctx) }
+    Host()
+        .registerService<IPersonAccess> (PersonAccess())
+        .registerService<IStaffManager> { ctx -> MembershipManager() }
+        .registerService<ICustomerManager> { ctx -> MembershipManager() }
         .start()
 
     "Invocation" - {
         "Direct invocation" {
-            val personAccess = KrpcProxyFactory.create<IPersonAccess>()
+            val personAccess = ProxyFactory.create<IPersonAccess>()
             val storedJohn = personAccess.store(StorePersonRequest.Parent(name = "John", age = 30, employed = true))
             val storedPeter = personAccess.store(StorePersonRequest.Child(name = "Peter", age = 10))
 

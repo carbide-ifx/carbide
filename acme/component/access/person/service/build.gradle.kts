@@ -4,5 +4,5 @@ plugins {
 
 dependencies{
     implementation(project(":component:access:person:contract"))
-    implementation("ifx:service")
+    implementation("sonat.ifx:service")
 }

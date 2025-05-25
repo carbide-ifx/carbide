@@ -1,12 +1,13 @@
 package acme.access.person.contract
 
+import ifx.service.IService
 import ifx.stdlib.IdGenerator
 import kotlinx.rpc.RemoteService
 import kotlinx.rpc.annotations.Rpc
 import kotlinx.serialization.Serializable
 
 @Rpc
-interface IPersonAccess : RemoteService {
+interface IPersonAccess : IService {
     suspend fun store(request: StorePersonRequest): Person
     suspend fun filter(request: PersonCriteria): List<Person>
     suspend fun echoContext(): PersonNumber

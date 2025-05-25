@@ -1,11 +1,18 @@
 package ifx.proxy.rsocket
 
 import ifx.context.Context
+import ifx.contract.InvocationException
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.websocket.WebSockets
 import io.rsocket.kotlin.ExperimentalMetadataApi
 import io.rsocket.kotlin.RSocket
+import io.rsocket.kotlin.core.WellKnownMimeType
+import io.rsocket.kotlin.ktor.client.RSocketSupport
+import io.rsocket.kotlin.ktor.client.rSocket
 import io.rsocket.kotlin.metadata.RoutingMetadata
 import io.rsocket.kotlin.metadata.metadata
 import io.rsocket.kotlin.payload.Payload
+import io.rsocket.kotlin.payload.PayloadMimeType
 import io.rsocket.kotlin.payload.buildPayload
 import io.rsocket.kotlin.payload.data
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +25,6 @@ import kotlinx.serialization.serializer
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlin.reflect.KType
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.kotlinFunction
@@ -46,14 +52,7 @@ class RsocketInvocationHandler(private val rSocket: RSocket, val formatter: Stri
             try {
                 val payload = method.toPayload(argumentsWithoutContinuation.firstOrNull())
                 val result = rSocket.invokeRemote(returnType, payload)
-                if (result == COROUTINE_SUSPENDED) {
-                    // this can happen if the method we are proxying is a suspending.
-                    // when that is the case, just return result / COROUTINE_SUSPENDED since they are the same thing
-                    result
-                } else {
-                    // here is where we could inspect result. In this
-                    result
-                }
+                result
             } catch (exception: Throwable) {
                 throw exception.cause ?: exception
             }
@@ -91,4 +90,27 @@ class RsocketInvocationHandler(private val rSocket: RSocket, val formatter: Stri
     }
 }
 
-class InvocationException(val wrappedError: Throwable) : RuntimeException()
+
+    fun buildRsocket(route: String): RSocket = runBlocking {
+        HttpClient {
+            install(WebSockets) // rsocket requires websockets plugin installed
+            install(RSocketSupport) {
+                // configure rSocket connector (all values have defaults)
+                connector {
+                    connectionConfig {
+                        // payload for setup frame
+                        setupPayload {
+                            buildPayload {
+                                data("""{ "data": "setup" }""")
+                            }
+                        }
+                        // mime types
+                        payloadMimeType = PayloadMimeType(
+                            data = WellKnownMimeType.ApplicationJson,
+                            metadata = WellKnownMimeType.MessageRSocketCompositeMetadata
+                        )
+                    }
+                }
+            }
+        }.rSocket("ws://localhost:8080/${route}")
+    }

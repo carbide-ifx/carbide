@@ -1,5 +1,8 @@
 package ifx.protocol.rsocket
 
+import ifx.protocol.IProtocol
+import ifx.proxy.rsocket.RsocketInvocationHandler
+import ifx.proxy.rsocket.buildRsocket
 import ifx.proxy.rsocket.methodsFor
 import ifx.rsocket.format
 import ifx.rsocket.route
@@ -22,6 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.io.readString
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.serializer
+import java.lang.reflect.InvocationHandler
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
@@ -33,6 +37,8 @@ class RSocketProtocol : IProtocol {
 
     private val server = server()
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
+
+    override fun <T : IService> createHandler(cls: KClass<T>)= RsocketInvocationHandler(buildRsocket(cls.simpleName!!))
 
     inline fun <reified T : IService> bind(instance: T) = bind(T::class, instance)
     override fun <T : IService> bind(contract: KClass<T>, instance: T): IProtocol {
@@ -58,7 +64,6 @@ class RSocketProtocol : IProtocol {
             get("/") {
                 call.respondText("Hello, world!")
             }
-
             acceptors.forEach {
                 rSocket(it.key, null, it.value)
             }

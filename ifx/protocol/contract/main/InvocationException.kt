@@ -1,3 +1,3 @@
-package ifx.proxy.rsocket
+package ifx.contract
 
 class InvocationException(val wrappedError: Throwable) : RuntimeException()

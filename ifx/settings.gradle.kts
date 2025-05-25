@@ -1,12 +1,16 @@
 rootProject.name = "ifx"
-include(":context")
-include(":host")
-include(":naming")
-include(":logging")
-include(":proxy")
-include(":service")
-include(":transport")
-include(":stdlib")
-include(":test")
-include(":protocol:contract")
-include(":protocol:rsocket")
+
+include(
+    ":context",
+    ":host",
+    ":naming",
+    ":logging",
+    ":proxy:contract",
+    ":proxy:utility",
+    ":service",
+    ":transport",
+    ":stdlib",
+    ":test",
+    ":protocol:contract",
+    ":protocol:rsocket-reflect"
+)

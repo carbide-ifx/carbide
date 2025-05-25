@@ -13,9 +13,7 @@ dependencies {
     api(project(":service"))
     api(project(":naming"))
     api("io.rsocket.kotlin:ktor-server-rsocket:0.20.0")
-
-    testImplementation(project(":proxy"))
-
+    api("io.rsocket.kotlin:ktor-client-rsocket:0.20.0")
 
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")

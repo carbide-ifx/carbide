@@ -3,12 +3,13 @@ package acme.access.person.service
 import acme.access.person.contract.*
 import acme.access.person.contract.PersonNumber
 import ifx.context.Context
+import ifx.service.IService
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.currentCoroutineContext
 import kotlin.coroutines.CoroutineContext
 
 
-class PersonAccess(override val coroutineContext: CoroutineContext) : IPersonAccess {
+class PersonAccess() : IPersonAccess {
     private val map: MutableMap<String, Person> = mutableMapOf()
     override suspend fun store(request: StorePersonRequest): Person {
         val person = request.toPerson()

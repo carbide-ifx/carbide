@@ -3,5 +3,5 @@ plugins {
 }
 
 dependencies{
-    api("ifx:service")
+    api("sonat.ifx:service")
 }

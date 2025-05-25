@@ -8,8 +8,6 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.javaMethod
 
-inline fun <reified T : IService> methodsFor(): Map<String, KFunction<*>> = methodsFor(T::class)
-
 fun <T : IService> methodsFor(cls: KClass<T>): Map<String, KFunction<*>> {
     require(cls.java.isInterface) { "Must be an interface" }
     return cls.memberFunctions

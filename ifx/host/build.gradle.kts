@@ -9,12 +9,10 @@ repositories {
 }
 
 dependencies {
-
     implementation(project(":naming"))
     implementation(project(":service"))
     implementation(project(":context"))
     implementation(project(":logging"))
     implementation(project(":protocol:contract"))
-    implementation(project(":protocol:rsocket"))
 }
 

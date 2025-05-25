@@ -6,6 +6,6 @@ dependencies {
     implementation(project(":component:manager:membership:contract"))
     implementation(project(":component:access:person:contract"))
 
-    implementation("ifx:service")
-    implementation("ifx:proxy")
+    implementation("sonat.ifx:service")
+    implementation("sonat.ifx:proxy")
 }

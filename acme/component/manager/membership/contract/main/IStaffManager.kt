@@ -1,12 +1,13 @@
 package acme.manager.membership.contract
 
+import ifx.service.IService
 import ifx.service.Response
 import kotlinx.rpc.RemoteService
 import kotlinx.rpc.annotations.Rpc
 import kotlinx.serialization.Serializable
 
 @Rpc
-interface IStaffManager : RemoteService {
+interface IStaffManager : IService {
     suspend fun fire(request: FireStaffRequest): Response<FireStaffResponse>
 }
 
