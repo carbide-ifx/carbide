@@ -1,0 +1,8 @@
+modules:
+  - *
+  - proxy/ifx.proxy.contract
+  - proxy/ifx.proxy.reflection
+  - protocol/ifx.protocol.contract
+  - protocol/ifx.protocol.rsocket-reflect
+  - acme/component/access/person/contract
+## TODO: Publish ifx to repository, then make acme project standalone

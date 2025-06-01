@@ -1,0 +1,6 @@
+apply: [ ../../../../component.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [jvm]
+
