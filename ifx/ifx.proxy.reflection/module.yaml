@@ -1,0 +1,12 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [ jvm ]
+
+dependencies:
+  - ../ifx.naming
+  - ../ifx.service
+  - ../ifx.context
+  - ../ifx.proxy.contract: exported
+  - ../ifx.protocol.rsocket-reflect: exported
+  - ../ifx.protocol.contract: exported

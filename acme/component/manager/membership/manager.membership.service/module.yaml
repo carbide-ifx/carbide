@@ -1,0 +1,11 @@
+apply: [ ../../../../component.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [jvm]
+
+dependencies:
+  - sonat.ifx:proxy.reflection:0.0.1-SNAPSHOT: exported
+  - ../manager.membership.contract: exported
+  - ../../../access/person/access.person.service
+

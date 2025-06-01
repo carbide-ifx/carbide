@@ -1,0 +1,8 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [jvm]
+
+dependencies:
+  - ../ifx.service
+  - com.lemonappdev:konsist:0.15.1

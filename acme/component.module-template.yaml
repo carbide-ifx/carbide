@@ -2,16 +2,18 @@ settings:
   kotlin:
     serialization: enabled
   publishing:
-    group: sonat
+    group: acme
     version: 0.0.1-SNAPSHOT
+
 dependencies:
   - $kotlin.serialization.json
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
 test-dependencies:
   - io.kotest:kotest-runner-junit5:5.8.1
 
 repositories:
-  - id: github
-    publish: true
+  - id: GitHub
+    publish: false
     resolve: true
     url: https://maven.pkg.github.com/Sonat-Consulting-Trondheim/ifx.kotlin
     credentials:

@@ -1,0 +1,9 @@
+apply: [ ../../../../component.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [jvm]
+
+
+dependencies:
+  - sonat.ifx:service:0.0.1-SNAPSHOT: exported

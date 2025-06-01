@@ -1,0 +1,13 @@
+apply: [ ../../../../component.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [jvm]
+
+
+settings:
+  publishing:
+    name: access.person.service
+dependencies:
+  - ../access.person.contract: exported
+  - sonat.ifx:context:0.0.1-SNAPSHOT

@@ -1,0 +1,10 @@
+apply: [ ../../component.module-template.yaml ]
+
+product:
+  type: jvm/app
+
+dependencies:
+  - sonat.ifx:host:0.0.1-SNAPSHOT
+  - sonat.ifx:proxy.reflection:0.0.1-SNAPSHOT
+  - ../../component/access/person/access.person.service
+  - ../../component/manager/membership/manager.membership.service

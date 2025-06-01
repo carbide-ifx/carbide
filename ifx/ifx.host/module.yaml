@@ -1,0 +1,11 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [jvm]
+
+dependencies:
+  - ../ifx.protocol.contract
+  - ../ifx.naming
+  - ../ifx.service
+  - ../ifx.context
+  - ../ifx.logging
