@@ -2,7 +2,7 @@ package ifx.rsocket.rsocket
 
 import ifx.protocol.contract.InvocationException
 import ifx.protocol.rsocket.RSocketProtocol
-import ifx.proxy.DynamicProxy
+import ifx.proxy.ProxyFactory
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
@@ -15,7 +15,7 @@ class RSocketProtocolTest : FreeSpec({
     val instance: IMyService = MyService()
     val protocol = RSocketProtocol().bind(instance).start()
     "Invocations" - {
-        val proxy = DynamicProxy(protocol).create<IMyService>()
+        val proxy = ProxyFactory(protocol).create<IMyService>()
         "Fire and forget" - {
             "fun hello()" {
                 proxy.hello() shouldBe Unit
@@ -64,8 +64,5 @@ class RSocketProtocolTest : FreeSpec({
                 proxy.blockingStream().toList() shouldBe listOf(listOf(1,2), listOf(2, 3))
             }
         }
-
     }
-
-
 })

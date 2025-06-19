@@ -9,3 +9,6 @@ dependencies:
   - ../ifx.service
   - ../ifx.context
   - ../ifx.logging
+
+test-dependencies:
+  - ../ifx.proxy.factory

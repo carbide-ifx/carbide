@@ -8,5 +8,5 @@ dependencies:
   - ../ifx.service
   - ../ifx.context
   - ../ifx.proxy.contract: exported
-  - ../ifx.protocol.rsocket-reflect: exported
+  - ../ifx.protocol.rsocket: exported
   - ../ifx.protocol.contract: exported

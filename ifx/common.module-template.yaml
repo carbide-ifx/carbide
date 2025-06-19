@@ -3,11 +3,11 @@ settings:
     serialization: enabled
   publishing:
     group: sonat
-    version: 0.0.1-SNAPSHOT
+    version: 0.0.5-LOCAL
 dependencies:
   - $kotlin.serialization.json
 test-dependencies:
-  - io.kotest:kotest-runner-junit5:5.8.1
+  - ../ifx/ifx.test
 
 repositories:
   - id: github
@@ -18,3 +18,15 @@ repositories:
       file: ../repository-credentials.properties
       usernameKey: github.username
       passwordKey: github.token
+  - id: local
+    publish: true
+    resolve: false
+    url: mavenLocal
+  - id: snap
+    publish: true
+    resolve: false
+    url: https://localhost/snapshots
+    credentials:
+      file: ../repository-credentials.properties
+      usernameKey: reposilite.username
+      passwordKey: reposilite.token

@@ -1,0 +1,6 @@
+modules:
+ - component/access/person/access.person.contract
+ - component/access/person/access.person.service
+ - component/manager/membership/manager.membership.contract
+ - component/manager/membership/manager.membership.service
+ - subsystem/acme-app/subsystem.acme-app

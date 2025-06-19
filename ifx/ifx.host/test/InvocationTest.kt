@@ -1,46 +1,36 @@
-//package ifx
-//
-//import ifx.context.Context
-//import ifx.service.Service
-//import ifx.testsystem.access.echo.contract.EchoAccess
-//import ifx.testsystem.access.echo.contract.EchoAccess.EchoRequest
-//import ifx.testsystem.access.echo.contract.EchoAccess.EmptyEmpty
-//import testcomponents.access.echo.service.EchoAccessService
-//import ifx.testsystem.access.person.contract.Dto.Number
-//import ifx.testsystem.access.person.contract.Dto.NumberCriteria
-//import ifx.testsystem.access.person.contract.Dto.PersonCriteria
-//import ifx.testsystem.access.person.contract.PersonAccess
-//import ifx.testsystem.access.person.service.PersonAccessService
-//import ifx.testsystem.manager.membership.contract.CustomerManager
-//import ifx.testsystem.manager.membership.contract.CustomerManager.RegisterRequest
-//import ifx.testsystem.manager.membership.service.MembershipManagerService
-//import io.github.oshai.kotlinlogging.KotlinLogging
-//import io.kotest.assertions.throwables.shouldThrow
-//import io.kotest.core.spec.style.FreeSpec
-//import io.kotest.matchers.comparables.shouldBeLessThan
-//import io.kotest.matchers.shouldBe
-//import kotlinx.coroutines.async
-//import kotlinx.coroutines.awaitAll
-//import kotlin.time.Duration.Companion.seconds
-//import kotlin.time.measureTime
-//
-//private val log = KotlinLogging.logger { }
-//
-//class InvocationTest : FreeSpec({
-//    val port = RpcHost.randomFreePort()
-//    beforeSpec {
-//        Host(port)
-//            .addService(MembershipManagerService())
-//            .addService(PersonAccessService())
-//            .addService(EchoAccessService())
-//            .start()
-//    }
-//
-//    "Invocation" - {
-//        "Direct invocation" {
-//            ProxyFactory.create<EchoAccess>().echo(EchoRequest(42)).number shouldBe 42
-//        }
-//
+package ifx
+
+import IMyService
+import IntPair
+import MyService
+import ifx.context.Context
+import ifx.host.Host
+import ifx.host.registerService
+import ifx.proxy.ProxyFactory
+
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
+
+class InvocationTest : FreeSpec({
+    beforeSpec {
+        Host()
+            .registerService<IMyService> { MyService() }
+            .start()
+    }
+
+    "Invocation" - {
+        "Direct invocation" {
+            ProxyFactory().create<IMyService>().add(IntPair(1, 1)) shouldBe 2
+        }
+    }
+})
+
 //        "Overloads are supported" {
 //            ProxyFactory.create<PersonAccess>().filter(PersonCriteria()).size shouldBe 0
 //            ProxyFactory.create<PersonAccess>().filter(NumberCriteria(3)) shouldBe Number(3)
@@ -108,8 +98,3 @@
 //        }
 //    }
 //})
-//
-//
-//interface NotExistingService: Service {
-//    suspend fun a(i: Int) = i
-//}

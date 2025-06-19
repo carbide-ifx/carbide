@@ -16,9 +16,9 @@
 set -e -u
 
 # The version of the Amper distribution to provision and use
-amper_version=0.8.0-dev-2900
+amper_version=0.8.0-dev-2915
 # Establish chain of trust from here by specifying exact checksum of Amper distribution to be run
-amper_sha256=39394fbfabe91d2e0c36e37f4155407aeda83d895b898bc540bbf4329e3bc82f
+amper_sha256=3ffa1b27f69e72afb937bacfbaeefebc8cf84f16d8537b530284e05ccac00f4c
 
 AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://packages.jetbrains.team/maven/p/amper/amper}"
 AMPER_JRE_DOWNLOAD_ROOT="${AMPER_JRE_DOWNLOAD_ROOT:-https:/}"
@@ -89,10 +89,10 @@ download_and_extract() {
   if command -v curl >/dev/null 2>&1; then
     if [ -t 1 ]; then CURL_PROGRESS="--progress-bar"; else CURL_PROGRESS="--silent --show-error"; fi
     # shellcheck disable=SC2086
-    curl $CURL_PROGRESS -L --fail --retry 5 --connect-timeout 30 --output "${temp_file}" "$file_url" 2>&1
+    curl $CURL_PROGRESS -L --fail --retry 5 --connect-timeout 30 --output "${temp_file}" "$file_url"
   elif command -v wget >/dev/null 2>&1; then
     if [ -t 1 ]; then WGET_PROGRESS=""; else WGET_PROGRESS="-nv"; fi
-    wget $WGET_PROGRESS --tries=5 --connect-timeout=30 --read-timeout=120 -O "${temp_file}" "$file_url" 2>&1
+    wget $WGET_PROGRESS --tries=5 --connect-timeout=30 --read-timeout=120 -O "${temp_file}" "$file_url"
   else
     die "ERROR: Please install 'wget' or 'curl', as Amper needs one of them to download $moniker"
   fi

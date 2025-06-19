@@ -9,5 +9,5 @@ settings:
     name: access.person.contract
 
 dependencies:
-  - sonat.ifx:service:0.0.1-SNAPSHOT: exported
-  - sonat.ifx:stdlib:0.0.1-SNAPSHOT
+  - $libs.ifx.service: exported
+  - $libs.ifx.stdlib

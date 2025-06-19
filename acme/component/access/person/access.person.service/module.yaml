@@ -10,4 +10,3 @@ settings:
     name: access.person.service
 dependencies:
   - ../access.person.contract: exported
-  - sonat.ifx:context:0.0.1-SNAPSHOT

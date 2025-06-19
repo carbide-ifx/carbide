@@ -4,10 +4,11 @@ product:
   platforms: [jvm]
 
 dependencies:
-  - ../ifx.service
+  - ../ifx.service: exported
   - io.kotest:kotest-runner-junit5:5.8.1: exported
   - io.kotest:kotest-assertions-core:5.8.1: exported
   - io.kotest:kotest-property:5.8.1: exported
   - io.kotest:kotest-framework-datatest:5.8.1: exported
   - io.kotest:kotest-extensions-htmlreporter:5.8.1: exported
   - io.kotest:kotest-extensions-junitxml:5.8.1: exported
+  - $kotlin.reflect: exported

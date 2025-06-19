@@ -8,7 +8,7 @@ interface IProtocol {
     fun <T : IService> bind(contract: KClass<T>, instance: T): IProtocol
     fun start(): IProtocol
     fun stop(): IProtocol
-    fun <T : IService> createHandler(cls: KClass<T>): InvocationHandler
+    fun <T : IService> createClient(cls: KClass<T>): InvocationHandler
 }
 
-inline fun <reified T : IService> IProtocol.createHandler(): InvocationHandler = createHandler<T>(T::class)
+inline fun <reified T : IService> IProtocol.createClient(): InvocationHandler = createClient<T>(T::class)

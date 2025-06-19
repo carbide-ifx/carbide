@@ -1,5 +1,7 @@
 package ifx.service
 
+import ifx.service.Response.Failure
+import ifx.service.Response.Success
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SealedClassSerializer
@@ -8,7 +10,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with= ResponseSerializer::class)
+@Serializable(with = ResponseSerializer::class)
 sealed interface Response<out T> {
 
     @Serializable
@@ -18,25 +20,40 @@ sealed interface Response<out T> {
     data class Failure(val errors: List<ErrorCode>) : Response<Nothing>
 
     companion object {
-        operator fun invoke() = Success(Unit)
-        fun <T : Any> emptyList() = Success(listOf<T>())
-        operator fun <T : Any> invoke(value: T) = Success(value)
-        fun fail(vararg errorCodes: ErrorCode) = Failure(errorCodes.toList())
-        fun fail(errorCodes: List<ErrorCode>) = Failure(errorCodes)
+        operator fun <T> invoke(vararg errorCode: ErrorCode): Response<T> = Failure(errorCode.toList())
+        operator fun <T> invoke(errors: List<ErrorCode>): Response<T> = Failure(errors)
+        operator fun <T> invoke(value: T): Response<T> = Success(value)
+        operator fun <T> invoke(vararg value: T): Response<List<T>> = Success(value.toList())
+        operator fun invoke(): Response<Unit> = Success(Unit)
+
     }
 }
+
+fun <T> Response<T>.getOrElse(provider: Failure.() -> T): T = when (this) {
+    is Success -> value
+    is Failure -> provider(this)
+}
+
+inline fun <T> Response<T>.onFailure(action: (Failure) -> Unit): Response<T> = when (this) {
+    is Success -> this
+    is Failure -> {
+        action(this)
+        this
+    }
+}
+
 
 @OptIn(InternalSerializationApi::class)
 class ResponseSerializer<T>(valueSerializer: KSerializer<T>): KSerializer<Response<T>> {
     private val serializer = SealedClassSerializer(
         Response::class.simpleName!!,
         Response::class,
-        arrayOf(Response.Success::class, Response.Failure::class),
-        arrayOf(Response.Success.serializer(valueSerializer), Response.Failure.serializer())
+        arrayOf(Success::class, Failure::class),
+        arrayOf(Success.serializer(valueSerializer), Failure.serializer())
     )
 
     override val descriptor: SerialDescriptor = serializer.descriptor
     @Suppress("UNCHECKED_CAST")
-    override fun deserialize(decoder: Decoder): Response.Success<T> { return serializer.deserialize(decoder) as Response.Success<T> }
+    override fun deserialize(decoder: Decoder): Response<T> { return serializer.deserialize(decoder) as Response<T> }
     override fun serialize(encoder: Encoder, value: Response<T>) { serializer.serialize(encoder, value) }
 }

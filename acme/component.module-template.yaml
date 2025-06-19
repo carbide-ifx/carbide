@@ -7,16 +7,25 @@ settings:
 
 dependencies:
   - $kotlin.serialization.json
-  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1
 test-dependencies:
-  - io.kotest:kotest-runner-junit5:5.8.1
-
+  - $libs.ifx.test
 repositories:
-  - id: GitHub
+  - id: snapp
     publish: false
     resolve: true
-    url: https://maven.pkg.github.com/Sonat-Consulting-Trondheim/ifx.kotlin
+    url: https://localhost:443/snapshots
     credentials:
       file: ../repository-credentials.properties
-      usernameKey: github.username
-      passwordKey: github.token
+      usernameKey: reposilite.username
+      passwordKey: reposilite.token
+
+#  - id: GitHub
+#    publish: false
+#    resolve: true
+#    url: https://maven.pkg.github.com/Sonat-Consulting-Trondheim/ifx.kotlin
+#    credentials:
+#      file: ../repository-credentials.properties
+#      usernameKey: github.username
+#      passwordKey: github.token
+

@@ -1,0 +1,22 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [jvm]
+
+
+dependencies:
+  - ../ifx.protocol.contract: exported
+  - ../ifx.service
+  - ../ifx.naming
+  - ../ifx.context
+  - io.rsocket.kotlin:ktor-server-rsocket:0.20.0: exported
+  - io.rsocket.kotlin:ktor-client-rsocket:0.20.0: exported
+  - io.ktor:ktor-client-core:3.1.1: exported
+  - io.ktor:ktor-server-cio:3.1.1: exported
+  - io.ktor:ktor-client-cio:3.1.1: exported
+  - io.ktor:ktor-client-websockets:3.1.1: exported
+  - $kotlin.reflect
+
+test-dependencies:
+  - ../ifx.proxy.factory
+  - ../ifx.test

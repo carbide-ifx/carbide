@@ -1,0 +1,15 @@
+[versions]
+ifx = "0.0.5-LOCAL"
+
+[libraries]
+ifx.logging = {  module = "sonat:ifx.logging", version.ref = "ifx" }
+ifx.service = {  module = "sonat:ifx.service", version.ref = "ifx" }
+ifx.stdlib = {  module = "sonat:ifx.stdlib", version.ref = "ifx" }
+ifx.protocol.contract = {  module = "sonat:ifx.protocol.contract", version.ref = "ifx" }
+ifx.proxy.contract = {  module = "sonat:ifx.proxy.contract", version.ref = "ifx" }
+ifx.naming = {  module = "sonat:ifx.naming", version.ref = "ifx" }
+ifx.prococol-rsocket = {  module = "sonat:ifx.prococol.rsocket-reflect", version.ref = "ifx" }
+ifx.proxy.factory = {  module = "sonat:ifx.proxy.factory", version.ref = "ifx" }
+ifx.host = {  module = "sonat:ifx.host", version.ref = "ifx" }
+ifx.context = {  module = "sonat:ifx.context", version.ref = "ifx" }
+ifx.test = {  module = "sonat:ifx.test", version.ref = "ifx" }

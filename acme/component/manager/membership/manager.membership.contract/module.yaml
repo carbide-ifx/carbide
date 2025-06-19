@@ -6,4 +6,4 @@ product:
 
 
 dependencies:
-  - sonat.ifx:service:0.0.1-SNAPSHOT: exported
+  - $libs.ifx.service: exported

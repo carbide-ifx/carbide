@@ -3,3 +3,6 @@ apply: [../common.module-template.yaml ]
 product:
   type: lib
   platforms: [jvm]
+
+dependencies:
+  - $kotlin.serialization.json: exported

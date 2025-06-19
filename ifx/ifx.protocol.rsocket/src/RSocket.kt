@@ -4,9 +4,6 @@ import ifx.protocol.contract.IProtocol
 import ifx.proxy.rsocket.RsocketInvocationHandler
 import ifx.proxy.rsocket.buildRsocket
 import ifx.proxy.rsocket.methodsFor
-import ifx.rsocket.format
-import ifx.rsocket.route
-import ifx.rsocket.toPayload
 import ifx.service.IService
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
@@ -37,7 +34,7 @@ class RSocketProtocol : IProtocol {
     private val server = server()
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
 
-    override fun <T : IService> createHandler(cls: KClass<T>)= RsocketInvocationHandler(buildRsocket(cls.simpleName!!))
+    override fun <T : IService> createClient(cls: KClass<T>) = RsocketInvocationHandler(buildRsocket(cls.simpleName!!))
 
     inline fun <reified T : IService> bind(instance: T) = bind(T::class, instance)
     override fun <T : IService> bind(contract: KClass<T>, instance: T): IProtocol {
@@ -81,31 +78,31 @@ private suspend operator fun <R> KFunction<R>.invoke(instance: Any, payload: Pay
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-private fun <T : IService> createAcceptor(contract: KClass<T>, instance: T): ConnectionAcceptor {
-    return ConnectionAcceptor {
-        val allMethods = methodsFor(contract)
-        // Create session, etc
-        RSocketRequestHandler {
-            fireAndForget { payload ->
-                val route = payload.route()
-                val method = allMethods[route]
-                    ?: error("Method $route not found. Registered methods: ${allMethods.keys}")
-                method(instance, payload)
-            }
-            requestResponse { payload ->
-                val route = payload.route()
-                val method = allMethods[route]
-                    ?: error("Method $route not found. Registered methods: ${allMethods.keys}")
-                method(instance, payload).toPayload(method.returnType)
-            }
+private fun <T : IService> createAcceptor(contract: KClass<T>, instance: T) = ConnectionAcceptor {
+    val allMethods = methodsFor(contract)
+    // Create session, etc
+    RSocketRequestHandler {
+        fireAndForget { payload ->
+            val route = payload.route()
+            val method = allMethods[route]
+                ?: error("Method $route not found. Registered methods: ${allMethods.keys}")
+            method(instance, payload)
+        }
+        requestResponse { payload ->
+            val route = payload.route()
+            val method = allMethods[route]
+                ?: error("Method $route not found. Registered methods: ${allMethods.keys}")
+            val result = method(instance, payload)
+            val response = result.toPayload(method.returnType)
+            response
+        }
 
-            requestStream { payload ->
-                val route = payload.route()
-                val method = allMethods[route]
-                    ?: error("Method $route not found. Registered methods: ${allMethods.keys}")
-                val result = method(instance, payload) as Flow<*>
-                result.map { it.toPayload(method.flowType()) }
-            }
+        requestStream { payload ->
+            val route = payload.route()
+            val method = allMethods[route]
+                ?: error("Method $route not found. Registered methods: ${allMethods.keys}")
+            val result = method(instance, payload) as Flow<*>
+            result.map { it.toPayload(method.flowType()) }
         }
     }
 }

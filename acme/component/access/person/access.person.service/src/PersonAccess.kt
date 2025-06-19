@@ -1,7 +1,6 @@
 package acme.access.person.service
 
 import acme.access.person.contract.*
-import ifx.context.Context
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.currentCoroutineContext
 
@@ -26,7 +25,7 @@ class PersonAccess() : IPersonAccess {
 //    override suspend fun filter(number: NumberCriteria) = PersonNumber(number.number)
 
     override suspend fun echoContext(): PersonNumber {
-        println("Received context: ${currentCoroutineContext()[Context]}")
+//        println("Received context: ${currentCoroutineContext()[Context]}")
         println("Coroutine name: ${currentCoroutineContext()[CoroutineName]}")
         return PersonNumber(1)
     }

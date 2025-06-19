@@ -8,7 +8,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 /**
  * Asserts that the Response is a success and returns the value.
  */
-fun <T> Response<T>.assertSuccess(): T = when (this) {
+fun <T: Any> Response<T>.assertSuccess(): T = when (this) {
     is Response.Success -> value
     is Response.Failure -> fail(concatErrors(errors))
 }
@@ -16,16 +16,16 @@ fun <T> Response<T>.assertSuccess(): T = when (this) {
 /**
  * Asserts that the Response is a failure and returns the errors.
  */
-fun <T> Response<T>.assertFailure(): List<ErrorCode> = when (this) {
+fun <T: Any> Response<T>.assertFailure(): List<ErrorCode> = when (this) {
     is Response.Failure -> errors
     is Response.Success -> fail("Expected failure")
 }
 
-fun <T> Response<T>.assertFailureWithErrors(vararg expectedErrors: ErrorCode) {
+fun <T: Any> Response<T>.assertFailureWithErrors(vararg expectedErrors: ErrorCode) {
     assertFailure() shouldContainExactlyInAnyOrder  expectedErrors.toList()
 }
 
-fun <T> Response<T>.assertSuccess(assertions: T.(T) -> Unit): T = when (this) {
+fun <T: Any> Response<T>.assertSuccess(assertions: T.(T) -> Unit): T = when (this) {
     is Response.Success -> assertSoftly(value, assertions)
     is Response.Failure -> fail(concatErrors(errors))
 }
@@ -42,5 +42,5 @@ fun <T : Any, U : Any> Response<T>.assertSuccess(extractor: (T) -> U, assertions
 
 fun concatErrors(errors: List<ErrorCode>) = errors.joinToString { it.message }
 
-fun <T> assertSuccess(block: () -> Response<T>): T = block().assertSuccess()
-fun <T> assertFailure(block: () -> Response<T>): List<ErrorCode> = block().assertFailure()
+fun <T: Any> assertSuccess(block: () -> Response<T>): T = block().assertSuccess()
+fun <T: Any> assertFailure(block: () -> Response<T>): List<ErrorCode> = block().assertFailure()

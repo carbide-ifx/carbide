@@ -3,6 +3,7 @@ package ifx.host
 import ifx.protocol.contract.IProtocol
 import ifx.service.IService
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.KClass
 
 class Host : IHost {
@@ -25,7 +26,8 @@ class Host : IHost {
         require(contract.java.isInterface) {
             "Contract for service must be an interface, but got: ${contract.qualifiedName}"
         }
-        TODO("Implement factory-based service registration")
+        protocols.forEach { it.bind(contract, factory(EmptyCoroutineContext)) }
+        return this
     }
 
 

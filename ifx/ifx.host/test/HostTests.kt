@@ -1,4 +1,4 @@
-package ifx
+package ifx.host
 
 import io.kotest.core.spec.style.FreeSpec
 

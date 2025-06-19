@@ -63,11 +63,15 @@ class RsocketInvocationHandler(private val rSocket: RSocket, val formatter: Stri
         Unit::class -> fireAndForget(payload)
         Flow::class -> requestStream(payload).map { payload ->
             payload.data.readString()
-                .let { formatter.decodeFromString(serializer(returnType.arguments.first().type!!), it) }
+                .let {
+                    formatter.decodeFromString(serializer(returnType.arguments.first().type!!), it)
+                }
         }
         else -> requestResponse(payload)
             .data.readString()
-            .let { formatter.decodeFromString(serializer(returnType), it) }
+            .let {
+                formatter.decodeFromString(serializer(returnType), it)
+            }
     }
 
     @Suppress("UNCHECKED_CAST")

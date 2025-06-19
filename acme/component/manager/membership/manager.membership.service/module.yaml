@@ -5,7 +5,6 @@ product:
   platforms: [jvm]
 
 dependencies:
-  - sonat.ifx:proxy.reflection:0.0.1-SNAPSHOT: exported
+  - $libs.ifx.proxy.factory: exported
   - ../manager.membership.contract: exported
   - ../../../access/person/access.person.service
-

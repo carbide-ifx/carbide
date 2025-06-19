@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMetadataApi::class)
 
-package ifx.rsocket
+package ifx.protocol.rsocket
 
 import io.rsocket.kotlin.ExperimentalMetadataApi
 import io.rsocket.kotlin.metadata.RoutingMetadata
