@@ -1,12 +1,13 @@
-package ifx.proxy
+package ifx.proxy.factory
 
 
-import ifx.protocol.contract.InvocationException
+import ifx.protocol.contract.ProtocolException
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 
+@Deprecated("Used only for development testing purposes, and bypasses all hooks and protocol features. Use EndpointInvocationHandler instead.")
 class InstanceHandler(val instance: Any) : InvocationHandler {
     @Throws(Exception::class)
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
@@ -18,7 +19,7 @@ class InstanceHandler(val instance: Any) : InvocationHandler {
             try {
                 method.invoke(instance, *nonNullArgs)
             } catch (exception: Exception) {
-                throw InvocationException(exception.cause ?: exception)
+                throw ProtocolException(exception.cause ?: exception)
 
             }
         } else {
@@ -49,7 +50,7 @@ class InstanceHandler(val instance: Any) : InvocationHandler {
 
                 try { method.invoke(instance, *newArgs.toTypedArray()) }
                 catch (invocationTargetException: Throwable) {
-                    throw InvocationException(invocationTargetException.cause ?: invocationTargetException)
+                    throw ProtocolException(invocationTargetException.cause ?: invocationTargetException)
                 }
             }
         }

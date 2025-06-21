@@ -2,6 +2,9 @@
 
 package ifx.protocol.rsocket
 
+
+
+import ifx.protocol.contract.Message
 import io.rsocket.kotlin.ExperimentalMetadataApi
 import io.rsocket.kotlin.metadata.RoutingMetadata
 import io.rsocket.kotlin.metadata.metadata
@@ -9,36 +12,34 @@ import io.rsocket.kotlin.metadata.read
 import io.rsocket.kotlin.payload.Payload
 import io.rsocket.kotlin.payload.buildPayload
 import io.rsocket.kotlin.payload.data
+import io.rsocket.kotlin.payload.metadata
 import kotlinx.io.Buffer
-import kotlinx.serialization.StringFormat
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
-import kotlin.reflect.KType
+import kotlinx.io.readString
 
-
-val format: StringFormat = Json { encodeDefaults = true }
 
 fun Payload.route(): String = metadata?.read(RoutingMetadata)?.tags?.firstOrNull()
-    ?: error("Request Payload contains no route!")
+    ?: error("Message Payload contains no route!")
 
-
-inline fun <reified T : Any> T.toPayload() = buildPayload {
-    data(format.encodeToString<T>(this@toPayload))
+fun Message.toRequestPayload(operation: String): Payload = buildPayload {
+    metadata(RoutingMetadata(operation))
+    data(this@toRequestPayload.body)
 }
 
-fun <T : Any> T?.toPayload(type: KType) = buildPayload {
-    data(format.encodeToString(serializer(type), this@toPayload))
-}
-
-
-
-inline fun <reified T : Any> Payload(route: String, value: T): Payload = buildPayload {
-    metadata(RoutingMetadata(route))
-    data(format.encodeToString<T>(value))
+fun Message.toResponsePayload(): Payload = buildPayload {
+    metadata(this@toResponsePayload.header)
+    data(this@toResponsePayload.body)
 }
 
 fun Payload(route: String, data: Buffer = Buffer()): Payload = buildPayload {
     metadata(RoutingMetadata(route))
     data(data)
 }
+
+
+fun Payload.toMessage(): Message = Message(
+    header = this.metadata?.readString() ?: "", body = data.readString()
+)
+fun Payload.toRequest(): Message = Message(
+    header = this.metadata?.readString() ?: "",
+    body = data.readString()
+)

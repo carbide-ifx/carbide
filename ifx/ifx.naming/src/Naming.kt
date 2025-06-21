@@ -1,6 +1,7 @@
 package ifx.naming
 
 
+import ifx.service.IService
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
 import kotlin.reflect.KClass
@@ -31,7 +32,9 @@ object Naming {
 
 
     data class Component(val cls: String) {
-        constructor(cls: KClass<*>) : this(cls.qualifiedName ?: throw IllegalArgumentException("Invalid class name: ${cls.qualifiedName}"))
+        constructor(cls: KClass<*>) : this(
+            cls.qualifiedName ?: throw IllegalArgumentException("Invalid class name: ${cls.qualifiedName}")
+        )
 
         val company: String
         val concept: String
@@ -57,11 +60,11 @@ object Naming {
 
     fun generateFullMethodName(fullServiceName: String, method: Method): String {
         val isSingleParam = method.parameterTypes.size == 1
-        val isSingleSuspendParam = method.parameterTypes.size == 2 && method.parameterTypes[1] == Continuation::class.java
+        val isSingleSuspendParam =
+            method.parameterTypes.size == 2 && method.parameterTypes[1] == Continuation::class.java
         require(isSingleParam || isSingleSuspendParam) { "Method must have exactly one parameter or one parameter and a continuation" }
         val paramType = method.parameterTypes.first().typeName
         return "$fullServiceName/${method.name}#$paramType"
     }
 }
-
 

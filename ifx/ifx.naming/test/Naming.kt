@@ -1,3 +1,16 @@
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+
+class DummyTest {
+    @Test
+    fun dummy() = runTest {
+        1 shouldBe 1
+    }
+
+}
+
+
 //package ifx.naming
 //
 //

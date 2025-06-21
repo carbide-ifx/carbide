@@ -11,15 +11,15 @@ import acme.manager.membership.contract.IStaffManager
 import acme.manager.membership.contract.RegisterRequest
 import acme.manager.membership.service.MembershipManager
 import ifx.host.Host
-import ifx.host.registerService
-import ifx.protocol.rsocket.RSocketProtocol
+import ifx.host.IHost.Companion.registerService
+import ifx.protocol.rsocket.RSocketServer
 import ifx.proxy.ProxyFactory
 import io.kotest.common.runBlocking
 import kotlin.test.Test
 
 class KSystemTest {
     val host = Host()
-        .addProtocol(RSocketProtocol())
+        .addProtocol(RSocketServer())
         .registerService<IPersonAccess>(PersonAccess())
         .registerService<IStaffManager>(MembershipManager())
         .registerService<ICustomerManager>(MembershipManager())
@@ -39,7 +39,6 @@ class KSystemTest {
         println(customerManager.forwardContext(Empty))
         println(customerManager.forwardContext(Empty))
         println(customerManager.forwardContext(Empty))
-
     }
 }
 

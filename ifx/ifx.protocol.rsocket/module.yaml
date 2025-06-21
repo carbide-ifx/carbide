@@ -8,6 +8,7 @@ dependencies:
   - ../ifx.protocol.contract: exported
   - ../ifx.service
   - ../ifx.naming
+  - ../ifx.host.contract
   - ../ifx.context
   - io.rsocket.kotlin:ktor-server-rsocket:0.20.0: exported
   - io.rsocket.kotlin:ktor-client-rsocket:0.20.0: exported

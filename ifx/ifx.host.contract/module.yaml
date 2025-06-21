@@ -5,14 +5,7 @@ product:
 
 dependencies:
   - $kotlin.reflect
-  - ../ifx.host.contract: exported
   - ../ifx.protocol.contract
   - ../ifx.naming
   - ../ifx.service
   - ../ifx.context
-  - ../ifx.logging
-
-test-dependencies:
-  - ../ifx.proxy.factory
-#  - $libs.acme.access.person.service
-#  - $libs.acme.manager.membership.service

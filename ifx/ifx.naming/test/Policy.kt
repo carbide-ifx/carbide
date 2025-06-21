@@ -1,8 +1,8 @@
 //package ifx.naming
 //
 //import kotlinx.serialization.serializer
-//import kotlin.contracts.ExperimentalContracts
-//import kotlin.contracts.contract
+//import kotlin.contract.ExperimentalContracts
+//import kotlin.contract.contract
 //import kotlin.reflect.KClass
 //import kotlin.reflect.KFunction
 //import kotlin.reflect.KType

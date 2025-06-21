@@ -1,4 +1,4 @@
-package ifx.proxy
+package ifx.proxy.factory
 
 import kotlinx.serialization.Serializable
 import kotlin.coroutines.CoroutineContext

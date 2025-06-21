@@ -1,0 +1,8 @@
+[versions]
+acme = "0.0.1-SNAPSHOT"
+
+[libraries]
+acme.access.person.contract = {  module = "acme:access.person.contract", version.ref = "acme" }
+acme.access.person.service = {  module = "acme:access.person.service", version.ref = "acme" }
+acme.manager.membership.contracy = {  module = "acme:manager.membership.contract", version.ref = "acme" }
+acme.manager.membership.service = {  module = "acme:manager.membership.service", version.ref = "acme" }

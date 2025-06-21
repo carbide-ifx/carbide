@@ -1,68 +1,70 @@
 package ifx.rsocket.rsocket
 
-import ifx.protocol.contract.InvocationException
-import ifx.protocol.rsocket.RSocketProtocol
-import ifx.proxy.ProxyFactory
-
-import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.FreeSpec
+import ifx.protocol.contract.IMessageHandler
+import ifx.protocol.contract.Message
+import ifx.protocol.contract.IProtocolServer.Companion.createClient
+import ifx.protocol.contract.toPath
+import ifx.protocol.rsocket.RSocketEndpoint
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.shouldBe
-import io.rsocket.kotlin.RSocketError
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 
-class RSocketProtocolTest : FreeSpec({
-    val instance: IMyService = MyService()
-    val protocol = RSocketProtocol().bind(instance).start()
-    "Invocations" - {
-        val proxy = ProxyFactory(protocol).create<IMyService>()
-        "Fire and forget" - {
-            "fun hello()" {
-                proxy.hello() shouldBe Unit
-            }
+val handler = TestHandler()
+val server = RSocketEndpoint().exposeEndpoint(IMyService::class.toPath(), handler).start()
+val client = server.createClient<IMyService>()
 
-            "fun blockingHello()" {
-                proxy.blockingHello() shouldBe Unit
-            }
-        }
+class RSocketProtocolTest {
 
-        "Request-Response" - {
-            "fun add(pair: IntPair): Int" {
-                proxy.add(IntPair(1, 1)) shouldBe 2
-            }
-
-            "fun add(pair: FloatPair): Float" {
-                proxy.add(FloatPair(1f, 1f)) shouldBe 2f
-            }
-
-            "fun blockingAdd(pair: IntPair): Int" {
-                proxy.blockingAdd(IntPair(2, 2)) shouldBe 4
-            }
-
-            "fun exception()" {
-                shouldThrow<RSocketError.ApplicationError> { proxy.exception() }
-            }
-
-            "fun blockingException()" {
-                shouldThrow<InvocationException> { proxy.blockingException() }
-            }
-
-            "fun blockingList(): List<Int>" {
-                proxy.blockingList() shouldBe listOf(1, 2, 3)
-            }
-            "fun list(): List<Int>" {
-                proxy.list() shouldBe listOf(1, 2, 3)
-            }
-        }
-
-        "Request-Stream" - {
-            "fun stream(): Flow<Int>" {
-                proxy.stream().toList() shouldBe listOf(listOf(1,2), listOf(2, 3))
-            }
-
-            "fun blockingStream(): Flow<Int>" {
-                proxy.blockingStream().toList() shouldBe listOf(listOf(1,2), listOf(2, 3))
-            }
+    @Test
+    fun `Fire and forget`(): Unit = runBlocking {
+        handler.flag shouldBe false
+        client.fireAndForget(operation = "setFlag", Message(header = "faf", body = "faf"))
+        eventually(1.seconds) {
+            handler.flag shouldBe true
         }
     }
-})
+
+    @Test
+    fun `Request-Response`(): Unit = runBlocking {
+        client.requestResponse(operation = "add-one",Message(header = "rr", body = "1"))
+            .body shouldBe Message("response", "2").body
+    }
+
+    @Test
+    fun `Request-Stream`(): Unit = runBlocking {
+        client.requestStream(operation = "numbers", Message("echo", "5")).toList() shouldBe listOf(
+            Message("", "0"),
+            Message("", "1"),
+            Message("", "2"),
+            Message("", "3"),
+            Message("", "4"),
+            Message("", "5")
+        )
+    }
+}
+
+
+class TestHandler : IMessageHandler {
+    var flag = false
+    override suspend fun fireAndForget(operation: String, message: Message) = when (operation) {
+        "setFlag" -> flag = true.also { println("Flag set!") }
+        else -> error("Unhandled method: $operation")
+
+    }
+
+    override suspend fun requestResponse(operation: String, message: Message): Message = when (operation) {
+        "add-one" -> Message("response", (message.body.toInt() + 1).toString())
+        else -> error("Unhandled method: $operation")
+    }
+
+    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = when (operation) {
+        "numbers" -> 0.rangeTo(message.body.toInt()).map { Message(message.header, it.toString()) }.asFlow()
+        else -> error("Unhandled method: $operation")
+    }
+}

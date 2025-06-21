@@ -1,4 +1,4 @@
-package ifx.proxy.rsocket
+package ifx.protocol.rsocket
 
 import ifx.service.IService
 import kotlin.reflect.KClass
@@ -15,12 +15,11 @@ fun <T : IService> methodsFor(cls: KClass<T>): Map<String, KFunction<*>> {
             val declaring = it.javaMethod?.declaringClass ?: return@filter false
             IService::class.java.isAssignableFrom(declaring)
         }
-        .associateBy { it.toRoute() }
+        .associateBy { it.operationName() }
 }
 
 
-@OptIn(ExperimentalStdlibApi::class)
-fun KFunction<*>.toRoute(): String {
+fun KFunction<*>.operationName(): String {
     require(typeParameters.isEmpty()) { "Type parameters are not supported" }
     require(valueParameters.size <= 1) { "Only single parameter methods are supported" }
     val paramType = valueParameters.singleOrNull()?.type?.simpleName() ?: ""

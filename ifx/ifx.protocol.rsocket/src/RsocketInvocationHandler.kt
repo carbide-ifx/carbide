@@ -1,18 +1,12 @@
-package ifx.proxy.rsocket
+package ifx.protocol.rsocket
 
 import ifx.context.Context
-import ifx.protocol.contract.InvocationException
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.websocket.WebSockets
+import ifx.protocol.contract.ProtocolException
 import io.rsocket.kotlin.ExperimentalMetadataApi
 import io.rsocket.kotlin.RSocket
-import io.rsocket.kotlin.core.WellKnownMimeType
-import io.rsocket.kotlin.ktor.client.RSocketSupport
-import io.rsocket.kotlin.ktor.client.rSocket
 import io.rsocket.kotlin.metadata.RoutingMetadata
 import io.rsocket.kotlin.metadata.metadata
 import io.rsocket.kotlin.payload.Payload
-import io.rsocket.kotlin.payload.PayloadMimeType
 import io.rsocket.kotlin.payload.buildPayload
 import io.rsocket.kotlin.payload.data
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +37,7 @@ class RsocketInvocationHandler(private val rSocket: RSocket, val formatter: Stri
                     rSocket.invokeRemote(returnType, payload)
                 }
             } catch (exception: Throwable) {
-                throw InvocationException(exception.cause ?: exception)
+                throw ProtocolException(exception.cause ?: exception)
             }
         }
 
@@ -84,7 +78,7 @@ class RsocketInvocationHandler(private val rSocket: RSocket, val formatter: Stri
 
     @OptIn(ExperimentalMetadataApi::class)
     private fun Method.toPayload(arg: Any?, context: Context = Context()) = buildPayload {
-        val route = this@toPayload.kotlinFunction!!.toRoute()
+        val route = this@toPayload.kotlinFunction!!.operationName()
         metadata(RoutingMetadata(route)) // todo: Add context to metadata (headers)
         val body = arg?.let {
             val argType = this@toPayload.kotlinFunction!!.valueParameters.single().type
@@ -93,28 +87,3 @@ class RsocketInvocationHandler(private val rSocket: RSocket, val formatter: Stri
         data(body ?: "")
     }
 }
-
-
-    fun buildRsocket(route: String): RSocket = runBlocking {
-        HttpClient {
-            install(WebSockets) // rsocket requires websockets plugin installed
-            install(RSocketSupport) {
-                // configure rSocket connector (all values have defaults)
-                connector {
-                    connectionConfig {
-                        // payload for setup frame
-                        setupPayload {
-                            buildPayload {
-                                data("""{ "data": "setup" }""")
-                            }
-                        }
-                        // mime types
-                        payloadMimeType = PayloadMimeType(
-                            data = WellKnownMimeType.ApplicationJson,
-                            metadata = WellKnownMimeType.MessageRSocketCompositeMetadata
-                        )
-                    }
-                }
-            }
-        }.rSocket("ws://localhost:8080/${route}")
-    }

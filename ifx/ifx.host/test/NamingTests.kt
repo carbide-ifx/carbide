@@ -1,3 +1,5 @@
+package ifx.host
+
 //package ifx
 //
 //import ifx.naming.Naming.Aspect.Contract
