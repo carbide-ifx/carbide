@@ -24,8 +24,8 @@ import kotlin.reflect.jvm.kotlinFunction
 class EndpointInvocationHandler(
     private val endpoint: IMessageHandler,
     private val extensionPipeline: ExtensionPipeline = ExtensionPipeline(
-        requestFilters = listOf(Rot13Filter(), LoggingFilter("Client - Sending request")),
-        responseFilters = listOf(Rot13Filter(), LoggingFilter("Client - Receiving response")),
+        requestFilters = listOf(Rot13Filter(), LoggingFilter("Client send req")),
+        responseFilters = listOf(Rot13Filter(), LoggingFilter("Client recv res")),
         nextHandler = endpoint
     ),
     val formatter: StringFormat = Json
