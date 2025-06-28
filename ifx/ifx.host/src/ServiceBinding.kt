@@ -3,13 +3,17 @@ package ifx.host
 import ifx.protocol.contract.IMessageHandler
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.decodeToType
+import ifx.protocol.contract.flowType
+import ifx.protocol.contract.methodsFor
+import ifx.protocol.contract.encodeToMessage
 import ifx.service.IService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.KType
 import kotlin.reflect.full.callSuspend
+import kotlin.reflect.full.valueParameters
 
 
 class ServiceBinding<out T : IService>(
@@ -30,19 +34,19 @@ class ServiceBinding<out T : IService>(
     override suspend fun requestResponse(operation: String, message: Message): Message {
         val method = methods[operation] ?: throw IllegalArgumentException("No method found for address: $operation")
         val result = method.invoke(instance, message)
-        return result.toMessage(method.returnType)
+        return result.encodeToMessage(method.returnType)
     }
 
     override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
         val method = methods[operation] ?: throw IllegalArgumentException("No method found for address: $operation")
         val result = method.invoke(instance, message) as Flow<*>
-        return result.map { it.toMessage(method.flowType()) }
+        return result.map { it.encodeToMessage(method.flowType()) }
+    }
+
+    private suspend fun <R> KFunction<R>.invoke(instance: T, message: Message): R {
+        val arg: Any? = this.valueParameters.singleOrNull()?.type?.let { message.decodeToType(it) }
+        return callSuspend(*listOfNotNull(instance, arg).toTypedArray())
     }
 }
 
-private suspend fun <R> KFunction<R>.invoke(instance: Any, payload: Message): R {
-    val args = listOfNotNull(instance, payload.asArgFor(this)).toTypedArray()
-    return callSuspend(*args)
-}
 
-private fun KFunction<*>.flowType(): KType = returnType.arguments.single().type!!

@@ -1,13 +1,14 @@
 package ifx.proxy.factory
 
-import ifx.context.Context
 import ifx.protocol.contract.ExtensionPipeline
 import ifx.protocol.contract.IMessageHandler
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.argType
+import ifx.protocol.contract.encodeToMessage
 import ifx.protocol.contract.filters.LoggingFilter
 import ifx.protocol.contract.filters.Rot13Filter
-import ifx.protocol.rsocket.operationName
+import ifx.protocol.contract.toOperation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
@@ -18,7 +19,6 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
 import kotlin.reflect.KType
-import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.kotlinFunction
 
 class EndpointInvocationHandler(
@@ -32,13 +32,12 @@ class EndpointInvocationHandler(
 ) : InvocationHandler {
     @Throws(Exception::class)
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
-        println("PROXY TODO ADDRESS COMPUTATION DONE HERE, SHOULD BE EXTRACTED")
         val nonNullArgs = args ?: arrayOf()
         val continuation = nonNullArgs.continuation()
         val valueArgs = nonNullArgs.filterNot { it is Continuation<*> }
         val returnType = method.kotlinFunction!!.returnType
-        val operation = method.kotlinFunction!!.operationName()
-        val request = method.toMessage(operation, valueArgs.firstOrNull())
+        val operation = method.kotlinFunction!!.toOperation()
+        val request = valueArgs.firstOrNull().encodeToMessage(method.argType())
         if (continuation == null) {
             // non-suspending function, just invoke regularly
             return try {
@@ -53,7 +52,7 @@ class EndpointInvocationHandler(
         return invokeSuspendFunction(continuation) outer@{
             val argumentsWithoutContinuation = args?.dropLast(1) ?: emptyList()
             try {
-                val request = method.toMessage(operation, argumentsWithoutContinuation.firstOrNull())
+                val request = argumentsWithoutContinuation.firstOrNull().encodeToMessage(method.argType())
                 val result = extensionPipeline.invokeRemote(operation, returnType, request)
                 result
             } catch (exception: Throwable) {
@@ -70,6 +69,7 @@ class EndpointInvocationHandler(
                     formatter.decodeFromString(serializer(returnType.arguments.first().type!!), it)
                 }
             }
+
             else -> requestResponse(operation, message)
                 .body.let {
                     formatter.decodeFromString(serializer(returnType), it)
@@ -83,12 +83,4 @@ class EndpointInvocationHandler(
     @Suppress("UNCHECKED_CAST")
     private fun Array<*>?.continuation(): Continuation<Any?>? = this?.lastOrNull() as? Continuation<Any?>
 
-
-    private fun Method.toMessage(operation: String, arg: Any?, context: Context = Context()): Message = Message(
-        header = "",
-        body = arg?.let {
-            val argType = this@toMessage.kotlinFunction!!.valueParameters.single().type
-            formatter.encodeToString(serializer(argType), arg)
-        } ?: ""
-    )
 }

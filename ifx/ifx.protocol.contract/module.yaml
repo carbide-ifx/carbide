@@ -6,4 +6,4 @@ product:
 dependencies:
   - ../ifx.service
   - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2: exported
-
+  - $kotlin.reflect
