@@ -20,5 +20,4 @@ data class Context(
     companion object Key : CoroutineContext.Key<Context> {
         val HEADER_KEY = "ifx.context"
     }
-
 }

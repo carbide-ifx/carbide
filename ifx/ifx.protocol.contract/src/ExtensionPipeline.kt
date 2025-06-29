@@ -9,20 +9,20 @@ class ExtensionPipeline(
     val nextHandler: IMessageHandler
 ) : IMessageHandler {
 
-    private fun List<IFilter>.process(message: Message): Message = fold(message) { acc, filter ->
-        filter.invoke(acc)
+    private suspend fun List<IFilter>.process(operation: String, message: Message): Message = fold(message) { acc, filter ->
+        filter.invoke(operation, acc)
     }
 
     override suspend fun fireAndForget(operation: String, message: Message) = nextHandler
-        .fireAndForget(operation, requestFilters.process(message))
+        .fireAndForget(operation, requestFilters.process(operation,message))
 
     override suspend fun requestResponse(operation: String, message: Message): Message = nextHandler
-        .requestResponse(operation, requestFilters.process(message))
-        .let { response -> responseFilters.process(response) }
+        .requestResponse(operation, requestFilters.process(operation,message))
+        .let { response -> responseFilters.process(operation,response) }
 
 
     override suspend fun requestStream(operation: String, message: Message): Flow<Message> = nextHandler
-        .requestStream(operation, requestFilters.process(message))
-        .map { response -> responseFilters.process(response) }
+        .requestStream(operation, requestFilters.process(operation, message))
+        .map { response -> responseFilters.process(operation, response) }
 
 }

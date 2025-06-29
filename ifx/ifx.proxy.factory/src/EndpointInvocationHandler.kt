@@ -8,6 +8,7 @@ import ifx.protocol.contract.argType
 import ifx.protocol.contract.encodeToMessage
 import ifx.protocol.contract.filters.LoggingFilter
 import ifx.protocol.contract.filters.Rot13Filter
+import ifx.protocol.contract.flowType
 import ifx.protocol.contract.toOperation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -18,7 +19,7 @@ import kotlinx.serialization.serializer
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
-import kotlin.reflect.KType
+import kotlin.reflect.KFunction
 import kotlin.reflect.jvm.kotlinFunction
 
 class EndpointInvocationHandler(
@@ -42,7 +43,7 @@ class EndpointInvocationHandler(
             // non-suspending function, just invoke regularly
             return try {
                 runBlocking {
-                    extensionPipeline.invokeRemote(operation, returnType, request)
+                    extensionPipeline.invokeRemote(method.kotlinFunction!!, request)
                 }
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.cause ?: exception)
@@ -53,7 +54,7 @@ class EndpointInvocationHandler(
             val argumentsWithoutContinuation = args?.dropLast(1) ?: emptyList()
             try {
                 val request = argumentsWithoutContinuation.firstOrNull().encodeToMessage(method.argType())
-                val result = extensionPipeline.invokeRemote(operation, returnType, request)
+                val result = extensionPipeline.invokeRemote(method.kotlinFunction!!, request)
                 result
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.cause ?: exception)
@@ -61,18 +62,18 @@ class EndpointInvocationHandler(
         }
     }
 
-    private suspend fun IMessageHandler.invokeRemote(operation: String, returnType: KType, message: Message): Any? =
-        when (returnType.classifier) {
-            Unit::class -> fireAndForget(operation, message)
-            Flow::class -> requestStream(operation, message).map { responseMessage ->
+    private suspend fun IMessageHandler.invokeRemote(method: KFunction<*>, message: Message): Any? =
+        when (method.returnType.classifier) {
+            Unit::class -> fireAndForget(method.toOperation(), message)
+            Flow::class -> requestStream(method.toOperation(), message).map { responseMessage ->
                 responseMessage.body.let {
-                    formatter.decodeFromString(serializer(returnType.arguments.first().type!!), it)
+                    formatter.decodeFromString(serializer(method.flowType()), it)
                 }
             }
 
-            else -> requestResponse(operation, message)
+            else -> requestResponse(method.toOperation(), message)
                 .body.let {
-                    formatter.decodeFromString(serializer(returnType), it)
+                    formatter.decodeFromString(serializer(method.returnType), it)
                 }
         }
 

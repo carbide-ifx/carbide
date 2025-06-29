@@ -1,5 +1,5 @@
 package ifx.protocol.contract
 
 fun interface IFilter {
-    operator fun invoke(message: Message): Message
+    suspend operator fun invoke(operation: String, message: Message): Message
 }

@@ -52,6 +52,7 @@ class RSocketProtocolTest {
 
 class TestHandler : IMessageHandler {
     var flag = false
+
     override suspend fun fireAndForget(operation: String, message: Message) = when (operation) {
         "setFlag" -> flag = true.also { println("Flag set!") }
         else -> error("Unhandled method: $operation")
