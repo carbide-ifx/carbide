@@ -39,12 +39,12 @@ class RSocketProtocolTest {
     @Test
     fun `Request-Stream`(): Unit = runBlocking {
         client.requestStream(operation = "numbers", Message("echo", "5")).toList() shouldBe listOf(
-            Message("", "0"),
-            Message("", "1"),
-            Message("", "2"),
-            Message("", "3"),
-            Message("", "4"),
-            Message("", "5")
+            Message("echo", "0"),
+            Message("echo", "1"),
+            Message("echo", "2"),
+            Message("echo", "3"),
+            Message("echo", "4"),
+            Message("echo", "5")
         )
     }
 }

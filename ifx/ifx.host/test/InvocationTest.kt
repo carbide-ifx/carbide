@@ -10,6 +10,7 @@ import ifx.host.contract.IntPair
 import ifx.host.service.FireAndForget
 import ifx.host.service.RequestResponse
 import ifx.host.service.RequestStream
+import ifx.logging.Log
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.rsocket.RSocketEndpoint
 import ifx.proxy.factory.ProxyFactory

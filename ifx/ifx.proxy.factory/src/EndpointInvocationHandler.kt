@@ -7,14 +7,12 @@ import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.argType
 import ifx.protocol.contract.encodeToMessage
 import ifx.protocol.contract.filters.LoggingFilter
-import ifx.protocol.contract.filters.Rot13Filter
 import ifx.protocol.contract.flowType
+import ifx.protocol.contract.RpcFormat
 import ifx.protocol.contract.toOperation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.StringFormat
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -25,25 +23,23 @@ import kotlin.reflect.jvm.kotlinFunction
 class EndpointInvocationHandler(
     private val endpoint: IMessageHandler,
     private val extensionPipeline: ExtensionPipeline = ExtensionPipeline(
-        requestFilters = listOf(Rot13Filter(), LoggingFilter("Client send req")),
-        responseFilters = listOf(Rot13Filter(), LoggingFilter("Client recv res")),
+        requestFilters = listOf(LoggingFilter("Client send req")),
+        responseFilters = listOf(LoggingFilter("Client recv res")),
         nextHandler = endpoint
-    ),
-    val formatter: StringFormat = Json
+    )
 ) : InvocationHandler {
     @Throws(Exception::class)
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val nonNullArgs = args ?: arrayOf()
         val continuation = nonNullArgs.continuation()
         val valueArgs = nonNullArgs.filterNot { it is Continuation<*> }
-        val returnType = method.kotlinFunction!!.returnType
-        val operation = method.kotlinFunction!!.toOperation()
-        val request = valueArgs.firstOrNull().encodeToMessage(method.argType())
+        val kMethod = method.kotlinFunction!!
+        val request = runBlocking { valueArgs.firstOrNull().encodeToMessage(method.argType()) }
         if (continuation == null) {
             // non-suspending function, just invoke regularly
             return try {
                 runBlocking {
-                    extensionPipeline.invokeRemote(method.kotlinFunction!!, request)
+                    extensionPipeline.invokeRemote(kMethod, request)
                 }
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.cause ?: exception)
@@ -54,7 +50,7 @@ class EndpointInvocationHandler(
             val argumentsWithoutContinuation = args?.dropLast(1) ?: emptyList()
             try {
                 val request = argumentsWithoutContinuation.firstOrNull().encodeToMessage(method.argType())
-                val result = extensionPipeline.invokeRemote(method.kotlinFunction!!, request)
+                val result = extensionPipeline.invokeRemote(kMethod, request)
                 result
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.cause ?: exception)
@@ -67,13 +63,12 @@ class EndpointInvocationHandler(
             Unit::class -> fireAndForget(method.toOperation(), message)
             Flow::class -> requestStream(method.toOperation(), message).map { responseMessage ->
                 responseMessage.body.let {
-                    formatter.decodeFromString(serializer(method.flowType()), it)
+                    RpcFormat.decodeFromString(serializer(method.flowType()), it)
                 }
             }
-
             else -> requestResponse(method.toOperation(), message)
                 .body.let {
-                    formatter.decodeFromString(serializer(method.returnType), it)
+                    RpcFormat.decodeFromString(serializer(method.returnType), it)
                 }
         }
 

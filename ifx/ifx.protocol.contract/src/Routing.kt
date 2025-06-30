@@ -1,8 +1,12 @@
 package ifx.protocol.contract
 
+import ifx.context.Context
 import ifx.service.IService
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.serialization.StringFormat
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
@@ -31,7 +35,7 @@ fun KFunction<*>.toOperation(): String {
     return finalName
 }
 
-fun Method.argType (): KType? = this.kotlinFunction!!.argType()
+fun Method.argType(): KType? = this.kotlinFunction!!.argType()
 fun KFunction<*>.argType(): KType? {
     require(valueParameters.size <= 1) { "Only single parameter methods are supported" }
     return valueParameters.singleOrNull()?.type
@@ -40,11 +44,19 @@ fun KFunction<*>.argType(): KType? {
 
 fun KType.simpleName() = this.toString().substringBefore("<").substringAfterLast(".")
 
-val format: StringFormat = Json { encodeDefaults = true }
-fun <T : Any> T?.encodeToMessage(type: KType?) = Message(
-    header = "",
-    body = type?.let { type -> format.encodeToString(serializer(type), this) } ?: ""
+val RpcFormat = Json {
+    encodeDefaults = true
+    prettyPrint = false
+}
+
+suspend fun <T : Any> T?.encodeToMessage(type: KType?) = Message(
+    header = RpcFormat.encodeToString(mapOf(Context.HEADER_KEY to currentCoroutineContext()[Context]).mapNotNullValues()),
+    body = type?.let { type -> RpcFormat.encodeToString(serializer(type), this) } ?: ""
 )
 
-fun Message.decodeToType(type: KType): Any? = format.decodeFromString(serializer(type), body)
+fun Message.decodeToType(type: KType): Any? = RpcFormat.decodeFromString(serializer(type), body)
 fun KFunction<*>.flowType(): KType = returnType.arguments.single().type!!
+
+
+private fun <K, V> Map<K, V?>.mapNotNullValues(): Map<K, V> = mapNotNull{ it.value?.let { value -> it.key to value} }
+    .toMap()

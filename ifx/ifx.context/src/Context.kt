@@ -6,10 +6,6 @@ import kotlin.reflect.KClass
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-fun main() {
-
-}
-
 @OptIn(ExperimentalUuidApi::class)
 @Serializable
 data class Context(

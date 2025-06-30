@@ -13,9 +13,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.rsocket.kotlin.ConnectionAcceptor
+import io.rsocket.kotlin.ExperimentalMetadataApi
 import io.rsocket.kotlin.RSocketRequestHandler
 import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
+import io.rsocket.kotlin.metadata.CompositeMetadata
+import io.rsocket.kotlin.metadata.read
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
@@ -54,18 +57,19 @@ class RSocketEndpoint(private val port: Int = 0) : IProtocolServer {
     }
 
     companion object {
+        @OptIn(ExperimentalMetadataApi::class)
         private fun createAcceptor(binding: IMessageHandler) = ConnectionAcceptor {
             // Create session, etc
             RSocketRequestHandler {
                 fireAndForget { payload ->
-                    binding.fireAndForget(payload.route(), payload.toRequest())
+                    binding.fireAndForget(payload.metadata.route(), payload.toMessage())
                 }
                 requestResponse { payload ->
-                    val result = binding.requestResponse(payload.route(),payload.toRequest())
+                    val result = binding.requestResponse(payload.metadata.route(), payload.toMessage())
                     result.toResponsePayload()
                 }
                 requestStream { payload ->
-                    val result = binding.requestStream(payload.route(),payload.toRequest())
+                    val result = binding.requestStream(payload.metadata.route(), payload.toMessage())
                     result.map { it.toResponsePayload() }
                 }
             }

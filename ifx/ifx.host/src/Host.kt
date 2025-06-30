@@ -37,8 +37,8 @@ class Host : IHost {
             services.forEach { (contract, instance) ->
                 val binding: IMessageHandler = ServiceBinding(contract, instance)
                 val requestPipeline = ExtensionPipeline(
-                    requestFilters = listOf(LoggingFilter("Server recv req"), Rot13Filter()),
-                    responseFilters = listOf( LoggingFilter("Server send res"), Rot13Filter()),
+                    requestFilters = listOf(LoggingFilter("Server recv req")),
+                    responseFilters = listOf(LoggingFilter("Server send res")),
                     nextHandler = binding
                 )
                 protocol.exposeEndpoint(contract.toPath(), requestPipeline)

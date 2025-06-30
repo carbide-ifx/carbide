@@ -1,4 +1,4 @@
-package ifx.host.contract
+package ifx.host.callfowarding
 
 import ifx.proxy.factory.ProxyFactory
 import ifx.service.IService
@@ -7,18 +7,18 @@ import ifx.service.getOrElse
 import kotlinx.serialization.Serializable
 
 interface ISomeManager: IService {
-    suspend fun forwardCall(call: CallRequest): Response<CallResponse>
-    fun blockingForwardCall(call: CallRequest): Response<CallResponse>
+    suspend fun someUseCase(call: CallRequest): Response<CallResponse>
+    fun someBlockingUseCase(call: CallRequest): Response<CallResponse>
 }
 
 interface ISomeEngine: IService {
-    suspend fun forwardCall(call: CallRequest): Response<CallResponse>
-    fun blockingForwardCall(call: CallRequest): Response<CallResponse>
+    suspend fun engineComputation(call: CallRequest): Response<CallResponse>
+    fun blockingEngineComputation(call: CallRequest): Response<CallResponse>
 }
 
 interface ISomeResourceAccess: IService {
-    suspend fun receiveCall(call: CallRequest): CallResponse
-    fun receiveBlockingCall(call: CallRequest): CallResponse
+    suspend fun storeSomething(call: CallRequest): CallResponse
+    fun blockingStoreSomething(call: CallRequest): CallResponse
 }
 
 
@@ -31,34 +31,34 @@ data class CallResponse(val values: List<String>)
 
 
 class SomeManager(val proxyFactory: ProxyFactory) : ISomeManager {
-    override suspend fun forwardCall(call: CallRequest): Response<CallResponse> {
+    override suspend fun someUseCase(call: CallRequest): Response<CallResponse> {
         val engine = proxyFactory.create<ISomeEngine>()
-        val result = engine.forwardCall(call).getOrElse { null } ?: error("Engine response is null")
+        val result = engine.engineComputation(call).getOrElse { null } ?: error("Engine response is null")
         return Response(CallResponse(result.values + "manager response"))
     }
 
-    override fun blockingForwardCall(call: CallRequest): Response<CallResponse> {
+    override fun someBlockingUseCase(call: CallRequest): Response<CallResponse> {
         val engine = proxyFactory.create<ISomeEngine>()
-        val result = engine.blockingForwardCall(call).getOrElse { null } ?: error("Engine response is null")
+        val result = engine.blockingEngineComputation(call).getOrElse { null } ?: error("Engine response is null")
         return Response(CallResponse(result.values + "manager response"))
     }
 }
 
 class SomeEngine(val proxyFactory: ProxyFactory) : ISomeEngine {
-    override suspend fun forwardCall(call: CallRequest): Response<CallResponse> {
+    override suspend fun engineComputation(call: CallRequest): Response<CallResponse> {
         val ra = proxyFactory.create<ISomeResourceAccess>()
-        val response = ra.receiveCall(call)
+        val response = ra.storeSomething(call)
         return Response(CallResponse(response.values + "engine response"))
     }
 
-    override fun blockingForwardCall(call: CallRequest): Response<CallResponse> {
+    override fun blockingEngineComputation(call: CallRequest): Response<CallResponse> {
         val ra = proxyFactory.create<ISomeResourceAccess>()
-        val response = ra.receiveBlockingCall(call)
+        val response = ra.blockingStoreSomething(call)
         return Response(CallResponse(response.values + "engine response"))
     }
 }
 
 class SomeResourceAccess(val proxyFactory: ProxyFactory) : ISomeResourceAccess {
-    override suspend fun receiveCall(call: CallRequest) = CallResponse(call.values + "resource response")
-    override fun receiveBlockingCall(call: CallRequest) = CallResponse(call.values + "resource response")
+    override suspend fun storeSomething(call: CallRequest) = CallResponse(call.values + "resource response")
+    override fun blockingStoreSomething(call: CallRequest) = CallResponse(call.values + "resource response")
 }
