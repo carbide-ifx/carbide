@@ -6,17 +6,17 @@ import ifx.service.Response
 import ifx.service.getOrElse
 import kotlinx.serialization.Serializable
 
-interface ISomeManager: IService {
+interface ISomeManager : IService {
     suspend fun someUseCase(call: CallRequest): Response<CallResponse>
     fun someBlockingUseCase(call: CallRequest): Response<CallResponse>
 }
 
-interface ISomeEngine: IService {
+interface ISomeEngine : IService {
     suspend fun engineComputation(call: CallRequest): Response<CallResponse>
     fun blockingEngineComputation(call: CallRequest): Response<CallResponse>
 }
 
-interface ISomeResourceAccess: IService {
+interface ISomeResourceAccess : IService {
     suspend fun storeSomething(call: CallRequest): CallResponse
     fun blockingStoreSomething(call: CallRequest): CallResponse
 }
@@ -47,6 +47,7 @@ class SomeManager(val proxyFactory: ProxyFactory) : ISomeManager {
 class SomeEngine(val proxyFactory: ProxyFactory) : ISomeEngine {
     override suspend fun engineComputation(call: CallRequest): Response<CallResponse> {
         val ra = proxyFactory.create<ISomeResourceAccess>()
+        log.info { "a test" }
         val response = ra.storeSomething(call)
         return Response(CallResponse(response.values + "engine response"))
     }

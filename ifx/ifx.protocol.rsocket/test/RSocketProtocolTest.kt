@@ -1,8 +1,9 @@
 package ifx.rsocket.rsocket
 
+import ifx.logging.Log
 import ifx.protocol.contract.IMessageHandler
-import ifx.protocol.contract.Message
 import ifx.protocol.contract.IProtocolServer.Companion.createClient
+import ifx.protocol.contract.Message
 import ifx.protocol.contract.toPath
 import ifx.protocol.rsocket.RSocketEndpoint
 import io.kotest.assertions.nondeterministic.eventually
@@ -32,7 +33,7 @@ class RSocketProtocolTest {
 
     @Test
     fun `Request-Response`(): Unit = runBlocking {
-        client.requestResponse(operation = "add-one",Message(header = "rr", body = "1"))
+        client.requestResponse(operation = "add-one", Message(header = "rr", body = "1"))
             .body shouldBe Message("response", "2").body
     }
 
@@ -51,10 +52,11 @@ class RSocketProtocolTest {
 
 
 class TestHandler : IMessageHandler {
+    val log = Log {}
     var flag = false
 
     override suspend fun fireAndForget(operation: String, message: Message) = when (operation) {
-        "setFlag" -> flag = true.also { println("Flag set!") }
+        "setFlag" -> flag = true.also { log.info { "Flag set!" } }
         else -> error("Unhandled method: $operation")
 
     }

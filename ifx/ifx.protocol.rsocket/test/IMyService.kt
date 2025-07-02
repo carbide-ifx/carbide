@@ -58,14 +58,14 @@ class MyService() : IMyService {
         throw CustomException("Error in IMyService")
     }
 
-    override suspend fun hello() = println("Service says: Hello World")
+    override suspend fun hello() = log.info { "Service says: Hello World" }
     override suspend fun stream(): Flow<List<Int>> = flowOf(listOf(1, 2), listOf(2, 3))
 
     override fun blockingAdd(pair: IntPair) = pair.a + pair.b
 
     override fun blockingException() = throw CustomException("Error in IMyBlockingService")
 
-    override fun blockingHello() = println("Service says: Hello World")
+    override fun blockingHello() = log.info { "Service says: Hello World" }
 
     override fun blockingStream(): Flow<List<Int>> = flowOf(listOf(1, 2), listOf(2, 3))
 

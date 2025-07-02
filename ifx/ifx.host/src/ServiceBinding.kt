@@ -1,6 +1,7 @@
 package ifx.host
 
 import ifx.context.Context
+import ifx.logging.Log
 import ifx.protocol.contract.IMessageHandler
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
@@ -13,8 +14,6 @@ import ifx.service.IService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.reflect.KClass
@@ -26,6 +25,7 @@ class ServiceBinding<out T : IService>(
     contract: KClass<out T>,
     private val instance: T,
 ) : IMessageHandler {
+    val log = Log {}
     val methods = methodsFor(contract)
 
     override suspend fun fireAndForget(operation: String, message: Message): Unit = try {
@@ -47,7 +47,7 @@ class ServiceBinding<out T : IService>(
             result.encodeToMessage(method.returnType)
         }
     } catch (exception: Throwable) {
-        println(exception.printStackTrace()) // Todo: logger 😅
+        log.warn { exception.printStackTrace() }
         throw ProtocolException(exception) { "Server: Failed to invoke method ${operation}: ${exception.message}" }
     }
 

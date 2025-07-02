@@ -6,3 +6,4 @@ product:
 
 dependencies:
   - $kotlin.serialization.json: exported
+  - ../ifx.logging: exported

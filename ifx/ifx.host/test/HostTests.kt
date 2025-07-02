@@ -18,17 +18,18 @@ package ifx.host
 //import kotlin.test.Test
 //
 //class AcmeTest {
+//    val log = Log.logger {}
 //    @Test
 //    fun theTest() = runTest {
 //        val personAccess = proxyFactory.create<IPersonAccess>()
 //        val storedJohn = personAccess.store(StorePersonRequest.Parent(name = "John", age = 30, employed = true))
 //        val storedPeter = personAccess.store(StorePersonRequest.Child(name = "Peter", age = 10))
-//        personAccess.filter(PersonCriteria.ofName("John")).single().let { println(it) }
-//        personAccess.filter(PersonCriteria.ofName("Peter")).single().let { println(it) }
+//        personAccess.filter(PersonCriteria.ofName("John")).single().let { log.info { it) }
+//        personAccess.filter(PersonCriteria.ofName("Peter")).single().let { log.info { it) }
 //
 //        val customerManager = proxyFactory.create<ICustomerManager>()
-//        println(customerManager.register(RegisterRequest("Eric", 30)))
-//        println(customerManager.forwardContext(Empty))
+//        log.info { customerManager.register(RegisterRequest("Eric", 30)) }
+//        log.info { customerManager.forwardContext(Empty) }
 //    }
 //
 //    @Test

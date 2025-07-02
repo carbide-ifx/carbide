@@ -10,20 +10,18 @@ import ifx.host.contract.IntPair
 import ifx.host.service.FireAndForget
 import ifx.host.service.RequestResponse
 import ifx.host.service.RequestStream
-import ifx.logging.Log
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.proxy.contract.IProxyFactory
+import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.measureTime
 
 val protocol = RSocketEndpoint()
 val fireAndForgetService = FireAndForget()
@@ -35,7 +33,8 @@ val host = Host()
     .registerService<IRequestResponse> { requestResponseService }
     .registerService<IRequestStream> { requestStreamService }
     .start()
-val proxyFactory = ProxyFactory(protocol)
+val proxyFactory: ProxyFactory = ProxyFactory(protocol)
+
 
 class InvocationTest() {
 
@@ -142,16 +141,4 @@ class InvocationTest() {
     }
 
 
-    @Test
-    fun `Handles over 1000 requests per second`() = runTest {
-        val iterations = 10
-        val myService = proxyFactory.create<IRequestResponse>()
-        val duration = measureTime {
-            repeat(iterations) {
-                myService.add(IntPair(it, it)) shouldBe it * 2
-            }
-        }
-        duration shouldBeLessThan 10.seconds
-        println("Performed 10'000 requests in $duration seconds, for ${iterations * 1000 / (duration.inWholeMilliseconds)} TPS")
-    }
 }

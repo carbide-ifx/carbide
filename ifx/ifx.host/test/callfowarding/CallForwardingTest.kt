@@ -3,6 +3,7 @@ package ifx.host.callfowarding
 import ifx.context.Context
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
+import ifx.logging.Log
 import ifx.protocol.rsocket.RSocketEndpoint
 import ifx.proxy.factory.ProxyFactory
 import ifx.test.assertSuccess
@@ -22,6 +23,10 @@ val host =
         .registerService<ISomeResourceAccess> { ra }.start()
 
 class CallForwardingTest {
+
+    @Test fun logTest() {
+        Log.info { "Call Forwarding" }
+    }
 
     @Test
     fun `Invoke use case`() = runTest {
