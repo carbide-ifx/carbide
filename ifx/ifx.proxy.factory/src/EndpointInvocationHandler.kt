@@ -1,6 +1,6 @@
 package ifx.proxy.factory
 
-import ifx.protocol.contract.IMessageHandler
+import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.RpcFormat
@@ -18,7 +18,7 @@ import kotlin.coroutines.Continuation
 import kotlin.reflect.KFunction
 import kotlin.reflect.jvm.kotlinFunction
 
-class EndpointInvocationHandler(private val messageHandler: IMessageHandler) : InvocationHandler {
+class EndpointInvocationHandler(private val messageHandler: IBinding) : InvocationHandler {
     @Throws(Exception::class)
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val nonNullArgs = args ?: arrayOf()
@@ -49,7 +49,7 @@ class EndpointInvocationHandler(private val messageHandler: IMessageHandler) : I
         }
     }
 
-    private suspend fun IMessageHandler.invokeRemote(method: KFunction<*>, message: Message): Any? =
+    private suspend fun IBinding.invokeRemote(method: KFunction<*>, message: Message): Any? =
         when (method.returnType.classifier) {
             Unit::class -> fireAndForget(method.toOperation(), message)
             Flow::class -> requestStream(method.toOperation(), message).map { responseMessage ->

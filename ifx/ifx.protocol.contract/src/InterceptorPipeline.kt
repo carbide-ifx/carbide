@@ -3,11 +3,11 @@ package ifx.protocol.contract
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class ExtensionPipeline(
+class InterceptorPipeline(
     val requestInterceptors: List<IInterceptor> = emptyList(),
     val responseInterceptors: List<IInterceptor>,
-    val nextHandler: IMessageHandler
-) : IMessageHandler {
+    val nextHandler: IBinding
+) : IBinding {
 
     private suspend fun List<IInterceptor>.process(operation: String, message: Message): Message = fold(message) { acc, filter ->
         filter.invoke(operation, acc)

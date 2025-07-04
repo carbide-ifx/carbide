@@ -1,11 +1,11 @@
 package ifx.rsocket.rsocket
 
 import ifx.logging.Log
-import ifx.protocol.contract.IMessageHandler
-import ifx.protocol.contract.IProtocolServer.Companion.createClient
+import ifx.protocol.contract.Endpoint
+import ifx.protocol.contract.IBinding
+import ifx.protocol.contract.IProtocol.Companion.createClient
 import ifx.protocol.contract.Message
-import ifx.protocol.contract.toPath
-import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.protocol.rsocket.RSocketProtocol
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.Flow
@@ -17,8 +17,9 @@ import kotlin.time.Duration.Companion.seconds
 
 
 val handler = TestHandler()
-val server = RSocketEndpoint().exposeEndpoint(IMyService::class.toPath(), handler).start()
-val client = server.createClient<IMyService>()
+val endpoint = RSocketProtocol.createEndpoint<IMyService>(handler)
+val protocol = RSocketProtocol().expose(endpoint).open()
+val client = protocol.createClient<IMyService>()
 
 class RSocketProtocolTest {
 
@@ -51,7 +52,7 @@ class RSocketProtocolTest {
 }
 
 
-class TestHandler : IMessageHandler {
+class TestHandler : IBinding {
     val log = Log {}
     var flag = false
 

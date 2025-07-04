@@ -1,31 +1,45 @@
 package ifx.proxy.factory
 
-import ifx.protocol.contract.ExtensionPipeline
+import ifx.protocol.contract.Endpoint
+import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.IInterceptor
-import ifx.protocol.contract.IProtocolServer
-import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.protocol.contract.IProtocol
+import ifx.protocol.rsocket.RSocketProtocol
 import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
-class ProxyFactory(protocol: IProtocolServer? = null) : IProxyFactory {
-    val protocol: IProtocolServer = protocol ?: RSocketEndpoint()
+class ProxyFactory(protocol: IProtocol? = null) : IProxyFactory {
+    val protocol: IProtocol = protocol ?: RSocketProtocol()
     val interceptors: MutableList<IInterceptor> = mutableListOf()
 
 
     fun addInterceptors(vararg i: IInterceptor): ProxyFactory = apply { interceptors.addAll(i) }
 
-    override fun <T : IService> create(contract: KClass<T>): T {
-        val extensionPipeline: ExtensionPipeline = ExtensionPipeline(
+    fun <T: IService> create(endpoint: Endpoint<T>): T {
+        val interceptorPipeline: InterceptorPipeline = InterceptorPipeline(
             requestInterceptors = interceptors,
             responseInterceptors = interceptors.reversed(),
-            nextHandler = protocol.createClient(contract)
+            nextHandler = protocol.createClientBinding<T>(endpoint.contract)
+        )
+        return Proxy.newProxyInstance(
+            endpoint.contract.java.classLoader,
+            arrayOf<Class<T>>(endpoint.contract.java),
+            EndpointInvocationHandler(interceptorPipeline)
+        ) as T
+    }
+
+    override fun <T : IService> create(contract: KClass<T>): T {
+        val interceptorPipeline: InterceptorPipeline = InterceptorPipeline(
+            requestInterceptors = interceptors,
+            responseInterceptors = interceptors.reversed(),
+            nextHandler = protocol.createClientBinding(contract)
         )
         return Proxy.newProxyInstance(
             contract.java.classLoader,
             arrayOf<Class<T>>(contract.java),
-            EndpointInvocationHandler(extensionPipeline)
+            EndpointInvocationHandler(interceptorPipeline)
         ) as T
     }
 }

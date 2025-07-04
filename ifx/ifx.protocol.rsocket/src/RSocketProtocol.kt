@@ -1,9 +1,9 @@
 package ifx.protocol.rsocket
 
-import ifx.protocol.contract.IMessageHandler
-import ifx.protocol.contract.IProtocolServer
+import ifx.protocol.contract.Endpoint
+import ifx.protocol.contract.IBinding
+import ifx.protocol.contract.IProtocol
 import ifx.protocol.contract.ProtocolException
-import ifx.protocol.contract.toPath
 import ifx.service.IService
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
@@ -13,30 +13,16 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.rsocket.kotlin.ConnectionAcceptor
-import io.rsocket.kotlin.ExperimentalMetadataApi
 import io.rsocket.kotlin.RSocketRequestHandler
 import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
-import io.rsocket.kotlin.metadata.CompositeMetadata
-import io.rsocket.kotlin.metadata.read
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 
-class RSocketEndpoint(private val port: Int = 0) : IProtocolServer {
-    private val server = server()
+class RSocketProtocol(private val port: Int = 0) : IProtocol {
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
-
-
-    override fun exposeEndpoint(path: String, binding: IMessageHandler): IProtocolServer = apply {
-        acceptors[path] = createAcceptor(binding)
-    }
-
-    override fun start(): IProtocolServer = apply { server.start() }
-
-    override fun stop(): IProtocolServer = apply { server.stop() }
-
-    private fun server() = embeddedServer(CIO, 0) {
+    private val server = embeddedServer(CIO, port) {
         install(WebSockets) // rsocket requires websockets plugin installed
         install(RSocketSupport)
         routing {
@@ -49,30 +35,44 @@ class RSocketEndpoint(private val port: Int = 0) : IProtocolServer {
         }
     }
 
-    override fun <T : IService> createClient(cls: KClass<T>) = try {
+    override fun open(): IProtocol = apply { server.start() }
+
+    override fun close(): IProtocol = apply { server.stop() }
+
+
+    override fun <T : IService> createClientBinding(cls: KClass<T>): IBinding = try {
         val port = runBlocking { server.engine.resolvedConnectors().single().port }
-        RSocketClient<T>("ws://localhost:$port/${cls.toPath()}")
+        RSocketClient<T>("ws://localhost:$port/${this.getAddress(cls)}")
     } catch (e: Throwable) {
         throw ProtocolException(e) { "Failed to create client for $cls: ${e.message}" }
     }
 
-    companion object {
-        @OptIn(ExperimentalMetadataApi::class)
-        private fun createAcceptor(binding: IMessageHandler) = ConnectionAcceptor {
-            // Create session, etc
+    override fun <T : IService> expose(endpoint: Endpoint<T>): IProtocol = apply {
+        acceptors[endpoint.address] = ConnectionAcceptor {
             RSocketRequestHandler {
                 fireAndForget { payload ->
-                    binding.fireAndForget(payload.metadata.route(), payload.toMessage())
+                    endpoint.binding.fireAndForget(payload.metadata.route(), payload.toMessage())
                 }
                 requestResponse { payload ->
-                    val result = binding.requestResponse(payload.metadata.route(), payload.toMessage())
+                    val result = endpoint.binding.requestResponse(payload.metadata.route(), payload.toMessage())
                     result.toResponsePayload()
                 }
                 requestStream { payload ->
-                    val result = binding.requestStream(payload.metadata.route(), payload.toMessage())
+                    val result = endpoint.binding.requestStream(payload.metadata.route(), payload.toMessage())
                     result.map { it.toResponsePayload() }
                 }
             }
         }
+
+    }
+
+    override fun <T : IService> getAddress(contract: KClass<T>): String = Companion.getAddress(contract)
+
+    companion object {
+        fun <T : IService> getAddress(contract: KClass<T>): String = contract.simpleName
+            ?: throw IllegalArgumentException("Service class $contract must have a simple name")
+
+        inline fun <reified T : IService> createEndpoint(binding: IBinding): Endpoint<T> =
+            Endpoint(getAddress(T::class), binding, T::class)
     }
 }

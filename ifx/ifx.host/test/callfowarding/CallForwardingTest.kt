@@ -4,7 +4,7 @@ import ifx.context.Context
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
-import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.protocol.rsocket.RSocketProtocol
 import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import ifx.test.assertSuccess
@@ -14,18 +14,21 @@ import kotlinx.coroutines.withContext
 import kotlin.test.Test
 
 
-val protocol = RSocketEndpoint()
+val protocol = RSocketProtocol()
 val proxyFactory = ProxyFactory(protocol)
 val manager = SomeManager(proxyFactory)
 val engine = SomeEngine(proxyFactory)
 val ra = SomeResourceAccess(proxyFactory)
-val host =
-    Host().addProtocol(protocol).registerService<ISomeManager> { manager }.registerService<ISomeEngine> { engine }
-        .registerService<ISomeResourceAccess> { ra }.start()
+val host = Host(protocol)
+    .registerService<ISomeManager> { manager }
+    .registerService<ISomeEngine> { engine }
+    .registerService<ISomeResourceAccess> { ra }
+    .open()
 
 class CallForwardingTest {
 
-    @Test fun logTest() {
+    @Test
+    fun logTest() {
         Log.info { "Call Forwarding" }
     }
 

@@ -13,7 +13,7 @@ import ifx.host.service.RequestStream
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.filters.LoggingInterceptor
 import ifx.protocol.contract.filters.Rot13Interceptor
-import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.protocol.rsocket.RSocketProtocol
 import ifx.proxy.contract.IProxyFactory
 import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
@@ -25,17 +25,16 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
-val protocol = RSocketEndpoint()
+val protocol = RSocketProtocol()
 val fireAndForgetService = FireAndForget()
 val requestResponseService = RequestResponse()
 val requestStreamService = RequestStream()
-val host = Host()
-    .addProtocol(protocol)
+val host = Host(protocol)
     .addInterceptors(LoggingInterceptor("Server: "), Rot13Interceptor())
     .registerService<IFireAndForget> { fireAndForgetService }
     .registerService<IRequestResponse> { requestResponseService }
     .registerService<IRequestStream> { requestStreamService }
-    .start()
+    .open()
 val proxyFactory: IProxyFactory = ProxyFactory(protocol)
     .addInterceptors(Rot13Interceptor(), LoggingInterceptor("Proxy: "))
 

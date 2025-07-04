@@ -4,7 +4,7 @@ product:
   platforms: [ jvm ]
 
 dependencies:
-  - ../ifx.naming
+  - ../ifx.sonat-convention
   - ../ifx.service
   - ../ifx.context
   - ../ifx.proxy.contract: exported

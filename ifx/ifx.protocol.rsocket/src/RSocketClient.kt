@@ -1,6 +1,6 @@
 package ifx.protocol.rsocket
 
-import ifx.protocol.contract.IMessageHandler
+import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.Message
 import ifx.service.IService
 import io.ktor.client.HttpClient
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
-class RSocketClient<T : IService>(url: String) : IMessageHandler {
+class RSocketClient<T : IService>(url: String) : IBinding {
     val client = runBlocking {
         HttpClient {
             this.install(WebSockets) // rsocket requires websockets plugin installed

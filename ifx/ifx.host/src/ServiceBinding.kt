@@ -2,7 +2,7 @@ package ifx.host
 
 import ifx.context.Context
 import ifx.logging.Log
-import ifx.protocol.contract.IMessageHandler
+import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.RpcFormat
@@ -24,7 +24,7 @@ import kotlin.reflect.full.valueParameters
 class ServiceBinding<out T : IService>(
     contract: KClass<out T>,
     private val instance: T,
-) : IMessageHandler {
+) : IBinding {
     val log = Log {}
     val methods = methodsFor(contract)
 

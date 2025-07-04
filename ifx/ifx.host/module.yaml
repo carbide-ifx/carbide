@@ -7,7 +7,7 @@ dependencies:
   - $kotlin.reflect
   - ../ifx.host.contract: exported
   - ../ifx.protocol.contract
-  - ../ifx.naming
+  - ../ifx.sonat-convention
   - ../ifx.service
   - ../ifx.context
   - ../ifx.logging
@@ -15,5 +15,3 @@ dependencies:
 test-dependencies:
   - ../ifx.proxy.factory
   - org.jetbrains.kotlinx:kotlinx-datetime:0.7.0
-#  - $libs.acme.access.person.service
-#  - $libs.acme.manager.membership.service
