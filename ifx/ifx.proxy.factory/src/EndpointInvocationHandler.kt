@@ -1,14 +1,12 @@
 package ifx.proxy.factory
 
-import ifx.protocol.contract.ExtensionPipeline
 import ifx.protocol.contract.IMessageHandler
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.RpcFormat
 import ifx.protocol.contract.argType
 import ifx.protocol.contract.encodeToMessage
-import ifx.protocol.contract.filters.LoggingFilter
 import ifx.protocol.contract.flowType
-import ifx.protocol.contract.RpcFormat
 import ifx.protocol.contract.toOperation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -20,14 +18,7 @@ import kotlin.coroutines.Continuation
 import kotlin.reflect.KFunction
 import kotlin.reflect.jvm.kotlinFunction
 
-class EndpointInvocationHandler(
-    private val endpoint: IMessageHandler,
-    private val extensionPipeline: ExtensionPipeline = ExtensionPipeline(
-        requestFilters = listOf(LoggingFilter("Client send req")),
-        responseFilters = listOf(LoggingFilter("Client recv res")),
-        nextHandler = endpoint
-    )
-) : InvocationHandler {
+class EndpointInvocationHandler(private val messageHandler: IMessageHandler) : InvocationHandler {
     @Throws(Exception::class)
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
         val nonNullArgs = args ?: arrayOf()
@@ -39,7 +30,7 @@ class EndpointInvocationHandler(
             // non-suspending function, just invoke regularly
             return try {
                 runBlocking {
-                    extensionPipeline.invokeRemote(kMethod, request)
+                    messageHandler.invokeRemote(kMethod, request)
                 }
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.cause ?: exception)
@@ -50,7 +41,7 @@ class EndpointInvocationHandler(
             val argumentsWithoutContinuation = args?.dropLast(1) ?: emptyList()
             try {
                 val request = argumentsWithoutContinuation.firstOrNull().encodeToMessage(method.argType())
-                val result = extensionPipeline.invokeRemote(kMethod, request)
+                val result = messageHandler.invokeRemote(kMethod, request)
                 result
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.cause ?: exception)
@@ -66,6 +57,7 @@ class EndpointInvocationHandler(
                     RpcFormat.decodeFromString(serializer(method.flowType()), it)
                 }
             }
+
             else -> requestResponse(method.toOperation(), message)
                 .body.let {
                     RpcFormat.decodeFromString(serializer(method.returnType), it)

@@ -1,10 +1,10 @@
 package ifx.protocol.contract.filters
 
-import ifx.protocol.contract.IFilter
+import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.Message
 
 @Deprecated("Only use for the lulz")
-class Rot13Filter : IFilter {
+class Rot13Interceptor : IInterceptor {
     fun String.rot13(): String = map {
         when (it) {
             in 'A'..'A' -> 'A' + (it - 'A' + 13) % 26

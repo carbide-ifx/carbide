@@ -5,6 +5,7 @@ import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
 import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import ifx.test.assertSuccess
 import io.kotest.matchers.shouldBe

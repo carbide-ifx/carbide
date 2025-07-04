@@ -11,6 +11,8 @@ import ifx.host.service.FireAndForget
 import ifx.host.service.RequestResponse
 import ifx.host.service.RequestStream
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.filters.LoggingInterceptor
+import ifx.protocol.contract.filters.Rot13Interceptor
 import ifx.protocol.rsocket.RSocketEndpoint
 import ifx.proxy.contract.IProxyFactory
 import ifx.proxy.contract.create
@@ -29,11 +31,13 @@ val requestResponseService = RequestResponse()
 val requestStreamService = RequestStream()
 val host = Host()
     .addProtocol(protocol)
+    .addInterceptors(LoggingInterceptor("Server: "), Rot13Interceptor())
     .registerService<IFireAndForget> { fireAndForgetService }
     .registerService<IRequestResponse> { requestResponseService }
     .registerService<IRequestStream> { requestStreamService }
     .start()
-val proxyFactory: ProxyFactory = ProxyFactory(protocol)
+val proxyFactory: IProxyFactory = ProxyFactory(protocol)
+    .addInterceptors(Rot13Interceptor(), LoggingInterceptor("Proxy: "))
 
 
 class InvocationTest() {

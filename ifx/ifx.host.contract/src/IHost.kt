@@ -1,5 +1,6 @@
 package ifx.host
 
+import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocolServer
 import ifx.service.IService
 import kotlin.reflect.KClass
@@ -21,6 +22,8 @@ interface IHost {
         inline fun <reified T : IService> IHost.registerService(noinline factory: () -> T): IHost =
             registerService(T::class, factory)
     }
+
+    fun addInterceptors(vararg i: IInterceptor): IHost
 }
 
 

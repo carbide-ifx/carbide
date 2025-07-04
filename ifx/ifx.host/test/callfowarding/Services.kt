@@ -1,5 +1,6 @@
 package ifx.host.callfowarding
 
+import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import ifx.service.IService
 import ifx.service.Response
@@ -27,8 +28,6 @@ data class CallRequest(val values: List<String>)
 
 @Serializable
 data class CallResponse(val values: List<String>)
-
-
 
 class SomeManager(val proxyFactory: ProxyFactory) : ISomeManager {
     override suspend fun someUseCase(call: CallRequest): Response<CallResponse> {
