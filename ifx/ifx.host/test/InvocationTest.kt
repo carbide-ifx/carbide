@@ -13,7 +13,7 @@ import ifx.host.service.RequestStream
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.filters.LoggingInterceptor
 import ifx.protocol.contract.filters.Rot13Interceptor
-import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.protocol.rsocket.RSocketProtocolServer
 import ifx.proxy.contract.IProxyFactory
 import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
@@ -25,7 +25,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
-val protocol = RSocketEndpoint()
+val protocol = RSocketProtocolServer()
 val fireAndForgetService = FireAndForget()
 val requestResponseService = RequestResponse()
 val requestStreamService = RequestStream()

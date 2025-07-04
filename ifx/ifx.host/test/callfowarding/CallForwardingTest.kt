@@ -4,7 +4,7 @@ import ifx.context.Context
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
-import ifx.protocol.rsocket.RSocketEndpoint
+import ifx.protocol.rsocket.RSocketProtocolServer
 import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import ifx.test.assertSuccess
@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlin.test.Test
 
 
-val protocol = RSocketEndpoint()
+val protocol = RSocketProtocolServer()
 val proxyFactory = ProxyFactory(protocol)
 val manager = SomeManager(proxyFactory)
 val engine = SomeEngine(proxyFactory)

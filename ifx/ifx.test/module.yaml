@@ -11,4 +11,5 @@ dependencies:
   - io.kotest:kotest-framework-datatest:5.8.1: exported
   - io.kotest:kotest-extensions-htmlreporter:5.8.1: exported
   - io.kotest:kotest-extensions-junitxml:5.8.1: exported
+  - io.github.serpro69:kotlin-faker:2.0.0-rc.10: exported
   - $kotlin.reflect: exported
