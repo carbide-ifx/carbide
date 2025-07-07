@@ -14,5 +14,6 @@ dependencies:
 
 test-dependencies:
   - ../ifx.proxy.factory
+  - org.jetbrains.kotlinx:kotlinx-datetime:0.7.0
 #  - $libs.acme.access.person.service
 #  - $libs.acme.manager.membership.service

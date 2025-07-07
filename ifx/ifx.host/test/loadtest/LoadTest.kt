@@ -6,7 +6,7 @@ import ifx.host.contract.IRequestResponse
 import ifx.host.contract.IntPair
 import ifx.host.service.RequestResponse
 import ifx.logging.Log
-import ifx.protocol.rsocket.RSocketProtocolServer
+import ifx.protocol.rsocket.RSocketEndpoint
 import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import io.kotest.matchers.comparables.shouldBeLessThan
@@ -18,7 +18,7 @@ import kotlin.time.measureTime
 
 class LoadTest {
     val log = Log {}
-    val protocol = RSocketProtocolServer()
+    val protocol = RSocketEndpoint()
     val host = Host().addProtocol(protocol)
         .registerService<IRequestResponse>(RequestResponse())
         .registerService<ILoadTestService>(LoadTestService())
