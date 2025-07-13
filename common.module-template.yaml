@@ -7,7 +7,7 @@ settings:
 dependencies:
   - $kotlin.serialization.json
 test-dependencies:
-  - ../ifx/ifx.test
+  - ./ifx.test
 
 repositories:
   - id: github
@@ -15,7 +15,7 @@ repositories:
     resolve: true
     url: https://maven.pkg.github.com/Sonat-Consulting-Trondheim/ifx.kotlin
     credentials:
-      file: ../repository-credentials.properties
+      file: repository-credentials.properties
       usernameKey: github.username
       passwordKey: github.token
   - id: local
@@ -27,6 +27,6 @@ repositories:
     resolve: true
     url: https://localhost/snapshots
     credentials:
-      file: ../repository-credentials.properties
+      file: repository-credentials.properties
       usernameKey: reposilite.username
       passwordKey: reposilite.token
