@@ -16,9 +16,9 @@
 setlocal
 
 @rem The version of the Amper distribution to provision and use
-set amper_version=0.8.0-dev-2900
+set amper_version=0.8.0-dev-3005
 @rem Establish chain of trust from here by specifying exact checksum of Amper distribution to be run
-set amper_sha256=39394fbfabe91d2e0c36e37f4155407aeda83d895b898bc540bbf4329e3bc82f
+set amper_sha256=83afe4e97e566b9f05065ddfa8effab49e3ab3e878019cb3128c5530d0b1a031
 
 if not defined AMPER_DOWNLOAD_ROOT set AMPER_DOWNLOAD_ROOT=https://packages.jetbrains.team/maven/p/amper/amper
 if not defined AMPER_JRE_DOWNLOAD_ROOT set AMPER_JRE_DOWNLOAD_ROOT=https:/
@@ -171,5 +171,5 @@ if not exist "%AMPER_JAVA_HOME%\bin\java.exe" (
 REM ********** Launch Amper **********
 
 set jvm_args=-ea -XX:+EnableDynamicAgentLoading %AMPER_JAVA_OPTIONS%
-"%AMPER_JAVA_HOME%\bin\java.exe" "-Damper.wrapper.dist.sha256=%amper_sha256%" "-Damper.wrapper.path=%~f0" %jvm_args% -cp "%amper_target_dir%\lib\*" org.jetbrains.amper.cli.MainKt %*
+"%AMPER_JAVA_HOME%\bin\java.exe" "-Damper.wrapper.dist.sha256=%amper_sha256%" "-Damper.dist.path=%amper_target_dir%" "-Damper.wrapper.path=%~f0" %jvm_args% -cp "%amper_target_dir%\lib\*" org.jetbrains.amper.cli.MainKt %*
 exit /B %ERRORLEVEL%

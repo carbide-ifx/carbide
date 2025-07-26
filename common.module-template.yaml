@@ -23,8 +23,8 @@ repositories:
     resolve: false
     url: mavenLocal
   - id: snap
-    publish: true
-    resolve: true
+    publish: false
+    resolve: false
     url: https://localhost/snapshots
     credentials:
       file: repository-credentials.properties
