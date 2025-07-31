@@ -9,6 +9,7 @@ import ifx.protocol.contract.encodeToMessage
 import ifx.protocol.contract.flowType
 import ifx.protocol.contract.toOperation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.serializer
@@ -33,7 +34,7 @@ class EndpointInvocationHandler(private val messageHandler: IBinding) : Invocati
                     messageHandler.invokeRemote(kMethod, request)
                 }
             } catch (exception: Throwable) {
-                throw ProtocolException(exception.cause ?: exception)
+                throw ProtocolException(exception.message, cause = exception.cause ?: exception)
             }
         }
 
@@ -41,10 +42,9 @@ class EndpointInvocationHandler(private val messageHandler: IBinding) : Invocati
             val argumentsWithoutContinuation = args?.dropLast(1) ?: emptyList()
             try {
                 val request = argumentsWithoutContinuation.firstOrNull().encodeToMessage(method.argType())
-                val result = messageHandler.invokeRemote(kMethod, request)
-                result
+                messageHandler.invokeRemote(kMethod, request)
             } catch (exception: Throwable) {
-                throw ProtocolException(exception.cause ?: exception)
+                throw ProtocolException(exception.message, cause = exception.cause ?: exception)
             }
         }
     }
@@ -52,16 +52,15 @@ class EndpointInvocationHandler(private val messageHandler: IBinding) : Invocati
     private suspend fun IBinding.invokeRemote(method: KFunction<*>, message: Message): Any? =
         when (method.returnType.classifier) {
             Unit::class -> fireAndForget(method.toOperation(), message)
-            Flow::class -> requestStream(method.toOperation(), message).map { responseMessage ->
-                responseMessage.body.let {
-                    RpcFormat.decodeFromString(serializer(method.flowType()), it)
+            Flow::class -> requestStream(method.toOperation(), message)
+                .map { responseMessage ->
+                    RpcFormat.decodeFromString(serializer(method.flowType()), responseMessage.body)
+                }.catch { exception ->
+                    throw ProtocolException(exception.message, cause = exception.cause ?: exception)
                 }
+            else -> requestResponse(method.toOperation(), message).body.let {
+                RpcFormat.decodeFromString(serializer(method.returnType), it)
             }
-
-            else -> requestResponse(method.toOperation(), message)
-                .body.let {
-                    RpcFormat.decodeFromString(serializer(method.returnType), it)
-                }
         }
 
     @Suppress("UNCHECKED_CAST")

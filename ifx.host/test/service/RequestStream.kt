@@ -1,6 +1,5 @@
 package ifx.host.service
 
-import ifx.host.contract.CustomException
 import ifx.host.contract.IRequestStream
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -32,13 +31,13 @@ class RequestStream : IRequestStream {
     override suspend fun streamWithException(): Flow<Int> = flow {
         emit(1)
         emit(2)
-        throw CustomException("Error when producing flow")
+        MyClient.throwException()
     }
 
     override fun blockingStreamWithException(): Flow<Int> = flow {
         emit(1)
         emit(2)
-        throw CustomException("Error when producing flow")
+        MyClient.throwException()
     }
 
 }

@@ -12,10 +12,12 @@ import ifx.protocol.contract.flowType
 import ifx.protocol.contract.methodsFor
 import ifx.service.IService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
@@ -36,7 +38,7 @@ class ServiceBinding<out T : IService>(
             Unit
         }
     } catch (exception: Throwable) {
-        throw ProtocolException(exception) { "Failed to invoke method ${operation}: ${exception.message}" }
+        throw exception.toProtocolException("invoking service")
     }
 
     override suspend fun requestResponse(operation: String, message: Message): Message = try {
@@ -46,21 +48,25 @@ class ServiceBinding<out T : IService>(
             val result = method.invoke(instance, message)
             result.encodeToMessage(method.returnType)
         }
+    } catch (exception: InvocationTargetException) {
+        throw exception.targetException.toProtocolException("invoking service")
     } catch (exception: Throwable) {
-        log.warn { exception.printStackTrace() }
-        throw ProtocolException(exception) { "Server: Failed to invoke method ${operation}: ${exception.message}" }
+        throw exception.toProtocolException("invoking service")
     }
 
     override suspend fun requestStream(operation: String, message: Message): Flow<Message> = try {
-            withContext(message.parseContext()) {
-                val method = methods[operation]
-                    ?: throw IllegalArgumentException("No method found for address: $operation")
-                val result = method.invoke(instance, message) as Flow<*>
-                result.map { it.encodeToMessage(method.flowType()) }
-            }
-        } catch (exception: Throwable) {
-            throw ProtocolException(exception) { "Failed to invoke method ${operation}: ${exception.message}" }
+        withContext(message.parseContext()) {
+            val method = methods[operation] ?: throw IllegalArgumentException("No method found for address: $operation")
+            val result = method.invoke(instance, message) as Flow<*>
+            result
+                .map { it.encodeToMessage(method.flowType()) }
+                .catch { exception ->
+                    throw exception.toProtocolException("producing Flow")
+                }
         }
+    } catch (exception: Throwable) {
+        throw exception.toProtocolException("invoking service")
+    }
 
     private suspend fun <R> KFunction<R>.invoke(instance: T, message: Message): R {
         val arg: Any? = this.valueParameters.singleOrNull()?.type?.let { message.decodeToType(it) }
@@ -74,5 +80,18 @@ private fun Message.parseContext(): Context = try {
         ?.let { RpcFormat.decodeFromJsonElement(it) }
         ?: Context() // Default context if not present
 } catch (e: Exception) {
-    throw ProtocolException(e) { "Failed to parse context from message header: ${e.message}" }
+    throw ProtocolException(e) { "Host - Failed to parse context from message header: ${e.message}" }
+}
+
+private fun Throwable.toProtocolException(action: String): ProtocolException =
+    ProtocolException(this) { "Host - ${javaClass.simpleName} when $action: $message [${callChain()}]" }
+
+private fun Throwable.callChain(): String {
+    val result = stackTrace
+        .takeWhile {
+            it.className != "jdk.internal.reflect.DirectMethodHandleAccessor" && it.methodName != "invoke"
+        }
+        .reversed()
+        .joinToString(" -> ") { "${it.className.substringAfterLast(".")}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
+    return result
 }

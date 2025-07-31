@@ -1,6 +1,5 @@
 package ifx.host.service
 
-import ifx.host.contract.CustomException
 import ifx.host.contract.FloatPair
 import ifx.host.contract.IRequestResponse
 import ifx.host.contract.IntPair
@@ -25,9 +24,8 @@ class RequestResponse() : IRequestResponse {
 
     override suspend fun add(pair: FloatPair) = pair.a + pair.b
 
-    override suspend fun exception() = withContext(Dispatchers.IO) {
-        throw CustomException("Error in IRequestResponse")
-    }
+    override suspend fun exception() = MyClient.throwException()
+
 
 
     override fun blockingAdd(pair: IntPair) = pair.a + pair.b
@@ -41,7 +39,7 @@ class RequestResponse() : IRequestResponse {
         is IntPair -> IntPair(pair.a * pair.a, pair.b * pair.b) // Danger: overflow
     }
 
-    override fun blockingException() = throw CustomException("Error in IMyBlockingService")
-
-
+    override fun blockingException() = MyClient.throwException()
 }
+
+

@@ -1,5 +1,5 @@
 package ifx.protocol.contract
 
-class ProtocolException(override val cause: Throwable, val msg: String = "") : RuntimeException(msg, cause) {
-    constructor(cause: Throwable, msg: () -> String) : this(cause, msg())
+class ProtocolException(override val message: String? = null, override val cause: Throwable?) : RuntimeException(message, cause) {
+    constructor(cause: Throwable, msg: () -> String) : this(msg(), cause)
 }

@@ -22,11 +22,3 @@ repositories:
     publish: true
     resolve: false
     url: mavenLocal
-  - id: snap
-    publish: false
-    resolve: false
-    url: https://localhost/snapshots
-    credentials:
-      file: repository-credentials.properties
-      usernameKey: reposilite.username
-      passwordKey: reposilite.token

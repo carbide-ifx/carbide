@@ -19,7 +19,7 @@ class InstanceHandler(val instance: Any) : InvocationHandler {
             try {
                 method.invoke(instance, *nonNullArgs)
             } catch (exception: Exception) {
-                throw ProtocolException(exception.cause ?: exception)
+                throw ProtocolException(cause = exception.cause ?: exception)
 
             }
         } else {
@@ -50,7 +50,7 @@ class InstanceHandler(val instance: Any) : InvocationHandler {
 
                 try { method.invoke(instance, *newArgs.toTypedArray()) }
                 catch (invocationTargetException: Throwable) {
-                    throw ProtocolException(invocationTargetException.cause ?: invocationTargetException)
+                    throw ProtocolException(cause = invocationTargetException.cause ?: invocationTargetException)
                 }
             }
         }
