@@ -3,10 +3,7 @@ package ifx.protocol.contract
 import ifx.context.Context
 import ifx.service.IService
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.serialization.StringFormat
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
@@ -19,17 +16,18 @@ import kotlin.reflect.jvm.kotlinFunction
 
 fun <T : IService> methodsFor(cls: KClass<T>): Map<String, KFunction<*>> {
     require(cls.java.isInterface) { "Must be an interface" }
+    require(IService::class.java.isAssignableFrom(cls.java)) { "Must be a service interface" }
     return cls.memberFunctions
         .filter {
             val declaring = it.javaMethod?.declaringClass ?: return@filter false
-            IService::class.java.isAssignableFrom(declaring)
+            declaring.isInterface
         }
         .associateBy { it.toOperation() }
 }
 
 fun KFunction<*>.toOperation(): String {
     require(typeParameters.isEmpty()) { "Type parameters are not supported" }
-    require(valueParameters.size <= 1) { "Only single parameter methods are supported" }
+    require(valueParameters.size <= 1) { "Could not create binding for method ${javaMethod?.declaringClass?.simpleName}:${name}. Only single parameter methods are supported" }
     val paramType = valueParameters.singleOrNull()?.type?.simpleName() ?: ""
     val finalName = "$name(${paramType}):${this.returnType.simpleName()}"
     return finalName
@@ -58,5 +56,5 @@ fun Message.decodeToType(type: KType): Any? = RpcFormat.decodeFromString(seriali
 fun KFunction<*>.flowType(): KType = returnType.arguments.single().type!!
 
 
-private fun <K, V> Map<K, V?>.mapNotNullValues(): Map<K, V> = mapNotNull{ it.value?.let { value -> it.key to value} }
+private fun <K, V> Map<K, V?>.mapNotNullValues(): Map<K, V> = mapNotNull { it.value?.let { value -> it.key to value } }
     .toMap()

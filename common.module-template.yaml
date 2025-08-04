@@ -1,13 +1,18 @@
 settings:
+  jvm:
+    release: 21
   kotlin:
+    languageVersion: 2.2
     serialization: enabled
+  junit: junit-5
   publishing:
     group: sonat
-    version: 0.0.5-LOCAL
+    version: 0.0.5-SNAPSHOT
 dependencies:
   - $kotlin.serialization.json
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2: exported
 test-dependencies:
-  - ./ifx.test
+  - ./ifx.test: exported
 
 repositories:
   - id: github

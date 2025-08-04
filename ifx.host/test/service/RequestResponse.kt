@@ -18,9 +18,8 @@ class RequestResponse() : IRequestResponse {
 
     override suspend fun list(): List<Int> = listOf(1, 2, 3)
 
-    override suspend fun add(pair: IntPair) = withContext(Dispatchers.IO) {
-        pair.a + pair.b
-    }
+    override suspend fun add(pair: IntPair) = pair.a + pair.b
+
 
     override suspend fun add(pair: FloatPair) = pair.a + pair.b
 

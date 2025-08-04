@@ -5,6 +5,7 @@ import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IProtocol
 import ifx.protocol.contract.ProtocolException
 import ifx.service.IService
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -18,30 +19,35 @@ import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
+import java.net.ServerSocket
 import kotlin.reflect.KClass
 
-class RSocketProtocol(private val port: Int = 0) : IProtocol {
+class RSocketProtocol(val portToUse: Int = 0) : IProtocol {
+    val port: Int = if(portToUse == 0) findFreePort() else portToUse
+    private val log = KotlinLogging.logger { }
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
     private val server = embeddedServer(CIO, port) {
-        install(WebSockets) // rsocket requires websockets plugin installed
+        install(WebSockets)
         install(RSocketSupport)
         routing {
             get("/") {
                 call.respondText("TODO: Service Descriptors, test client, MEX should be here.")
             }
-            acceptors.forEach {
-                rSocket(path = it.key, acceptor = it.value)
+            acceptors.forEach { (route, acceotor) ->
+                rSocket(path = route, acceptor = acceotor)
             }
         }
     }
 
-    override fun open(): IProtocol = apply { server.start() }
+    override fun open(): IProtocol = apply {
+        server.start()
+        log.info { "RSocket Protocol opened, listening on $port" }
+    }
 
     override fun close(): IProtocol = apply { server.stop() }
 
 
     override fun <T : IService> createClientBinding(cls: KClass<T>): IBinding = try {
-        val port = runBlocking { server.engine.resolvedConnectors().single().port }
         RSocketClient<T>("ws://localhost:$port/${this.getAddress(cls)}")
     } catch (e: Throwable) {
         throw ProtocolException(e) { "Failed to create client for $cls: ${e.message}" }
@@ -69,6 +75,8 @@ class RSocketProtocol(private val port: Int = 0) : IProtocol {
     override fun <T : IService> getAddress(contract: KClass<T>): String = Companion.getAddress(contract)
 
     companion object {
+        fun findFreePort(): Int = ServerSocket(0).use { it.localPort }
+
         fun <T : IService> getAddress(contract: KClass<T>): String = contract.simpleName
             ?: throw IllegalArgumentException("Service class $contract must have a simple name")
 

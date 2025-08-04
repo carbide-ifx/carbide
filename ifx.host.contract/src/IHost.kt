@@ -12,6 +12,7 @@ interface IHost {
     fun <T : IService> registerService(contract: KClass<T>, factory: () -> T): IHost
 
     fun open(): IHost
+    fun start() = open()
     fun close(): IHost
 
     companion object {

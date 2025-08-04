@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
  *      project-specific ifx. (E.g. Sonat-Conventions). To facilitate earlier release, this is left for later.
  */
 
-class Host(private val protocol: IProtocol) : IHost {
+class Host(val protocol: IProtocol, val name: String = "Service Host") : IHost {
     val log = Log {}
     private val interceptors: MutableList<IInterceptor> = mutableListOf()
     val endpoints: MutableList<Endpoint<*>> = mutableListOf()
@@ -55,6 +55,7 @@ class Host(private val protocol: IProtocol) : IHost {
             protocol.expose(endpoint)
         }
         protocol.open()
+        log.info { "HOST OPENED" }
     }
 
     override fun close(): IHost = apply { protocol.close() }

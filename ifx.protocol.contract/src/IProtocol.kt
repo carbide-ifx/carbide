@@ -12,8 +12,6 @@ interface IProtocol {
     fun <T : IService> getAddress(contract: KClass<T>): String
 
     companion object {
-        inline fun <reified T : IService> IProtocol.createClient(): IBinding =
-            createClientBinding(T::class)
-
+        inline fun <reified T : IService> IProtocol.createClient(): IBinding = createClientBinding(T::class)
     }
 }

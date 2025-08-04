@@ -11,6 +11,8 @@ import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
@@ -29,8 +31,12 @@ class LoadTest {
         val requestResponse = ProxyFactory(protocol).create<IRequestResponse>()
         val iterations = 30000
         val duration = measureTime {
-            repeat(iterations) {
-                requestResponse.add(IntPair(it, it)) shouldBe it * 2
+            coroutineScope {
+                repeat(iterations) {
+                    launch {
+                        requestResponse.add(IntPair(it, it)) shouldBe it * 2
+                    }
+                }
             }
         }
         duration shouldBeLessThan 10.seconds
@@ -58,7 +64,7 @@ class LoadTest {
         log.info { "Flow: $count timetables in $duration seconds, for ${count * 1000 / (duration.inWholeMilliseconds)} TPS" }
     }
 
-     @Test
+    @Test
     fun `30k Departures - list`() = runTest {
         val loadTestService = ProxyFactory(protocol).create<ILoadTestService>()
         var count = 0

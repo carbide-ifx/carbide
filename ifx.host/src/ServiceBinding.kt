@@ -11,6 +11,7 @@ import ifx.protocol.contract.encodeToMessage
 import ifx.protocol.contract.flowType
 import ifx.protocol.contract.methodsFor
 import ifx.service.IService
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -70,7 +71,13 @@ class ServiceBinding<out T : IService>(
 
     private suspend fun <R> KFunction<R>.invoke(instance: T, message: Message): R {
         val arg: Any? = this.valueParameters.singleOrNull()?.type?.let { message.decodeToType(it) }
-        return callSuspend(*listOfNotNull(instance, arg).toTypedArray())
+        return if (!this.isSuspend) {
+            ScopedValue.where(Context.CTX, currentCoroutineContext()[Context.Key]).call<R> {
+                this@invoke.call(*listOfNotNull(instance, arg).toTypedArray())
+            }
+        } else {
+            callSuspend(*listOfNotNull(instance, arg).toTypedArray())
+        }
     }
 }
 

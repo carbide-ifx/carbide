@@ -1,5 +1,6 @@
 package ifx.proxy.factory
 
+import ifx.context.Context
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
@@ -8,10 +9,12 @@ import ifx.protocol.contract.argType
 import ifx.protocol.contract.encodeToMessage
 import ifx.protocol.contract.flowType
 import ifx.protocol.contract.toOperation
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.serializer
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -22,23 +25,27 @@ import kotlin.reflect.jvm.kotlinFunction
 class EndpointInvocationHandler(private val messageHandler: IBinding) : InvocationHandler {
     @Throws(Exception::class)
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+         if (method.name.equals("toString")) {
+            return "Custom Proxy"
+        }
         val nonNullArgs = args ?: arrayOf()
         val continuation = nonNullArgs.continuation()
         val valueArgs = nonNullArgs.filterNot { it is Continuation<*> }
         val kMethod = method.kotlinFunction!!
-        val request = runBlocking { valueArgs.firstOrNull().encodeToMessage(method.argType()) }
-        if (continuation == null) {
+        return if (continuation == null) {
             // non-suspending function, just invoke regularly
-            return try {
+             try {
                 runBlocking {
-                    messageHandler.invokeRemote(kMethod, request)
+                    val contextFromScopedValue = Context.getBlocking()
+                    withContext(contextFromScopedValue) {
+                        val request = valueArgs.firstOrNull().encodeToMessage(method.argType())
+                        messageHandler.invokeRemote(kMethod, request)
+                    }
                 }
             } catch (exception: Throwable) {
                 throw ProtocolException(exception.message, cause = exception.cause ?: exception)
             }
-        }
-
-        return invokeSuspendFunction(continuation) outer@{
+        } else  invokeSuspendFunction(continuation) {
             val argumentsWithoutContinuation = args?.dropLast(1) ?: emptyList()
             try {
                 val request = argumentsWithoutContinuation.firstOrNull().encodeToMessage(method.argType())
@@ -58,6 +65,7 @@ class EndpointInvocationHandler(private val messageHandler: IBinding) : Invocati
                 }.catch { exception ->
                     throw ProtocolException(exception.message, cause = exception.cause ?: exception)
                 }
+
             else -> requestResponse(method.toOperation(), message).body.let {
                 RpcFormat.decodeFromString(serializer(method.returnType), it)
             }
