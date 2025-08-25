@@ -1,5 +1,5 @@
 [versions]
-acme = "0.0.1-SNAPSHOT"
+acme = "0.0.2-SNAPSHOT"
 
 [libraries]
 acme.access.person.contract = {  module = "acme:access.person.contract", version.ref = "acme" }
