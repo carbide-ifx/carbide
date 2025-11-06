@@ -14,7 +14,7 @@ import ifx.protocol.contract.ProtocolException
 import ifx.protocol.rsocket.RSocketProtocol
 import ifx.proxy.contract.IProxyFactory
 import ifx.proxy.contract.create
-import ifx.proxy.factory.ProxyFactory
+import ifx.proxy.factory.ProxyFactoryBase
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -29,12 +29,12 @@ class InvocationTest() {
     val fireAndForgetService = FireAndForget()
     val requestResponseService = RequestResponse()
     val requestStreamService = RequestStream()
-    val host = Host(protocol)
+    val host = HostBase(protocol)
         .registerService<IFireAndForget> { fireAndForgetService }
         .registerService<IRequestResponse> { requestResponseService }
         .registerService<IRequestStream> { requestStreamService }
         .open()
-    val proxyFactory: IProxyFactory = ProxyFactory(protocol)
+    val proxyFactory: IProxyFactory = ProxyFactoryBase(protocol)
 
     @Test
     fun `Client exception - Server not found`() {

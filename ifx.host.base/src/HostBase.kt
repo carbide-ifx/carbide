@@ -6,6 +6,8 @@ import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocol
+import ifx.proxy.contract.IProxyFactory
+import ifx.proxy.factory.ProxyFactoryBase
 import ifx.service.IService
 import kotlin.reflect.KClass
 
@@ -17,9 +19,12 @@ import kotlin.reflect.KClass
  *      project-specific ifx. (E.g. Sonat-Conventions). To facilitate earlier release, this is left for later.
  */
 
-class Host(val protocol: IProtocol, val name: String = "Service Host") : IHost {
+class HostBase(
+    override val protocol: IProtocol,
+    val name: String = "Service Host",
+    override val interceptors: MutableList<IInterceptor> = mutableListOf(),
+) : IHost {
     val log = Log {}
-    private val interceptors: MutableList<IInterceptor> = mutableListOf()
     val endpoints: MutableList<Endpoint<*>> = mutableListOf()
 
     // TODO: Right now interceptors must be registered before services, breaking builder pattern expectations. Should fix!
@@ -46,12 +51,10 @@ class Host(val protocol: IProtocol, val name: String = "Service Host") : IHost {
         registerService(contract,factory())
     }
 
-    override fun addInterceptors(vararg i: IInterceptor): IHost = apply {
-        interceptors.addAll(i)
-    }
+    override fun addInterceptors(vararg i: IInterceptor): IHost = apply { interceptors.addAll(i) }
 
     override fun open(): IHost = apply {
-        endpoints.map { endpoint ->
+        endpoints.forEach { endpoint ->
             protocol.expose(endpoint)
         }
         protocol.open()

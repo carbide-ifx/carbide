@@ -7,6 +7,8 @@ dependencies:
   - ../ifx.sonat-convention
   - ../ifx.service
   - ../ifx.context
-  - ../ifx.proxy.contract: exported
+  - ../ifx.host.contract
+  - ../ifx.proxy-factory.contract: exported
+  - ../ifx.proxy-factory.base: exported
   - ../ifx.protocol.rsocket: exported
   - ../ifx.protocol.contract: exported

@@ -2,7 +2,7 @@ package ifx.host.callfowarding
 
 import ifx.context.Context
 import ifx.proxy.contract.create
-import ifx.proxy.factory.ProxyFactory
+import ifx.proxy.factory.ProxyFactoryBase
 import ifx.service.IService
 import ifx.service.Response
 import ifx.service.getOrElse
@@ -31,7 +31,7 @@ data class CallRequest(val values: List<String>)
 @Serializable
 data class CallResponse(val values: List<String>)
 
-class SomeManager(val proxyFactory: ProxyFactory) : ISomeManager {
+class SomeManager(val proxyFactory: ProxyFactoryBase) : ISomeManager {
     val engine = proxyFactory.create<ISomeEngine>()
 
     override suspend fun someUseCase(call: CallRequest): Response<CallResponse> {
@@ -45,7 +45,7 @@ class SomeManager(val proxyFactory: ProxyFactory) : ISomeManager {
     }
 }
 
-class SomeEngine(val proxyFactory: ProxyFactory) : ISomeEngine {
+class SomeEngine(val proxyFactory: ProxyFactoryBase) : ISomeEngine {
     val ra: ISomeResourceAccess = proxyFactory.create<ISomeResourceAccess>()
 
     override suspend fun engineComputation(call: CallRequest): Response<CallResponse> {

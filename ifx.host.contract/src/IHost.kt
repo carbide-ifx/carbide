@@ -12,7 +12,6 @@ interface IHost {
     fun <T : IService> registerService(contract: KClass<T>, factory: () -> T): IHost
 
     fun open(): IHost
-    fun start() = open()
     fun close(): IHost
 
     companion object {
@@ -22,8 +21,9 @@ interface IHost {
         inline fun <reified T : IService> IHost.registerService(noinline factory: () -> T): IHost =
             registerService(T::class, factory)
     }
-
     fun addInterceptors(vararg i: IInterceptor): IHost
+    val interceptors: List<IInterceptor>
+    val protocol: IProtocol
 }
 
 

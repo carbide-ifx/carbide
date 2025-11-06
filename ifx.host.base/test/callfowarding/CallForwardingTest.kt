@@ -1,11 +1,11 @@
 package ifx.host.callfowarding
 
 import ifx.context.Context
-import ifx.host.Host
+import ifx.host.HostBase
 import ifx.host.IHost.Companion.registerService
 import ifx.protocol.rsocket.RSocketProtocol
 import ifx.proxy.contract.create
-import ifx.proxy.factory.ProxyFactory
+import ifx.proxy.factory.ProxyFactoryBase
 import ifx.test.assertSuccess
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.shouldBe
@@ -20,11 +20,11 @@ import kotlin.test.Test
 class CallForwardingTest() {
 
     val protocol = RSocketProtocol()
-    val proxyFactory = ProxyFactory(protocol)
+    val proxyFactory = ProxyFactoryBase(protocol)
     val manager = SomeManager(proxyFactory)
     val engine = SomeEngine(proxyFactory)
     val ra = SomeResourceAccess()
-    val host = Host(protocol)
+    val host = HostBase(protocol)
         .registerService<ISomeManager> { manager }
         .registerService<ISomeEngine> { engine }
         .registerService<ISomeResourceAccess> { ra }

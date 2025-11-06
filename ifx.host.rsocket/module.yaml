@@ -6,14 +6,15 @@ product:
 dependencies:
   - $kotlin.reflect
   - ../ifx.host.contract: exported
+  - ../ifx.host.base
   - ../ifx.service
-  - ../ifx.protocol.contract
+  - ../ifx.protocol.rsocket
   - ../ifx.sonat-convention
   - ../ifx.context: exported
   - ../ifx.logging
 
 test-dependencies:
-  - ../ifx.proxy.factory
+  - ../ifx.proxy-factory.base
   - org.jetbrains.kotlinx:kotlinx-datetime:0.7.0
   - ../ifx.test
   - io.kotest:kotest-runner-junit5:5.9.1

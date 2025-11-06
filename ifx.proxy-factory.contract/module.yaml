@@ -5,3 +5,4 @@ product:
 
 dependencies:
   - ../ifx.service
+  - ../ifx.protocol.contract : exported

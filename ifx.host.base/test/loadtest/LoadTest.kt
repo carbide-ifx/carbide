@@ -1,6 +1,6 @@
 package ifx.host.loadtest
 
-import ifx.host.Host
+import ifx.host.HostBase
 import ifx.host.IHost.Companion.registerService
 import ifx.host.contract.IRequestResponse
 import ifx.host.contract.IntPair
@@ -8,7 +8,7 @@ import ifx.host.service.RequestResponse
 import ifx.logging.Log
 import ifx.protocol.rsocket.RSocketProtocol
 import ifx.proxy.contract.create
-import ifx.proxy.factory.ProxyFactory
+import ifx.proxy.factory.ProxyFactoryBase
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
@@ -21,14 +21,14 @@ import kotlin.time.measureTime
 class LoadTest {
     val log = Log {}
     val protocol = RSocketProtocol()
-    val host = Host(protocol)
+    val host = HostBase(protocol)
         .registerService<IRequestResponse>(RequestResponse())
         .registerService<ILoadTestService>(LoadTestService())
         .open()
 
     @Test
     fun `Request Throughput`() = runTest {
-        val requestResponse = ProxyFactory(protocol).create<IRequestResponse>()
+        val requestResponse = ProxyFactoryBase(protocol).create<IRequestResponse>()
         val iterations = 30000
         val duration = measureTime {
             coroutineScope {
@@ -45,7 +45,7 @@ class LoadTest {
 
     @Test
     fun `30k Departures - flow`() = runTest {
-        val loadTestService = ProxyFactory(protocol).create<ILoadTestService>()
+        val loadTestService = ProxyFactoryBase(protocol).create<ILoadTestService>()
         var count = 0
         val duration = measureTime {
             loadTestService.loadDepartures().collect { _ -> count++ }
@@ -56,7 +56,7 @@ class LoadTest {
 
     @Test
     fun `1k Timetables - flow`() = runTest {
-        val loadTestService = ProxyFactory(protocol).create<ILoadTestService>()
+        val loadTestService = ProxyFactoryBase(protocol).create<ILoadTestService>()
         var count = 0
         val duration = measureTime {
             loadTestService.loadTimeTables().collect { _ -> count++ }
@@ -66,7 +66,7 @@ class LoadTest {
 
     @Test
     fun `30k Departures - list`() = runTest {
-        val loadTestService = ProxyFactory(protocol).create<ILoadTestService>()
+        val loadTestService = ProxyFactoryBase(protocol).create<ILoadTestService>()
         var count = 0
         val duration = measureTime {
             loadTestService.loadDeparturesList().map { _ -> count++ }
@@ -77,7 +77,7 @@ class LoadTest {
 
     @Test
     fun `1k Timetables - list`() = runTest {
-        val loadTestService = ProxyFactory(protocol).create<ILoadTestService>()
+        val loadTestService = ProxyFactoryBase(protocol).create<ILoadTestService>()
         var count = 0
         val duration = measureTime {
             loadTestService.loadTimeTablesList().map { _ -> count++ }

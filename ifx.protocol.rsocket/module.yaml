@@ -19,5 +19,5 @@ dependencies:
   - $kotlin.reflect
 
 test-dependencies:
-  - ../ifx.proxy.factory
+  - ../ifx.proxy-factory.base
   - ../ifx.test

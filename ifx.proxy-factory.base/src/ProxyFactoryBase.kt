@@ -1,25 +1,24 @@
 package ifx.proxy.factory
 
-import ifx.context.Context
+import ifx.host.IHost
 import ifx.protocol.contract.Endpoint
-import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocol
-import ifx.protocol.rsocket.RSocketProtocol
+import ifx.protocol.contract.InterceptorPipeline
 import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
-class ProxyFactory(protocol: IProtocol? = null, val context: Context = Context()) : IProxyFactory {
-    val protocol: IProtocol = protocol ?: RSocketProtocol()
+class ProxyFactoryBase(val protocol: IProtocol) : IProxyFactory {
     val interceptors: MutableList<IInterceptor> = mutableListOf()
     private val log = KotlinLogging.logger { }
 
-    fun addInterceptors(vararg i: IInterceptor): ProxyFactory = apply { interceptors.addAll(i) }
+    override fun addInterceptors(vararg i: IInterceptor): ProxyFactoryBase = apply { interceptors.addAll(i) }
 
-    fun <T: IService> create(endpoint: Endpoint<T>): T {
+    @Suppress("UNCHECKED_CAST")
+    fun <T : IService> create(endpoint: Endpoint<T>): T {
         val interceptorPipeline: InterceptorPipeline = InterceptorPipeline(
             requestInterceptors = interceptors,
             responseInterceptors = interceptors.reversed(),
@@ -32,6 +31,8 @@ class ProxyFactory(protocol: IProtocol? = null, val context: Context = Context()
         ) as T
     }
 
+
+    @Suppress("UNCHECKED_CAST")
     override fun <T : IService> create(contract: KClass<T>): T {
         val interceptorPipeline = InterceptorPipeline(
             requestInterceptors = interceptors,
@@ -45,4 +46,3 @@ class ProxyFactory(protocol: IProtocol? = null, val context: Context = Context()
         ) as T
     }
 }
-
