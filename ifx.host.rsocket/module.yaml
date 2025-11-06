@@ -6,7 +6,7 @@ product:
 dependencies:
   - $kotlin.reflect
   - ../ifx.host.contract: exported
-  - ../ifx.host.base
+  - ../ifx.host.base: exported
   - ../ifx.service
   - ../ifx.protocol.rsocket
   - ../ifx.sonat-convention
