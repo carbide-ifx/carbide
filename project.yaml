@@ -1,3 +1,16 @@
 modules:
-  - *
-
+  - ifx.context
+  - ifx.host.base
+  - ifx.host.contract
+  - ifx.host.rsocket
+  - ifx.logging
+  - ifx.protocol.contract
+  - ifx.protocol.rsocket
+  - ifx.proxy-factory.base
+  - ifx.proxy-factory.contract
+  - ifx.proxy-factory.rsocket
+  - ifx.service
+  - ifx.sonat-convention
+  - utility.stdlib
+  - ifx.test
+#  - utility.db   # built using gradle until compiler plugin support fixed in amper

@@ -9,6 +9,7 @@ import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.lang.reflect.Proxy
+import kotlin.jvm.java
 import kotlin.reflect.KClass
 
 class ProxyFactoryBase(val protocol: IProtocol) : IProxyFactory {
@@ -45,4 +46,20 @@ class ProxyFactoryBase(val protocol: IProtocol) : IProxyFactory {
             EndpointInvocationHandler(interceptorPipeline)
         ) as T
     }
+}
+
+
+class DirectProxyFactory {
+    val serviceMap: MutableMap<Class<*>, IService> = mutableMapOf()
+
+    fun <T : IService> registerService(contract: KClass<T>, instance: T): DirectProxyFactory {
+        serviceMap[contract.java] = instance
+        return this
+    }
+     fun <T : IService> create(contract: KClass<T>): T = Proxy.newProxyInstance(
+        contract.java.classLoader,
+        arrayOf<Class<*>>(contract.java),
+        InstanceHandler(serviceMap[contract.java] ?: error("No instance registered for $contract"))
+    ) as T
+
 }

@@ -1,7 +1,7 @@
 apply: [ ../common.module-template.yaml ]
 product:
   type: lib
-  platforms: [jvm]
+  platforms: [ jvm ]
 
 dependencies:
   - ../ifx.service: exported
@@ -13,3 +13,4 @@ dependencies:
   - io.kotest:kotest-property:6.0.4: exported
   - io.github.serpro69:kotlin-faker:2.0.0-rc.10: exported
   - $kotlin.reflect: exported
+  - io.exoquery:pprint-kotlin:2.0.2: exported

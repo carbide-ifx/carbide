@@ -15,6 +15,4 @@ dependencies:
 
 test-dependencies:
   - ../ifx.proxy-factory.base
-  - org.jetbrains.kotlinx:kotlinx-datetime:0.7.0
-  - ../ifx.test
   - io.kotest:kotest-runner-junit5:5.9.1

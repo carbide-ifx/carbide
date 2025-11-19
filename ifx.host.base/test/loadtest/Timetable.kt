@@ -1,7 +1,7 @@
 package ifx.host.loadtest
 
-import kotlinx.datetime.DayOfWeek
 import kotlinx.serialization.Serializable
+import java.time.DayOfWeek
 
 interface Timetable {
     @Serializable
