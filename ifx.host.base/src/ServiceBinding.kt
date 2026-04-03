@@ -72,7 +72,7 @@ class ServiceBinding<out T : IService>(
     private suspend fun <R> KFunction<R>.invoke(instance: T, message: Message): R {
         val arg: Any? = this.valueParameters.singleOrNull()?.type?.let { message.decodeToType(it) }
         return if (!this.isSuspend) {
-            ScopedValue.where(Context.CTX, currentCoroutineContext()[Context.Key]).call<R> {
+            ScopedValue.where(Context.CTX, currentCoroutineContext()[Context.Key]).call<R, Exception> {
                 this@invoke.call(*listOfNotNull(instance, arg).toTypedArray())
             }
         } else {

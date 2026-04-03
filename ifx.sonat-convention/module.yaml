@@ -6,3 +6,5 @@ product:
 dependencies:
   - ../ifx.service
   - com.lemonappdev:konsist:0.15.1
+test-dependencies:
+  - $kotlin.test

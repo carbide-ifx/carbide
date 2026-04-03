@@ -1,9 +1,6 @@
-package ifx.host
-
-//package ifx
+//package ifx.host
 //
-//import ifx.naming.Naming.Aspect.Contract
-//import ifx.naming.Naming.Concept.Manager
+//
 //import ifx.naming.Naming.asComponent
 //import ifx.naming.Naming.getComponent
 //import ifx.naming.Naming.isContract

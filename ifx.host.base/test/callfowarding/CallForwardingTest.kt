@@ -52,7 +52,7 @@ class CallForwardingTest() {
         coroutineScope {
             val results = List(1000) { i ->
                 async {
-                    ScopedValue.where(Context.CTX, Context("$i")).call {
+                    ScopedValue.where(Context.CTX, Context("$i")).call<Pair<Int, CallResponse>, Exception> {
                         val response =
                             managerProxy.someBlockingUseCase(CallRequest(listOf("a", "b", "c"))).assertSuccess()
                         val expected =

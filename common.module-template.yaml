@@ -1,13 +1,16 @@
 settings:
   jvm:
-    release: 21
+    jdk:
+      version: 25
+    release: 25
   kotlin:
-    languageVersion: 2.2
+    languageVersion: 2.3
     serialization: enabled
   junit: junit-5
   publishing:
     group: sonat
     version: 0.0.6
+    enabled: true
 dependencies:
   - $kotlin.serialization.json
   - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2: exported
