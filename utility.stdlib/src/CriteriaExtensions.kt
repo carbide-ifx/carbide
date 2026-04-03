@@ -7,42 +7,35 @@ import kotlinx.coroutines.flow.filter
  * Helper functions for optional filtering based criteria. Typical useage:
  * Does nothing if the criterion is null.
  *
- * ```val result = collection.filterIfPresent(criteria) { criterion, item -> item.property == criterion }```
- *
+ * ```val result = collection.filterIfPresent(criteria) { item, criteria -> item.property in criteria }```
  */
 
-inline fun <reified T : Any, U : Any> Iterable<U>.filterIfPresent(
-    criteria: Collection<T>?,
-    predicate: (T, U) -> Boolean
-): Iterable<U> = criteria?.let { filter { item -> criteria.any { predicate(it, item) } } } ?: this
+inline fun <reified Criterion, Value> Iterable<Value>.filterIfPresent(
+    criterion: Criterion?,
+    predicate: (Value, Criterion) -> Boolean
+): Iterable<Value> = criterion?.let { this.filter { item -> predicate(item, criterion) } } ?: this
 
-inline fun <reified T : Comparable<T>, U : Any> Iterable<U>.filterIfPresent(
-    criterion: T?,
-    predicate: (T, U) -> Boolean
-): Iterable<U> = criterion?.let { this.filter { item -> predicate(criterion, item) } } ?: this
+inline fun <reified Criterion, Value> Flow<Value>.filterIfPresent(
+    criterion: Criterion?,
+    crossinline predicate: (Value, Criterion) -> Boolean
+): Flow<Value> = criterion?.let { this.filter { item -> predicate(item, criterion) } } ?: this
 
-inline fun <reified T : Any, U : Any> Flow<U>.filterIfPresent(
-    criteria: Collection<T>?,
-    crossinline predicate: (T, U) -> Boolean
-): Flow<U> = criteria?.let { filter { item -> criteria.any { predicate(it, item) } } } ?: this
+inline fun <reified Criterion, Key, Value> Map<Key, Value>.filterIfPresent(
+    criterion: Criterion?,
+    crossinline predicate: (Map.Entry<Key, Value>, Criterion) -> Boolean
+): Map<Key, Value> = criterion?.let { this.filter { entry -> predicate(entry, criterion) } } ?: this
 
-inline fun <reified T : Comparable<T>, U : Any> Flow<U>.filterIfPresent(
-    criterion: T?,
-    crossinline predicate: (T, U) -> Boolean
-): Flow<U> = criterion?.let { this.filter { item -> predicate(criterion, item) } } ?: this
+inline fun <reified Criterion, Value> Sequence<Value>.filterIfPresent(
+    criterion: Criterion?,
+    crossinline predicate: (Value, Criterion) -> Boolean
+): Sequence<Value> = criterion?.let { this.filter { item -> predicate(item, criterion) } } ?: this
 
+inline fun <reified Criterion, Key, Value> Map<Key, Value>.filterKeysIfPresent(
+    criterion: Criterion?,
+    crossinline predicate: (Key, Criterion) -> Boolean
+): Map<Key, Value> = this.filterIfPresent(criterion) { entry, criterion -> predicate(entry.key, criterion) }
 
-inline fun <reified C: Any, K : Any, V : Any> Map<K, V>.filterKeysIfPresent(
-    criteria: Collection<C>?,
-    predicate: (C, K) -> Boolean
-): Map<K, V> = criteria?.let {
-    filterKeys { key -> criteria.any { predicate(it, key) } }
-} ?: this
-
-
-inline fun <reified C: Any, K : Any, V : Any> Map<K, V>.filterValuesIfPresent(
-    criteria: Collection<C>?,
-    predicate: (C, V) -> Boolean
-): Map<K, V> = criteria?.let {
-    filterValues { key -> criteria.any { predicate(it, key) } }
-} ?: this
+inline fun <reified Criterion, Key, Value> Map<Key, Value>.filterValuesIfPresent(
+    criterion: Criterion?,
+    crossinline predicate: (Value, Criterion) -> Boolean
+): Map<Key, Value> = this.filterIfPresent(criterion) { entry, criterion -> predicate(entry.value, criterion) }
