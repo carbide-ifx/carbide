@@ -5,6 +5,5 @@ product:
   platforms: [jvm]
 
 dependencies:
-  - $kotlin.serialization.json: exported
   - ../ifx.logging: exported
   - ../ifx.context: exported

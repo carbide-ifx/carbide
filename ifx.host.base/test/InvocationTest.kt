@@ -17,12 +17,13 @@ import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactoryBase
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
+
 
 
 class InvocationTest() {

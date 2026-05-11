@@ -1,7 +1,6 @@
 apply: [ ../common.module-template.yaml ]
 product:
-  type: lib
-  platforms: [ jvm ]
+  type: jvm/lib
 
 dependencies:
   - ../ifx.service: exported

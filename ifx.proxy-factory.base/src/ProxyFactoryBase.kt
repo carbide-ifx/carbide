@@ -1,10 +1,10 @@
 package ifx.proxy.factory
 
 import ifx.host.IHost
+import ifx.protocol.contract.ClientInterceptorPipeline
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocol
-import ifx.protocol.contract.InterceptorPipeline
 import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -17,13 +17,13 @@ class ProxyFactoryBase(val protocol: IProtocol) : IProxyFactory {
     private val log = KotlinLogging.logger { }
 
     override fun addInterceptors(vararg i: IInterceptor): ProxyFactoryBase = apply { interceptors.addAll(i) }
+    override fun addInterceptors(i: List<IInterceptor>): ProxyFactoryBase = apply { interceptors.addAll(i) }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : IService> create(endpoint: Endpoint<T>): T {
-        val interceptorPipeline: InterceptorPipeline = InterceptorPipeline(
-            requestInterceptors = interceptors,
-            responseInterceptors = interceptors.reversed(),
-            nextHandler = protocol.createClientBinding<T>(endpoint.contract)
+        val interceptorPipeline = ClientInterceptorPipeline(
+            interceptors = interceptors,
+            nextHandler = protocol.createClientBinding(endpoint.contract),
         )
         return Proxy.newProxyInstance(
             endpoint.contract.java.classLoader,
@@ -35,10 +35,9 @@ class ProxyFactoryBase(val protocol: IProtocol) : IProxyFactory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : IService> create(contract: KClass<T>): T {
-        val interceptorPipeline = InterceptorPipeline(
-            requestInterceptors = interceptors,
-            responseInterceptors = interceptors.reversed(),
-            nextHandler = protocol.createClientBinding(contract)
+        val interceptorPipeline = ClientInterceptorPipeline(
+            interceptors = interceptors,
+            nextHandler = protocol.createClientBinding(contract),
         )
         return Proxy.newProxyInstance(
             contract.java.classLoader,

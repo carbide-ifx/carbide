@@ -1,5 +1,9 @@
 package ifx.protocol.contract
 
-fun interface IInterceptor {
-    suspend operator fun invoke(operation: String, message: Message): Message
+interface IInterceptor {
+    suspend fun onClientSend(operation: String, message: Message): Message = message
+    suspend fun onServerReceive(operation: String, message: Message): Message = message
+    suspend fun onServerSend(operation: String, message: Message): Message = message
+    suspend fun onClientReceive(operation: String, message: Message): Message = message
 }
+

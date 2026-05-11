@@ -11,6 +11,7 @@ modules:
   - ifx.proxy-factory.rsocket
   - ifx.service
   - ifx.sonat-convention
-  - utility.stdlib
   - ifx.test
+  - test.acme
+  - utility.stdlib
 #  - utility.db   # built using gradle until compiler plugin support fixed in amper

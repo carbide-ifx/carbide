@@ -2,12 +2,10 @@ package ifx.host
 
 import ifx.logging.Log
 import ifx.protocol.contract.Endpoint
-import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocol
-import ifx.proxy.contract.IProxyFactory
-import ifx.proxy.factory.ProxyFactoryBase
+import ifx.protocol.contract.ServerInterceptorPipeline
 import ifx.service.IService
 import kotlin.reflect.KClass
 
@@ -34,11 +32,7 @@ class HostBase(
         }
         val address = protocol.getAddress(contract)
         val serviceBinding: IBinding = ServiceBinding(contract, instance)
-        val interceptorBinding = InterceptorPipeline(
-            requestInterceptors = interceptors,
-            responseInterceptors = interceptors.reversed(),
-            nextHandler = serviceBinding
-        )
+        val interceptorBinding: IBinding = ServerInterceptorPipeline(interceptors = interceptors, nextBinding = serviceBinding)
         val endpoint = Endpoint(address, interceptorBinding, contract)
         endpoints.add(endpoint)
     }
@@ -52,6 +46,7 @@ class HostBase(
     }
 
     override fun addInterceptors(vararg i: IInterceptor): IHost = apply { interceptors.addAll(i) }
+    override fun addInterceptors(i: List<IInterceptor>): IHost = apply { interceptors.addAll(i) }
 
     override fun open(): IHost = apply {
         endpoints.forEach { endpoint ->

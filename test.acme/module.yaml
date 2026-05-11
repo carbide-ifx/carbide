@@ -1,0 +1,9 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: jvm/app
+
+dependencies:
+  - ../ifx.host.rsocket
+  - ../ifx.proxy-factory.rsocket
+  - ../ifx.protocol.contract
+  - ../ifx.service

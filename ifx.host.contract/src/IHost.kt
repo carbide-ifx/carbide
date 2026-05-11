@@ -22,6 +22,7 @@ interface IHost {
             registerService(T::class, factory)
     }
     fun addInterceptors(vararg i: IInterceptor): IHost
+    fun addInterceptors(interceptors: List<IInterceptor>): IHost
     val interceptors: List<IInterceptor>
     val protocol: IProtocol
 }
