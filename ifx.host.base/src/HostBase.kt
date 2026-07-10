@@ -1,11 +1,11 @@
 package ifx.host
 
-import ifx.logging.Log
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocol
 import ifx.protocol.contract.ServerInterceptorPipeline
+import ifx.protocol.contract.ServiceRegistry
 import ifx.service.IService
 import kotlin.reflect.KClass
 
@@ -19,41 +19,33 @@ import kotlin.reflect.KClass
 
 class HostBase(
     override val protocol: IProtocol,
+    override val registry: ServiceRegistry,
     val name: String = "Service Host",
     override val interceptors: MutableList<IInterceptor> = mutableListOf(),
 ) : IHost {
-    val log = Log {}
-    val endpoints: MutableList<Endpoint<*>> = mutableListOf()
+    val endpoints: MutableList<Endpoint> = mutableListOf()
 
     // TODO: Right now interceptors must be registered before services, breaking builder pattern expectations. Should fix!
     override fun <T : IService> registerService(contract: KClass<T>, instance: T): IHost = apply {
-        require(contract.java.isInterface) {
-            "Contract for service must be an interface, but got: ${contract.qualifiedName}"
-        }
-        val address = protocol.getAddress(contract)
-        val serviceBinding: IBinding = ServiceBinding(contract, instance)
+        val descriptor = registry.descriptor(contract)
+        val serviceBinding = descriptor.bind(instance)
         val interceptorBinding: IBinding = ServerInterceptorPipeline(interceptors = interceptors, nextBinding = serviceBinding)
-        val endpoint = Endpoint(address, interceptorBinding, contract)
+        val endpoint = Endpoint(descriptor.address, interceptorBinding)
         endpoints.add(endpoint)
     }
 
     override fun <T : IService> registerService(contract: KClass<T>, factory: () -> T): IHost = apply {
-        require(contract.java.isInterface) {
-            "Contract for service must be an interface, but got: ${contract.qualifiedName}"
-        }
-        log.warn { "Service [${contract.qualifiedName}] registered with factory, but stored as singleton (Pending DI TODO)" }
         registerService(contract,factory())
     }
 
     override fun addInterceptors(vararg i: IInterceptor): IHost = apply { interceptors.addAll(i) }
-    override fun addInterceptors(i: List<IInterceptor>): IHost = apply { interceptors.addAll(i) }
+    override fun addInterceptors(interceptors: List<IInterceptor>): IHost = apply { this.interceptors.addAll(interceptors) }
 
     override fun open(): IHost = apply {
         endpoints.forEach { endpoint ->
             protocol.expose(endpoint)
         }
         protocol.open()
-        log.info { "HOST OPENED" }
     }
 
     override fun close(): IHost = apply { protocol.close() }

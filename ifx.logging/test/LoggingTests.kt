@@ -21,7 +21,7 @@ class LoggingTests {
 class SomeManager : IService {
     fun anOperation() {
         val e = Exception("A test error")
-        log.info { "Performing an operation" }
-        log.warn(e) { "This test is logging an exception:" }
+        Log(this).info { "Performing an operation" }
+//        Log(this).warn(e) { "This test is logging an exception:" }
     }
 }

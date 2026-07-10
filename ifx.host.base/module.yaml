@@ -1,18 +1,14 @@
 apply: [ ../common.module-template.yaml ]
 product:
   type: lib
-  platforms: [ jvm ]
+  platforms: [ jvm, macosArm64 ]
 
 dependencies:
-  - $kotlin.reflect
   - ../ifx.host.contract: exported
-  - ../ifx.proxy-factory.base
   - ../ifx.service
   - ../ifx.protocol.contract
-  - ../ifx.sonat-convention
   - ../ifx.context: exported
-  - ../ifx.logging
 
-test-dependencies:
+test-dependencies@jvm:
   - ../ifx.proxy-factory.base
   - ../ifx.test

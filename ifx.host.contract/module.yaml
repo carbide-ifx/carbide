@@ -1,11 +1,9 @@
 apply: [ ../common.module-template.yaml ]
 product:
   type: lib
-  platforms: [jvm]
+  platforms: [jvm, macosArm64]
 
 dependencies:
-  - $kotlin.reflect
   - ../ifx.protocol.contract
-  - ../ifx.sonat-convention
   - ../ifx.service
   - ../ifx.context

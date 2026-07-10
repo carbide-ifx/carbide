@@ -7,3 +7,11 @@ dependencies:
   - ../ifx.proxy-factory.rsocket
   - ../ifx.protocol.contract
   - ../ifx.service
+
+settings:
+  jvm:
+    mainClass: HostWithInterceptorKt
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.rpc.ksp

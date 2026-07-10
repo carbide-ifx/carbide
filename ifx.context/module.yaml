@@ -1,5 +1,4 @@
 apply: [ ../common.module-template.yaml ]
 product:
   type: lib
-  platforms: [jvm]
-
+  platforms: [jvm, macosArm64]

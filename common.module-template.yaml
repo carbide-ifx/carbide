@@ -14,7 +14,7 @@ settings:
 dependencies:
   - $kotlin.serialization.json
   - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2: exported
-test-dependencies:
+test-dependencies@jvm:
   - ./ifx.test: exported
 
 repositories:

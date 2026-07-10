@@ -2,8 +2,10 @@ apply: [../common.module-template.yaml ]
 
 product:
   type: lib
-  platforms: [jvm]
+  platforms: [jvm, macosArm64]
 
 dependencies:
-  - ../ifx.logging: exported
   - ../ifx.context: exported
+
+test-dependencies@jvm:
+  - ../ifx.logging

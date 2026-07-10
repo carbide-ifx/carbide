@@ -1,11 +1,15 @@
 apply: [ ../common.module-template.yaml ]
+
 product:
   type: lib
   platforms: [ jvm, macosArm64 ]
 
 dependencies:
+  - ../ifx.protocol.contract
   - ../ifx.service
-  - ../ifx.context
 
-dependencies@jvm:
-  - ../ifx.logging
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.rpc.ksp

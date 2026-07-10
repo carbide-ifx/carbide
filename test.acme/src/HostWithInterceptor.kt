@@ -4,16 +4,18 @@ import ifx.protocol.contract.interceptors.Encryption
 import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.proxy.contract.create
 import ifx.proxy.factory.ProxyFactory
+import ifx.protocol.contract.ServiceRegistry
 import ifx.service.IService
 
 interface IEchoServie : IService {
-    fun echo(message: String) = "Echo: $message"
+    suspend fun echo(message: String) = "Echo: $message"
 }
 
 
 fun main() {
     val interceptors = listOf(LoggingInterceptor("test"), Encryption )
-    val host = Host(0, "localhost")
+    val registry = ServiceRegistry(listOf(IEchoServieDescriptor))
+    val host = Host(0, registry, "localhost")
         .addInterceptors(interceptors)
         .registerService<IEchoServie> { object : IEchoServie {} }
         .open()
@@ -21,7 +23,7 @@ fun main() {
     val pf = ProxyFactory.forHost(host).addInterceptors(interceptors)
     val proxy = pf.create<IEchoServie>()
 
-   println( proxy.echo("hello"))
+   println( kotlinx.coroutines.runBlocking { proxy.echo("hello") })
 }
 
 //})

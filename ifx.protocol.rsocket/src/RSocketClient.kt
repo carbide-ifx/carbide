@@ -2,7 +2,6 @@ package ifx.protocol.rsocket
 
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.Message
-import ifx.service.IService
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.WebSockets
 import io.rsocket.kotlin.RSocket
@@ -20,7 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
-class RSocketClient<T : IService>(url: String) : IBinding {
+class RSocketClient(url: String) : IBinding {
     val httpClient = HttpClient {
         this.install(WebSockets) // rsocket requires websockets plugin installed
         this.install(RSocketSupport) {
@@ -56,4 +55,3 @@ class RSocketClient<T : IService>(url: String) : IBinding {
         rsocketClient.await().requestStream(message.toRequestPayload(operation)).map { it.toMessage() }
 
 }
-

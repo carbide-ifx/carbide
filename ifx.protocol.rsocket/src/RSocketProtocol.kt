@@ -4,8 +4,6 @@ import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IProtocol
 import ifx.protocol.contract.ProtocolException
-import ifx.service.IService
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -20,11 +18,9 @@ import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import java.net.ServerSocket
-import kotlin.reflect.KClass
 
 class RSocketProtocol(val portToUse: Int = 0) : IProtocol {
     val port: Int = if(portToUse == 0) findFreePort() else portToUse
-    private val log = KotlinLogging.logger { }
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
     private val server = embeddedServer(CIO, port) {
         install(WebSockets)
@@ -41,19 +37,18 @@ class RSocketProtocol(val portToUse: Int = 0) : IProtocol {
 
     override fun open(): IProtocol = apply {
         server.start()
-        log.info { "RSocket Protocol opened, listening on $port" }
     }
 
     override fun close(): IProtocol = apply { server.stop() }
 
 
-    override fun <T : IService> createClientBinding(cls: KClass<T>): IBinding = try {
-        RSocketClient<T>("ws://localhost:$port/${this.getAddress(cls)}")
+    override fun createClientBinding(address: String): IBinding = try {
+        RSocketClient("ws://localhost:$port/$address")
     } catch (e: Throwable) {
-        throw ProtocolException(e) { "Failed to create client for $cls: ${e.message}" }
+        throw ProtocolException(e) { "Failed to create client for $address: ${e.message}" }
     }
 
-    override fun <T : IService> expose(endpoint: Endpoint<T>): IProtocol = apply {
+    override fun expose(endpoint: Endpoint): IProtocol = apply {
         acceptors[endpoint.address] = ConnectionAcceptor {
             RSocketRequestHandler {
                 fireAndForget { payload ->
@@ -72,15 +67,7 @@ class RSocketProtocol(val portToUse: Int = 0) : IProtocol {
 
     }
 
-    override fun <T : IService> getAddress(contract: KClass<T>): String = Companion.getAddress(contract)
-
     companion object {
         fun findFreePort(): Int = ServerSocket(0).use { it.localPort }
-
-        fun <T : IService> getAddress(contract: KClass<T>): String = contract.simpleName
-            ?: throw IllegalArgumentException("Service class $contract must have a simple name")
-
-        inline fun <reified T : IService> createEndpoint(binding: IBinding): Endpoint<T> =
-            Endpoint(getAddress(T::class), binding, T::class)
     }
 }
