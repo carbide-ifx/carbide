@@ -1,0 +1,18 @@
+apply: [ ../common.module-template.yaml ]
+
+product:
+  type: macos/app
+  platforms: [ macosArm64 ]
+
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.rpc.ksp
+
+dependencies:
+  - ../ifx.host.rsocket
+  - ../ifx.proxy-factory.rsocket
+  - ../ifx.protocol.contract
+  - ../ifx.service
+  - ../utility.stdlib

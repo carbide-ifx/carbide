@@ -1,17 +1,10 @@
 apply: [ ../common.module-template.yaml ]
 product:
   type: lib
-  platforms: [jvm]
+  platforms: [ jvm, macosArm64 ]
 
 
 dependencies:
-  - org.apache.logging.log4j:log4j-api:2.23.1
-  - org.apache.logging.log4j:log4j-core:2.23.1
-  - org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1
-  - org.apache.logging.log4j:log4j-layout-template-json:2.23.1
-  - org.slf4j:jul-to-slf4j:2.0.10
-  - org.slf4j:slf4j-api:2.0.16: exported
-  - io.github.oshai:kotlin-logging-jvm:7.0.7: exported
-test-dependencies:
-  - ../ifx.service
+  - co.touchlab:kermit:2.1.0
+
 

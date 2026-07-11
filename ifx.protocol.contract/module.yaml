@@ -6,6 +6,4 @@ product:
 dependencies:
   - ../ifx.service
   - ../ifx.context
-
-dependencies@jvm:
   - ../ifx.logging

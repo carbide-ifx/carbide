@@ -9,14 +9,6 @@ import ifx.protocol.contract.ServiceRegistry
 import ifx.service.IService
 import kotlin.reflect.KClass
 
-/**
- * Todo:
- *  - Leverage Dependency Injection (DI) Container for service resolution / late binding.
- *  - Incorporate protocol into endpoint address(instead of just path), to resolve protocol for each endpoint.
- *  - Some things are hardcoded here. Turn this into HostBase, and Leave `Host` to be implenented in each
- *      project-specific ifx. (E.g. Sonat-Conventions). To facilitate earlier release, this is left for later.
- */
-
 class HostBase(
     override val protocol: IProtocol,
     override val registry: ServiceRegistry,

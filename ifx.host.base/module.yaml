@@ -11,4 +11,4 @@ dependencies:
 
 test-dependencies@jvm:
   - ../ifx.proxy-factory.base
-  - ../ifx.test
+  - ../ifx.testing

@@ -2,7 +2,7 @@ apply: [ ../common.module-template.yaml ]
 
 product:
   type: lib
-  platforms: [jvm]
+  platforms: [jvm, macosArm64]
 
 dependencies:
   - "org.jetbrains.kotlinx:kotlinx-datetime:0.7.1": exported

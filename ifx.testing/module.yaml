@@ -1,0 +1,9 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [jvm, macosArm64]
+
+dependencies:
+  - ../ifx.service: exported
+  - de.infix.testBalloon:testBalloon-framework-core:1.0.1-K2.4.0
+  - de.infix.testBalloon:testBalloon-integration-kotest-assertions:1.0.1-K2.4.0

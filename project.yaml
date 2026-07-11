@@ -9,11 +9,9 @@ modules:
   - ifx.proxy-factory.base
   - ifx.proxy-factory.contract
   - ifx.proxy-factory.rsocket
-  - ifx.rpc.fixture
   - ifx.rpc.ksp
   - ifx.service
-  - ifx.sonat-convention
-  - ifx.test
-  - test.acme
+  - ifx.testing
+  - test.test-system
   - utility.stdlib
 #  - utility.db   # built using gradle until compiler plugin support fixed in amper

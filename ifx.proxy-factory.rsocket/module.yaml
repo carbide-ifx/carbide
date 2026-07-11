@@ -1,12 +1,9 @@
 apply: [ ../common.module-template.yaml ]
 product:
   type: lib
-  platforms: [ jvm ]
+  platforms: [ jvm, macosArm64 ]
 
 dependencies:
-  - ../ifx.sonat-convention
-  - ../ifx.service
-  - ../ifx.context
   - ../ifx.host.contract
   - ../ifx.proxy-factory.contract: exported
   - ../ifx.proxy-factory.base: exported

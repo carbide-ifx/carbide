@@ -16,11 +16,9 @@ import io.rsocket.kotlin.RSocketRequestHandler
 import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
-import java.net.ServerSocket
 
-class RSocketProtocol(val portToUse: Int = 0) : IProtocol {
-    val port: Int = if(portToUse == 0) findFreePort() else portToUse
+class RSocketProtocol(val port: Int = 0) : IProtocol {
+
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
     private val server = embeddedServer(CIO, port) {
         install(WebSockets)
@@ -65,9 +63,5 @@ class RSocketProtocol(val portToUse: Int = 0) : IProtocol {
             }
         }
 
-    }
-
-    companion object {
-        fun findFreePort(): Int = ServerSocket(0).use { it.localPort }
     }
 }
