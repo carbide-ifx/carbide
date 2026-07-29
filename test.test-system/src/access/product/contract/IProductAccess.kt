@@ -2,6 +2,7 @@ package access.product.contract
 
 import ifx.service.IService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
 
 
 interface IProductAccess: IService {
@@ -9,6 +10,7 @@ interface IProductAccess: IService {
     suspend fun store(product: Product)
 }
 
+@Serializable
 data class ProductCriteria(
     val ids: Collection<String>? = null,
 ) {

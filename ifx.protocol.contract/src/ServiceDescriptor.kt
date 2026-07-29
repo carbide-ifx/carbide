@@ -10,12 +10,3 @@ interface ServiceDescriptor<T : IService> {
     fun createClient(binding: IBinding): T
     fun bind(instance: T): IBinding
 }
-
-class ServiceRegistry(descriptors: Iterable<ServiceDescriptor<out IService>>) {
-    private val descriptors = descriptors.associateBy { it.contract }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T : IService> descriptor(contract: KClass<T>): ServiceDescriptor<T> =
-        descriptors[contract] as? ServiceDescriptor<T>
-            ?: error("No generated service descriptor registered for ${contract.simpleName}")
-}

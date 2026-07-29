@@ -23,5 +23,5 @@ repositories:
       passwordKey: github.token
   - id: local
     publish: true
-    resolve: false
+    resolve: true
     url: mavenLocal

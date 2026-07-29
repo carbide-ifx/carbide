@@ -1,8 +1,8 @@
 apply: [ ../common.module-template.yaml ]
 
 product:
-  type: macos/app
-  platforms: [ macosArm64 ]
+  type: lib
+  platforms: [ jvm, macosArm64 ]
 
 settings:
   kotlin:
@@ -14,8 +14,7 @@ settings:
         dependency: sonat:ifx-rpc-compiler-plugin:0.0.6
 
 dependencies:
-  - ../ifx.host.rsocket
-  - ../ifx.proxy-factory.rsocket
+  - ../ifx.host.base
   - ../ifx.protocol.contract
+  - ../ifx.proxy-factory.base
   - ../ifx.service
-  - ../utility.stdlib

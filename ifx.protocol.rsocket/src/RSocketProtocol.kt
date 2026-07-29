@@ -16,11 +16,12 @@ import io.rsocket.kotlin.RSocketRequestHandler
 import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 
-class RSocketProtocol(val port: Int = 0) : IProtocol {
+class RSocketProtocol(private val requestedPort: Int = 0) : IProtocol {
 
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
-    private val server = embeddedServer(CIO, port) {
+    private val server = embeddedServer(CIO, requestedPort) {
         install(WebSockets)
         install(RSocketSupport)
         routing {
@@ -32,9 +33,14 @@ class RSocketProtocol(val port: Int = 0) : IProtocol {
             }
         }
     }
+    var port: Int = requestedPort
+        private set
 
     override fun open(): IProtocol = apply {
         server.start()
+        port = runBlocking {
+            server.engine.resolvedConnectors().single().port
+        }
     }
 
     override fun close(): IProtocol = apply { server.stop() }

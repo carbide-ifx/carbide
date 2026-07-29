@@ -1,0 +1,20 @@
+product: jvm/lib
+layout: maven-like
+
+repositories:
+  - id: local
+    url: mavenLocal
+    resolve: false
+    publish: true
+
+settings:
+  kotlin:
+    version: 2.4.10
+  publishing:
+    enabled: true
+    group: sonat
+    version: 0.0.6
+    artifactId: ifx-rpc-compiler-plugin
+
+dependencies:
+  - org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10: compile-only

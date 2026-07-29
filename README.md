@@ -1,5 +1,51 @@
 
 # iFX.kotlin
+
+## RPC service contracts
+
+An RPC service is just an interface extending `IService` and its implementation:
+
+```kotlin
+interface AwesomeService : IService {
+    suspend fun awesome(request: AwesomeRequest): AwesomeResponse
+}
+
+class AwesomeServiceImpl : AwesomeService {
+    override suspend fun awesome(request: AwesomeRequest): AwesomeResponse = TODO()
+}
+
+host.registerService<AwesomeService> {
+    AwesomeServiceImpl()
+}
+
+val client = proxyFactory.create<AwesomeService>()
+```
+
+There is no descriptor registry and no service annotation. The KSP processor generates
+the descriptor, and the compiler plugin associates the service contract with it on
+Kotlin/Native. JVM resolves the same generated descriptor by convention.
+
+Modules declaring service contracts need both integrations:
+
+```yaml
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.rpc.ksp
+    compilerPlugins:
+      - id: ifx.rpc.compiler
+        dependency: sonat:ifx-rpc-compiler-plugin:0.0.6
+```
+
+Amper consumes compiler plugins as Maven artifacts, so publish the compiler-plugin
+module locally before building modules that use it:
+
+```shell
+./kotlin publish local -m ifx.rpc.compiler-plugin
+./kotlin build
+```
+
 - 
 - ifx.Kotlin
   - Build conventions / templates
