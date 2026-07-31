@@ -17,6 +17,7 @@ dependencies:
   - ../ifx.host.rsocket
   - ../ifx.proxy-factory.rsocket
   - ../ifx.protocol.contract
+  - ../ifx.telemetry.otel
   - ../ifx.logging
   - ../ifx.service
   - ../utility.stdlib

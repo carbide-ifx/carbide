@@ -1,0 +1,18 @@
+apply: [ ../common.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [ jvm, macosArm64 ]
+
+dependencies:
+  - ../ifx.protocol.contract: exported
+  - io.ktor:ktor-client-core:3.1.1: exported
+
+dependencies@jvm:
+  - io.ktor:ktor-client-cio:3.1.1
+
+dependencies@macosArm64:
+  - io.ktor:ktor-client-darwin:3.1.1
+
+test-dependencies:
+  - io.ktor:ktor-client-mock:3.1.1

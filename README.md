@@ -59,6 +59,39 @@ server binding. This remains active while request streams are collected. Generic
 JSON headers can be inspected or changed with `Message.headers()` and
 `Message.withHeader(...)`.
 
+## OpenTelemetry traces
+
+`ifx.telemetry.otel` provides tracing without depending on a platform-specific
+OpenTelemetry SDK. It propagates W3C `traceparent`/`tracestate` headers and exports
+OTLP/HTTP JSON through Ktor on JVM and macOS.
+
+```kotlin
+val exporter = OtlpHttpSpanExporter(
+    endpoint = "http://localhost:4318/v1/traces",
+)
+val telemetry = OpenTelemetryInterceptor(
+    exporter = exporter,
+    serviceName = "sales-manager",
+)
+val interceptors = listOf(
+    LoggingInterceptor(),
+    telemetry,
+    Encryption,
+)
+
+host.addInterceptors(interceptors)
+proxyFactory.addInterceptors(interceptors)
+```
+
+Place telemetry before interceptors that encode or encrypt message headers. The
+server reverses the list, so the same ordering decrypts `traceparent` before the
+telemetry layer extracts it.
+
+The HTTP exporter sends each completed span immediately and never fails the RPC
+when export fails. Supply `onExportFailure` to the interceptor for diagnostics,
+or implement `SpanExporter` to add batching and retry policy. Call
+`OtlpHttpSpanExporter.close()` when the application shuts down.
+
 There is no descriptor registry and no service annotation. The KSP processor generates
 the descriptor, and the compiler plugin associates the service contract with it on
 Kotlin/Native. JVM resolves the same generated descriptor by convention.
