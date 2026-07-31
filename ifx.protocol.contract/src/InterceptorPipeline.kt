@@ -56,6 +56,7 @@ sealed class InterceptorPipeline protected constructor(
 
 /** Client calls enter interceptors in registration order. */
 class ClientInterceptorPipeline(
+    private val service: String,
     interceptors: List<IInterceptor> = emptyList(),
     nextBinding: IBinding,
 ) : InterceptorPipeline(listOf(ContextPropagationInterceptor) + interceptors, nextBinding) {
@@ -63,7 +64,7 @@ class ClientInterceptorPipeline(
         interactionType: InteractionType,
         operation: String,
         message: Message,
-    ): ClientCall = ClientCall(interactionType, operation, message)
+    ): ClientCall = ClientCall(service, interactionType, operation, message)
 }
 
 /**
@@ -71,6 +72,7 @@ class ClientInterceptorPipeline(
  * shared client/server interceptor list symmetrical across the transport.
  */
 class ServerInterceptorPipeline(
+    private val service: String,
     interceptors: List<IInterceptor> = emptyList(),
     nextBinding: IBinding,
 ) : InterceptorPipeline(interceptors.asReversed() + ContextPropagationInterceptor, nextBinding) {
@@ -78,7 +80,7 @@ class ServerInterceptorPipeline(
         interactionType: InteractionType,
         operation: String,
         message: Message,
-    ): ServerCall = ServerCall(interactionType, operation, message)
+    ): ServerCall = ServerCall(service, interactionType, operation, message)
 }
 
 /**

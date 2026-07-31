@@ -9,6 +9,8 @@ enum class InteractionType {
 }
 
 sealed interface InterceptorCall {
+    /** Fully qualified service descriptor address. */
+    val service: String
     val interactionType: InteractionType
     val operation: String
     val message: Message
@@ -17,6 +19,7 @@ sealed interface InterceptorCall {
 }
 
 data class ClientCall(
+    override val service: String,
     override val interactionType: InteractionType,
     override val operation: String,
     override val message: Message,
@@ -25,6 +28,7 @@ data class ClientCall(
 }
 
 data class ServerCall(
+    override val service: String,
     override val interactionType: InteractionType,
     override val operation: String,
     override val message: Message,

@@ -21,7 +21,7 @@ class HostBase(
         val descriptor = serviceDescriptorOf(contract)
         val serviceBinding = descriptor.bind(instance)
         val interceptorBinding: IBinding =
-            ServerInterceptorPipeline(interceptors, serviceBinding)
+            ServerInterceptorPipeline(descriptor.address, interceptors, serviceBinding)
         val endpoint = Endpoint(descriptor.address, interceptorBinding)
         endpoints.add(endpoint)
     }

@@ -19,6 +19,7 @@ class ProxyFactoryBase(
     override fun <T : IService> create(contract: KClass<T>): T {
         val descriptor = serviceDescriptorOf(contract)
         val interceptorPipeline = ClientInterceptorPipeline(
+            descriptor.address,
             interceptors,
             protocol.createClientBinding(descriptor.address),
         )

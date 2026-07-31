@@ -16,6 +16,7 @@ class InterceptorPipelineTest {
     fun `client interceptors surround the complete stream in registration order`() = runBlocking {
         val events = mutableListOf<String>()
         val pipeline = ClientInterceptorPipeline(
+            service = "test.Service",
             interceptors = listOf(RecordingInterceptor("first", events), RecordingInterceptor("second", events)),
             nextBinding = RecordingBinding(events),
         )
@@ -40,6 +41,7 @@ class InterceptorPipelineTest {
     fun `server interceptors mirror client order`() = runBlocking {
         val events = mutableListOf<String>()
         val pipeline = ServerInterceptorPipeline(
+            service = "test.Service",
             interceptors = listOf(RecordingInterceptor("first", events), RecordingInterceptor("second", events)),
             nextBinding = RecordingBinding(events),
         )
@@ -60,6 +62,30 @@ class InterceptorPipelineTest {
     }
 
     @Test
+    fun `pipeline exposes the qualified service name to interceptors`() = runBlocking {
+        var observedService: String? = null
+        val inspector = IInterceptor { call, next ->
+            flow {
+                observedService = call.service
+                emitAll(next(call))
+            }
+        }
+        val binding = object : EmptyBinding() {
+            override suspend fun requestResponse(operation: String, message: Message): Message =
+                Message("{}", "response")
+        }
+        val pipeline = ClientInterceptorPipeline(
+            service = "manager.sales.contract.ISalesManager",
+            interceptors = listOf(inspector),
+            nextBinding = binding,
+        )
+
+        pipeline.requestResponse("listProducts()", Message("{}", "request"))
+
+        assertEquals("manager.sales.contract.ISalesManager", observedService)
+    }
+
+    @Test
     fun `client context is injected into headers and coroutine context`() = runBlocking {
         val expected = Context(traceId = "client-trace")
         val observed = mutableListOf<Pair<String, String>>()
@@ -75,7 +101,7 @@ class InterceptorPipelineTest {
                 return Message("{}", "response")
             }
         }
-        val pipeline = ClientInterceptorPipeline(listOf(inspector), binding)
+        val pipeline = ClientInterceptorPipeline("test.Service", listOf(inspector), binding)
 
         withContext(expected) {
             pipeline.requestResponse("response", Message("{}", "request"))
@@ -94,7 +120,7 @@ class InterceptorPipelineTest {
                 emit(Message("{}", "response"))
             }
         }
-        val pipeline = ServerInterceptorPipeline(nextBinding = binding)
+        val pipeline = ServerInterceptorPipeline("test.Service", nextBinding = binding)
 
         pipeline.requestStream("stream", Message("{}", "request").withContext(expected)).toList()
 

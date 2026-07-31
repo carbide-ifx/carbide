@@ -15,13 +15,14 @@ class LoggingInterceptor : IInterceptor {
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
         val (requestDirection, responseDirection) = when (call) {
-            is ClientCall -> "Client ->" to "Client <-"
-            is ServerCall -> "-> Server" to "<- Server send"
+            is ClientCall -> "Proxy -> " to "Proxy <- "
+            is ServerCall -> "-> " to "<- "
         }
+        val callName = "${call.service.substringAfterLast('.')}.${call.operation}"
 
-        log.info { "$requestDirection: ${call.operation}: ${call.message}" }
+        log.info { "$requestDirection $callName: ${call.message}" }
         next(call).collect { message ->
-            log.info { "$responseDirection: ${call.operation}: $message" }
+            log.info { "$responseDirection $callName: $message" }
             emit(message)
         }
     }
