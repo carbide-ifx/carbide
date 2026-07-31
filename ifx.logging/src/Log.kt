@@ -1,12 +1,10 @@
 package ifx.logging
 
 import co.touchlab.kermit.CommonWriter
-import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.Severity
-import co.touchlab.kermit.mutableLoggerConfigInit
+import co.touchlab.kermit.loggerConfigInit
 
-private val logConfig = mutableLoggerConfigInit(CommonWriter())
+private val logConfig = loggerConfigInit(CommonWriter())
 
 open class Log(open val tag: String = "") {
     fun withTag(tag: String): Log = Log(tag)
@@ -35,23 +33,6 @@ open class Log(open val tag: String = "") {
 
         fun setTag(tag: String) {
             Logger.setTag(tag)
-        }
-
-        fun setMinSeverity(severity: Severity) {
-            logConfig.minSeverity = severity
-        }
-
-        fun setLogWriters(vararg logWriters: LogWriter) {
-            logConfig.logWriterList = logWriters.toList()
-        }
-
-        fun addLogWriter(vararg logWriters: LogWriter) {
-            logConfig.logWriterList = logWriters.toList() + logConfig.logWriterList
-        }
-
-        fun resetConfiguration() {
-            logConfig.minSeverity = Severity.Verbose
-            logConfig.logWriterList = listOf(CommonWriter())
         }
     }
 }
