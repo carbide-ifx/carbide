@@ -1,74 +1,101 @@
 package ifx.protocol.contract
 
+import ifx.context.Context
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.single
 
-
-class ServerInterceptorPipeline(
-    val interceptors: List<IInterceptor> = emptyList(),
-    val nextBinding: IBinding,
+/** Executes pre-ordered interceptor onion layers around [nextBinding]. */
+sealed class InterceptorPipeline protected constructor(
+    interceptors: List<IInterceptor>,
+    private val nextBinding: IBinding,
 ) : IBinding {
-    private val reversedInterceptors = interceptors.reversed()
-
-    override suspend fun fireAndForget(operation: String, message: Message) = nextBinding
-        .fireAndForget(operation, reversedInterceptors.fold(message) { acc, interceptor ->
-            interceptor.onServerReceive(operation, acc)
-        })
-
-    override suspend fun requestResponse(operation: String, message: Message): Message {
-        val request = reversedInterceptors.fold(message) { acc, interceptor ->
-            interceptor.onServerReceive(operation, acc)
+    private val chain: InterceptorChain = interceptors
+        .foldRight(InterceptorChain(::invokeBinding)) { interceptor, next ->
+            InterceptorChain { call -> interceptor.intercept(call, next) }
         }
-        val response = nextBinding.requestResponse(operation, request)
-        return interceptors.fold(response) { acc, interceptor ->
-            interceptor.onServerSend(operation, acc)
-        }
+
+    protected abstract fun createCall(
+        interactionType: InteractionType,
+        operation: String,
+        message: Message,
+    ): InterceptorCall
+
+    override suspend fun fireAndForget(operation: String, message: Message) {
+        invoke(InteractionType.FIRE_AND_FORGET, operation, message).collect()
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
-        val request = reversedInterceptors.fold(message) { acc, interceptor ->
-            interceptor.onServerReceive(operation, acc)
+    override suspend fun requestResponse(operation: String, message: Message): Message =
+        invoke(InteractionType.REQUEST_RESPONSE, operation, message).single()
+
+    override suspend fun requestStream(operation: String, message: Message): Flow<Message> =
+        invoke(InteractionType.REQUEST_STREAM, operation, message)
+
+    private fun invoke(
+        interactionType: InteractionType,
+        operation: String,
+        message: Message,
+    ): Flow<Message> = chain(createCall(interactionType, operation, message))
+
+    private fun invokeBinding(call: InterceptorCall): Flow<Message> = flow {
+        when (call.interactionType) {
+            InteractionType.FIRE_AND_FORGET ->
+                nextBinding.fireAndForget(call.operation, call.message)
+
+            InteractionType.REQUEST_RESPONSE ->
+                emit(nextBinding.requestResponse(call.operation, call.message))
+
+            InteractionType.REQUEST_STREAM ->
+                emitAll(nextBinding.requestStream(call.operation, call.message))
         }
-        return nextBinding.requestStream(operation, request)
-            .map { response ->
-                interceptors.fold(response) { acc, interceptor ->
-                    interceptor.onServerSend(operation, acc)
-                }
-            }
     }
 }
 
-
+/** Client calls enter interceptors in registration order. */
 class ClientInterceptorPipeline(
-    val interceptors: List<IInterceptor> = emptyList(),
-    val nextHandler: IBinding,
-) : IBinding {
-    private val reversedInterceptors = interceptors.reversed()
+    interceptors: List<IInterceptor> = emptyList(),
+    nextBinding: IBinding,
+) : InterceptorPipeline(listOf(ContextPropagationInterceptor) + interceptors, nextBinding) {
+    override fun createCall(
+        interactionType: InteractionType,
+        operation: String,
+        message: Message,
+    ): ClientCall = ClientCall(interactionType, operation, message)
+}
 
-    override suspend fun fireAndForget(operation: String, message: Message) = nextHandler
-        .fireAndForget(operation, interceptors.fold(message) { acc, interceptor ->
-            interceptor.onClientSend(operation, acc)
-        })
+/**
+ * Server calls enter interceptors in reverse registration order, making a
+ * shared client/server interceptor list symmetrical across the transport.
+ */
+class ServerInterceptorPipeline(
+    interceptors: List<IInterceptor> = emptyList(),
+    nextBinding: IBinding,
+) : InterceptorPipeline(interceptors.asReversed() + ContextPropagationInterceptor, nextBinding) {
+    override fun createCall(
+        interactionType: InteractionType,
+        operation: String,
+        message: Message,
+    ): ServerCall = ServerCall(interactionType, operation, message)
+}
 
-    override suspend fun requestResponse(operation: String, message: Message): Message {
-        val request = interceptors.fold(message) { acc, interceptor ->
-            interceptor.onClientSend(operation, acc)
+/**
+ * Injects the caller's Context before client interceptors and extracts it after
+ * server interceptors have decoded the incoming message.
+ */
+private object ContextPropagationInterceptor : IInterceptor {
+    override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
+        val context = when (call) {
+            is ClientCall -> Context.currentOrNull() ?: call.message.contextOrNull() ?: Context()
+            is ServerCall -> call.message.context()
         }
-        val response = nextHandler.requestResponse(operation, request)
-        return reversedInterceptors.fold(response) { acc, interceptor ->
-            interceptor.onClientReceive(operation, acc)
+        val message = when (call) {
+            is ClientCall -> call.message.withContext(context)
+            is ServerCall -> call.message
         }
-    }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
-        val request = interceptors.fold(message) { acc, interceptor ->
-            interceptor.onClientSend(operation, acc)
-        }
-        return nextHandler.requestStream(operation, request)
-            .map { response ->
-                reversedInterceptors.fold(response) { acc, interceptor ->
-                    interceptor.onClientReceive(operation, acc)
-                }
-            }
+        emitAll(next(call.withMessage(message)).flowOn(context))
     }
 }

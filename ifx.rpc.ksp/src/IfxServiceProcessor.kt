@@ -68,7 +68,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 
 public object $descriptorName : ServiceDescriptor<$contractName> {
     override val contract = $contractName::class
@@ -78,24 +77,18 @@ ${functions.joinToString("\n") { clientMethod(it) }}
     }
     override fun bind(instance: $contractName): IBinding = object : IBinding {
         override suspend fun fireAndForget(operation: String, message: Message) {
-            withContext(message.parseContext()) {
-                when (operation) {
+            when (operation) {
 ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() == "kotlin.Unit" }.joinToString("\n") { serverUnitBranch(it) }}
-                    else -> error("No fire-and-forget operation: ${'$'}operation")
-                }
+                else -> error("No fire-and-forget operation: ${'$'}operation")
             }
         }
-        override suspend fun requestResponse(operation: String, message: Message): Message = withContext(message.parseContext()) {
-            when (operation) {
+        override suspend fun requestResponse(operation: String, message: Message): Message = when (operation) {
 ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() !in setOf("kotlin.Unit", "kotlinx.coroutines.flow.Flow") }.joinToString("\n") { serverResponseBranch(it) }}
-                else -> error("No request-response operation: ${'$'}operation")
-            }
+            else -> error("No request-response operation: ${'$'}operation")
         }
-        override suspend fun requestStream(operation: String, message: Message): Flow<Message> = withContext(message.parseContext()) {
-            when (operation) {
+        override suspend fun requestStream(operation: String, message: Message): Flow<Message> = when (operation) {
 ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() == "kotlinx.coroutines.flow.Flow" }.joinToString("\n") { serverStreamBranch(it) }}
-                else -> error("No request-stream operation: ${'$'}operation")
-            }
+            else -> error("No request-stream operation: ${'$'}operation")
         }
     }
 }

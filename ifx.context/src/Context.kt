@@ -16,8 +16,14 @@ data class Context(
     override val key: CoroutineContext.Key<Context> get() = Key
 
     companion object Key : CoroutineContext.Key<Context> {
-        val HEADER_KEY = "ifx.context"
-        suspend fun get(): Context = currentCoroutineContext()[Key] ?: Context()
+        const val HEADER_KEY = "ifx.context"
+
+        suspend fun currentOrNull(): Context? = currentCoroutineContext()[Key]
+
+        suspend fun current(): Context = currentOrNull() ?: Context()
+
+        @Deprecated("Use Context.current()", ReplaceWith("Context.current()"))
+        suspend fun get(): Context = current()
     }
 }
 

@@ -1,7 +1,13 @@
 package ifx.protocol.contract.interceptors
 
+import ifx.protocol.contract.ClientCall
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.InterceptorCall
+import ifx.protocol.contract.InterceptorChain
 import ifx.protocol.contract.Message
+import ifx.protocol.contract.ServerCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Deprecated("Only use for the lulz")
 object Rot13Interceptor : IInterceptor {
@@ -18,10 +24,8 @@ object Rot13Interceptor : IInterceptor {
         body = message.body.rot13()
     )
 
-    override suspend fun onClientSend(operation: String, message: Message): Message = transform(message)
-    override suspend fun onServerReceive(operation: String, message: Message): Message = transform(message)
-    override suspend fun onServerSend(operation: String, message: Message): Message = transform(message)
-    override suspend fun onClientReceive(operation: String, message: Message): Message = transform(message)
+    override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> =
+        next(call.withMessage(transform(call.message))).map(::transform)
 }
 
 
@@ -31,9 +35,22 @@ object Encryption : IInterceptor {
     fun String.decrypt(): String = map { it - 3 }.joinToString("")
 
 
-    override suspend fun onClientSend(operation: String, message: Message): Message = Message(header = message.header.encrypt(), body = message.body.encrypt())
-    override suspend fun onServerReceive(operation: String, message: Message): Message = Message(header = message.header.decrypt(), body = message.body.decrypt())
-    override suspend fun onServerSend(operation: String, message: Message): Message = Message(header = message.header.encrypt(), body = message.body.encrypt())
-    override suspend fun onClientReceive(operation: String, message: Message): Message = Message(header = message.header.decrypt(), body = message.body.decrypt())
-}
+    private fun encrypt(message: Message): Message =
+        Message(header = message.header.encrypt(), body = message.body.encrypt())
 
+    private fun decrypt(message: Message): Message =
+        Message(header = message.header.decrypt(), body = message.body.decrypt())
+
+    override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> {
+        val request = when (call) {
+            is ClientCall -> encrypt(call.message)
+            is ServerCall -> decrypt(call.message)
+        }
+        return next(call.withMessage(request)).map { response ->
+            when (call) {
+                is ClientCall -> decrypt(response)
+                is ServerCall -> encrypt(response)
+            }
+        }
+    }
+}

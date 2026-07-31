@@ -10,7 +10,6 @@ modules:
   - ifx.proxy-factory.contract
   - ifx.proxy-factory.rsocket
   - ifx.rpc.compiler-plugin
-  - ifx.rpc.fixture
   - ifx.rpc.ksp
   - ifx.service
   - ifx.testing

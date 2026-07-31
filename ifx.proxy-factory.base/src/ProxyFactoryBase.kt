@@ -1,8 +1,8 @@
 package ifx.proxy.factory
 
-import ifx.protocol.contract.ClientInterceptorPipeline
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IProtocol
+import ifx.protocol.contract.ClientInterceptorPipeline
 import ifx.protocol.contract.serviceDescriptorOf
 import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
@@ -19,8 +19,8 @@ class ProxyFactoryBase(
     override fun <T : IService> create(contract: KClass<T>): T {
         val descriptor = serviceDescriptorOf(contract)
         val interceptorPipeline = ClientInterceptorPipeline(
-            interceptors = interceptors,
-            nextHandler = protocol.createClientBinding(descriptor.address),
+            interceptors,
+            protocol.createClientBinding(descriptor.address),
         )
         return descriptor.createClient(interceptorPipeline)
     }

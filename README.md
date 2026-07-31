@@ -21,6 +21,44 @@ host.registerService<AwesomeService> {
 val client = proxyFactory.create<AwesomeService>()
 ```
 
+## Interceptors
+
+An interceptor is one onion layer around a complete RPC invocation. The invocation
+is represented as a cold `Flow<Message>`: fire-and-forget emits nothing,
+request/response emits once, and request streams emit normally. Keeping one model
+for all three interaction types means cleanup, failures, cancellation, and future
+telemetry spans can surround the full lifetime of a stream.
+
+```kotlin
+class TimingInterceptor : IInterceptor {
+    override fun intercept(
+        call: InterceptorCall,
+        next: InterceptorChain,
+    ): Flow<Message> = flow {
+        val started = TimeSource.Monotonic.markNow()
+        try {
+            emitAll(next(call))
+        } finally {
+            println("${call.operation}: ${started.elapsedNow()}")
+        }
+    }
+}
+```
+
+Client interceptors run in registration order around the transport. Server
+interceptors run in reverse order, so using `[logging, encryption]` on both sides
+produces a symmetric onion:
+
+```text
+client logging -> client encryption -> transport -> server encryption -> server logging -> service
+```
+
+The pipeline writes the current `ifx.context.Context` to the client message header
+and installs the received header value as a coroutine-context element around the
+server binding. This remains active while request streams are collected. Generic
+JSON headers can be inspected or changed with `Message.headers()` and
+`Message.withHeader(...)`.
+
 There is no descriptor registry and no service annotation. The KSP processor generates
 the descriptor, and the compiler plugin associates the service contract with it on
 Kotlin/Native. JVM resolves the same generated descriptor by convention.
