@@ -10,19 +10,18 @@ import ifx.protocol.contract.ServerCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class LoggingInterceptor(val prefix: String) : IInterceptor {
+class LoggingInterceptor : IInterceptor {
     val log = Log("LoggingInterceptor")
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
         val (requestDirection, responseDirection) = when (call) {
-            is ClientCall -> "Client send" to "Client receive"
-            is ServerCall -> "Server receive" to "Server send"
+            is ClientCall -> "Client ->" to "Client <-"
+            is ServerCall -> "-> Server" to "<- Server send"
         }
 
-        log.info { "$requestDirection: $prefix ${call.operation}: ${call.message}" }
+        log.info { "$requestDirection: ${call.operation}: ${call.message}" }
         next(call).collect { message ->
-            log.info { "HELLO SIR" }
-            log.info { "$responseDirection: $prefix ${call.operation}: $message" }
+            log.info { "$responseDirection: ${call.operation}: $message" }
             emit(message)
         }
     }
