@@ -15,5 +15,5 @@ modules:
   - ifx.telemetry.otel
   - ifx.testing
   - test.test-system
+  - utility.db
   - utility.stdlib
-#  - utility.db   # built using gradle until compiler plugin support fixed in amper
