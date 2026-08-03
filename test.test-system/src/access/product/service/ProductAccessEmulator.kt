@@ -6,17 +6,16 @@ import access.product.contract.ProductCriteria
 import ifx.stdlib.filterKeysIfPresent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 class ProductAccessEmulator(val db: MutableMap<String, Product> = mutableMapOf()) : IProductAccess {
     override suspend fun store(product: Product) = db.set(product.id, product)
-    override fun filter(criteria: ProductCriteria): Flow<Product> = db
+    override suspend fun filter(criteria: ProductCriteria): List<Product> = db
         .filterKeysIfPresent(criteria.ids){ key, criteria -> key in criteria}
         .values
-        .asFlow()
+        .toList()
 
     override fun generateRandowProduct(): Flow<Product> = flow {
         repeat(50) { index ->

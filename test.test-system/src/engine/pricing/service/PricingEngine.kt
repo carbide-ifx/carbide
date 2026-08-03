@@ -7,7 +7,6 @@ import engine.pricing.contract.IPricingEngine
 import ifx.proxy.contract.IProxyFactory
 import ifx.proxy.contract.create
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.singleOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 class PricingEngine(val proxyFactory: IProxyFactory) : IPricingEngine {
