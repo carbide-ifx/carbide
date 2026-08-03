@@ -137,10 +137,17 @@ settings:
     ksp:
       processors:
         - ../ifx.rpc.ksp
+        - ../ifx.rpc.typescript.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
         dependency: sonat:ifx-rpc-compiler-plugin:0.0.6
 ```
+
+The optional `ifx.rpc.typescript.ksp` processor generates a TypeScript service
+interface, operation request/response aliases, and all reachable serializable
+types. User-defined request and response types must use `@Serializable` and
+custom or contextual serializers are rejected because their wire shape cannot
+be inferred from KSP symbols.
 
 Amper consumes compiler plugins as Maven artifacts, so publish the compiler-plugin
 module locally before building modules that use it:

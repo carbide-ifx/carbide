@@ -9,6 +9,7 @@ settings:
     ksp:
       processors:
         - ../ifx.rpc.ksp
+        - ../ifx.rpc.typescript.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
         dependency: sonat:ifx-rpc-compiler-plugin:0.0.6

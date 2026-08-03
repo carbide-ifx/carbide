@@ -1,5 +1,7 @@
 package ifx.service
 
+import kotlinx.serialization.Serializable
+
 interface IService {
     suspend fun status() = Status(isReady(), isLive())
 
@@ -11,4 +13,5 @@ interface IService {
 
 }
 
+@Serializable
 data class Status(val ready: Boolean, val live: Boolean)

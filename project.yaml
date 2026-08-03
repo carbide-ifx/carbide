@@ -11,6 +11,7 @@ modules:
   - ifx.proxy-factory.rsocket
   - ifx.rpc.compiler-plugin
   - ifx.rpc.ksp
+  - ifx.rpc.typescript.ksp
   - ifx.service
   - ifx.telemetry.otel
   - ifx.testing
