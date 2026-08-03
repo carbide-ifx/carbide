@@ -18,36 +18,65 @@ const styles = `
   .brand { display: flex; align-items: center; gap: 13px; font-weight: 720; letter-spacing: -.02em; }
   .mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #8cc09d; color: #bde6c9; font-size: 12px; font-family: ui-monospace, monospace; }
   .host-name { color: #b9c8bf; font-size: 13px; }
-  main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 54px 0 80px; }
+  main { width: min(1320px, calc(100% - 40px)); margin: 0 auto; padding: 54px 0 80px; }
   .eyebrow { color: #568164; font: 700 11px/1.2 ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
   h1 { margin: 9px 0 12px; font-size: clamp(34px, 5vw, 58px); line-height: .98; letter-spacing: -.055em; font-weight: 650; }
   .lede { max-width: 660px; margin: 0; color: #5f6c64; font-size: 17px; line-height: 1.55; }
-  .catalog { margin-top: 42px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-  .service-card { position: relative; display: block; min-height: 190px; padding: 25px; color: inherit; text-decoration: none; background: #fff; border: 1px solid #d6ddd7; box-shadow: 0 8px 28px rgba(23, 41, 31, .04); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
-  .service-card:hover, .service-card:focus-visible { transform: translateY(-3px); border-color: #6d9b79; box-shadow: 0 14px 34px rgba(23, 41, 31, .09); outline: none; }
+  .architecture { display: grid; grid-template-columns: minmax(0, 1fr) 230px; grid-template-areas: "clients clients" "business utilities" "access utilities" "resources resources"; margin-top: 46px; border: 1px solid #cfd5d0; background: #fff; box-shadow: 0 10px 34px rgba(23, 41, 31, .04); }
+  .architecture-layer { display: grid; grid-template-columns: 150px minmax(0, 1fr); min-height: 176px; }
+  .client-layer { grid-area: clients; min-height: 138px; border-bottom: 1px dashed #89928c; }
+  .business-layer { grid-area: business; border-bottom: 1px dashed #89928c; }
+  .access-layer { grid-area: access; }
+  .resources-layer { grid-area: resources; min-height: 166px; border-top: 1px dashed #89928c; }
+  .unclassified-layer { grid-column: 1 / -1; border-top: 1px dashed #89928c; }
+  .layer-label { display: flex; align-items: center; padding: 28px 26px; font-size: 17px; font-weight: 760; line-height: 1.12; letter-spacing: -.02em; }
+  .layer-content { display: grid; align-content: center; gap: 18px; padding: 28px 32px; min-width: 0; }
+  .service-row { display: flex; flex-wrap: wrap; gap: 16px; }
+  .layer-placeholder { justify-self: center; align-self: center; color: #929b94; font-size: 15px; text-align: center; }
+  .utilities-layer { grid-area: utilities; display: flex; flex-direction: column; min-width: 0; padding: 26px 22px; border-left: 1px dashed #89928c; }
+  .utilities-label { margin-bottom: 22px; font-size: 17px; font-weight: 760; letter-spacing: -.02em; text-align: center; }
+  .utilities-content { display: grid; place-items: center; gap: 14px; flex: 1; }
+  .service-card { position: relative; display: grid; place-items: center; width: 218px; min-height: 104px; padding: 16px; color: #1c211e; text-decoration: none; border: 1px solid #353a37; border-radius: 6px; box-shadow: 0 2px 0 rgba(23, 41, 31, .09); transition: transform .16s ease, box-shadow .16s ease, filter .16s ease; }
+  .service-card.manager { background: #ffdc73; }
+  .service-card.engine { background: #ff9635; }
+  .service-card.access { background: #e3e4e3; }
+  .service-card.unclassified { background: #dec6e8; }
+  .service-card:hover, .service-card:focus-visible { transform: translateY(-3px); box-shadow: 0 7px 18px rgba(23, 41, 31, .16); filter: saturate(1.05); outline: none; }
   .stereotype { color: #6d7a72; font: 11px ui-monospace, monospace; }
-  .service-status { position: absolute; top: 20px; right: 20px; display: inline-flex; align-items: center; gap: 8px; padding: 5px 9px; border: 1px solid #d1d9d3; border-radius: 999px; background: #f5f7f4; font-size: 10px; font-weight: 750; letter-spacing: .035em; }
-  .service-status-part { display: inline-flex; align-items: center; gap: 5px; color: #6b776f; white-space: nowrap; }
-  .service-status-part + .service-status-part { padding-left: 8px; border-left: 1px solid #d8dfda; }
-  .service-status-part::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .service-status-part.positive { color: #2d7040; }
-  .service-status-part.negative { color: #a04735; }
-  .service-card h2 { margin: 28px 0 7px; font-size: 22px; letter-spacing: -.025em; }
+  .service-status { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 5px; border: 1px solid rgba(53, 58, 55, .24); border-radius: 999px; background: rgba(255, 255, 255, .72); color: #6b776f; font-size: 8px; font-weight: 750; letter-spacing: .02em; }
+  .service-status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .service-status.ready { color: #2d7040; }
+  .service-status.starting { color: #8a6613; }
+  .service-status.unavailable { color: #a04735; }
+  .service-card h2 { margin: 0; font-size: 17px; line-height: 1.08; letter-spacing: -.025em; text-align: center; }
   .address { overflow-wrap: anywhere; color: #718078; font: 12px/1.5 ui-monospace, monospace; }
-  .operation-count { position: absolute; left: 25px; bottom: 22px; color: #3f6e4d; font-size: 12px; font-weight: 700; }
-  .arrow { position: absolute; right: 24px; bottom: 20px; color: #3f6e4d; font-size: 22px; }
   .empty { margin-top: 42px; padding: 28px; background: #fff; border: 1px solid #d6ddd7; color: #68766d; }
   .back { display: inline-flex; gap: 8px; align-items: center; color: #426d4d; text-decoration: none; font-size: 13px; font-weight: 700; }
-  .service-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-top: 30px; padding-bottom: 30px; border-bottom: 1px solid #d4dbd5; }
+  .service-page.manager { --service-accent: #d5a619; --service-tint: #fff1b8; }
+  .service-page.engine { --service-accent: #e97014; --service-tint: #ffe0bf; }
+  .service-page.access { --service-accent: #858b87; --service-tint: #eceeed; }
+  .service-page.unclassified { --service-accent: #9b68aa; --service-tint: #f0e2f4; }
+  .service-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-top: 30px; padding: 30px 32px; border: 1px solid #4c524e; border-top: 7px solid var(--service-accent); background: var(--service-tint); }
   .service-head h1 { font-size: clamp(34px, 4vw, 52px); }
   .service-meta { max-width: 420px; text-align: right; }
   .service-meta .address { display: block; margin-top: 6px; }
-  .operations { display: grid; gap: 18px; margin-top: 28px; }
-  .operation { background: #fff; border: 1px solid #d5ddd7; }
-  .operation-head { display: flex; align-items: center; gap: 13px; padding: 20px 24px; border-bottom: 1px solid #e2e7e3; }
-  .verb { padding: 6px 9px; background: #e9f2eb; color: #315f3e; font: 700 10px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
-  .operation h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+  .operations-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-top: 42px; }
+  .operations-intro h2 { margin: 7px 0 0; font-size: 25px; letter-spacing: -.035em; }
+  .operations-intro p { margin: 0; color: #727e76; font-size: 13px; }
+  .operations { display: grid; gap: 10px; margin-top: 17px; }
+  .operation { overflow: hidden; background: #fff; border: 1px solid #cfd7d1; }
+  .operation[open] { border-color: #aeb9b1; box-shadow: 0 8px 24px rgba(23, 41, 31, .06); }
+  .operation-head { display: flex; align-items: center; gap: 13px; padding: 17px 20px; cursor: pointer; list-style: none; user-select: none; }
+  .operation-head::-webkit-details-marker { display: none; }
+  .operation[open] > .operation-head { border-bottom: 1px solid #e2e7e3; }
+  .operation-head:hover { background: #fafbf9; }
+  .operation-head:focus-visible { outline: 3px solid color-mix(in srgb, var(--service-accent) 28%, transparent); outline-offset: -3px; }
+  .verb { padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--service-accent) 45%, transparent); background: var(--service-tint); color: #39433c; font: 700 9px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+  .operation-name { font-size: 17px; font-weight: 720; letter-spacing: -.02em; }
   .signature { margin-left: auto; color: #7a877f; font: 11px ui-monospace, monospace; }
+  .operation-toggle { display: grid; place-items: center; width: 23px; height: 23px; margin-left: 4px; border: 1px solid #c9d1cb; border-radius: 50%; color: #68746c; font-size: 15px; line-height: 1; }
+  .operation-toggle::before { content: "+"; }
+  .operation[open] .operation-toggle::before { content: "−"; }
   .operation-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .85fr); min-height: 250px; }
   .request, .response { padding: 24px; min-width: 0; }
   .response { background: #17231c; color: #dce9df; }
@@ -75,7 +104,7 @@ const styles = `
   .response-tools { display: flex; gap: 8px; align-items: center; }
   .cancel { border: 1px solid #4e6255; padding: 5px 8px; background: transparent; color: #b9cabe; font-size: 11px; }
   .status { color: #91a597; font-size: 11px; text-transform: none; letter-spacing: 0; }
-  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1180px); padding-top: 36px; } .service-head { display: block; } .service-meta { margin-top: 18px; text-align: left; } .operation-body { grid-template-columns: 1fr; } .signature { display: none; } }
+  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .signature { display: none; } }
 `;
 
 const OMIT = Symbol("omit");
@@ -83,6 +112,8 @@ const I_SERVICE_OPERATIONS = new Set(["status", "init", "isReady", "isLive"]);
 type ReadValue = () => unknown | typeof OMIT;
 interface Control { readonly element: HTMLElement; readonly read: ReadValue }
 interface SchemaContext { readonly definitions: ReadonlyMap<string, IfxTypeDescription>; readonly parameters: ReadonlyMap<string, IfxTypeReference> }
+type ServiceKind = "manager" | "engine" | "access" | "unclassified";
+interface CatalogService { readonly service: IfxServiceDescription; readonly index: number; readonly kind: ServiceKind }
 
 const appElement = document.querySelector<HTMLElement>("#app");
 if (!appElement) throw new Error("Missing #app element");
@@ -116,23 +147,31 @@ function chrome(catalog: IfxServiceCatalog, body: string): void {
 }
 
 function renderCatalog(catalog: IfxServiceCatalog): void {
-  const cards = catalog.services.map((service, index) => {
-    const operationCount = visibleOperations(service).length;
-    return `
-    <a class="service-card" data-service-index="${index}" href="#/services/${encodeURIComponent(service.address)}">
-      <div class="stereotype">&laquo;service component&raquo;</div>
-      <span class="service-status"><span class="service-status-part">Ready …</span><span class="service-status-part">Live …</span></span>
-      <h2>${escapeHtml(service.name)}</h2>
-      <div class="address">${escapeHtml(service.address)}</div>
-      <div class="operation-count">${operationCount} operation${operationCount === 1 ? "" : "s"}</div>
-      <div class="arrow">→</div>
-    </a>`;
-  }).join("");
+  const services = catalog.services.map((service, index): CatalogService => ({
+    service,
+    index,
+    kind: serviceKind(service),
+  }));
+  const managers = services.filter(({ kind }) => kind === "manager");
+  const engines = services.filter(({ kind }) => kind === "engine");
+  const access = services.filter(({ kind }) => kind === "access");
+  const unclassified = services.filter(({ kind }) => kind === "unclassified");
+  const architecture = `
+    ${renderArchitectureLayer("Client / UI", [], "client-layer", "Client applications will appear here")}
+    ${renderArchitectureLayer("Business<br>Logic", [managers, engines], "business-layer", "No managers or engines registered")}
+    ${renderArchitectureLayer("Resource<br>Access", [access], "access-layer", "No access services registered")}
+    <aside class="utilities-layer">
+      <div class="utilities-label">Utilities</div>
+      <div class="utilities-content"><div class="layer-placeholder">Utilities will appear here</div></div>
+    </aside>
+    ${renderArchitectureLayer("Resources", [], "resources-layer", "Resources will appear here")}
+    ${unclassified.length > 0 ? renderArchitectureLayer("Unclassified", [unclassified], "unclassified-layer", "") : ""}`;
+
   chrome(catalog, `
-    <div class="eyebrow">System composition</div>
+    <div class="eyebrow">Static architecture</div>
     <h1>${escapeHtml(catalog.name)}</h1>
-    <p class="lede">Inspect the service boundary, compose a valid request from its contract, and invoke the running system directly.</p>
-    ${cards ? `<section class="catalog" aria-label="Service components">${cards}</section>` : `<div class="empty">No services are registered on this host.</div>`}`);
+    <p class="lede">Explore the running system by layer. Select a service component to inspect its contract and invoke its operations.</p>
+    <section class="architecture" aria-label="Service architecture">${architecture}</section>`);
 
   for (const card of app.querySelectorAll<HTMLElement>(".service-card[data-service-index]")) {
     const service = catalog.services[Number(card.dataset.serviceIndex)];
@@ -141,14 +180,63 @@ function renderCatalog(catalog: IfxServiceCatalog): void {
   }
 }
 
+function renderArchitectureLayer(
+  label: string,
+  rows: readonly CatalogService[][],
+  className: string,
+  placeholder: string,
+): string {
+  const populatedRows = rows.filter((row) => row.length > 0);
+  return `
+    <section class="architecture-layer ${className}">
+      <div class="layer-label">${label}</div>
+      <div class="layer-content">${populatedRows.length > 0 ? populatedRows.map((row) => `
+        <div class="service-row">${row.map(renderServiceCard).join("")}</div>`).join("") : `
+        <div class="layer-placeholder">${escapeHtml(placeholder)}</div>`}
+      </div>
+    </section>`;
+}
+
+function renderServiceCard({ service, index, kind }: CatalogService): string {
+  return `
+    <a class="service-card ${kind}" data-service-index="${index}" href="#/services/${encodeURIComponent(service.address)}" title="${escapeHtml(service.address)}">
+      <h2>${escapeHtml(service.name)}</h2>
+      <span class="service-status">Checking</span>
+    </a>`;
+}
+
+function serviceKind(service: IfxServiceDescription): ServiceKind {
+  const name = service.name.replace(/^I(?=[A-Z])/, "");
+  if (/Manager$/i.test(name)) return "manager";
+  if (/Engine$/i.test(name)) return "engine";
+  if (/Access$/i.test(name)) return "access";
+  return "unclassified";
+}
+
+function serviceTypeLabel(kind: ServiceKind): string {
+  switch (kind) {
+    case "manager": return "Business Logic · Manager";
+    case "engine": return "Business Logic · Engine";
+    case "access": return "Resource Access";
+    case "unclassified": return "Unclassified Service";
+  }
+}
+
 function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescription): void {
+  const kind = serviceKind(service);
   chrome(catalog, `
-    <a class="back" href="#/">← All service components</a>
-    <section class="service-head">
-      <div><div class="eyebrow">Service component</div><h1>${escapeHtml(service.name)}</h1></div>
-      <div class="service-meta"><span class="stereotype">RSocket endpoint</span><span class="address">${escapeHtml(service.address)}</span></div>
-    </section>
-    <section class="operations" aria-label="Operations"></section>`);
+    <div class="service-page ${kind}">
+      <a class="back" href="#/">← All service components</a>
+      <section class="service-head">
+        <div><div class="eyebrow">${escapeHtml(serviceTypeLabel(kind))}</div><h1>${escapeHtml(service.name)}</h1></div>
+        <div class="service-meta"><span class="stereotype">RSocket endpoint</span><span class="address">${escapeHtml(service.address)}</span></div>
+      </section>
+      <div class="operations-intro">
+        <div><div class="eyebrow">Contract</div><h2>Operations</h2></div>
+        <p>Select an operation to configure and invoke it.</p>
+      </div>
+      <section class="operations" aria-label="Operations"></section>
+    </div>`);
 
   const container = app.querySelector<HTMLElement>(".operations");
   if (!container) return;
@@ -168,7 +256,7 @@ function visibleOperations(service: IfxServiceDescription): readonly IfxOperatio
 async function loadServiceStatus(service: IfxServiceDescription, pill: HTMLElement): Promise<void> {
   const operation = service.operations.find((candidate) => candidate.name === "status");
   if (!operation) {
-    setServiceStatus(pill, null, null);
+    setServiceStatus(pill, "Unknown", "unknown");
     return;
   }
 
@@ -179,23 +267,23 @@ async function loadServiceStatus(service: IfxServiceDescription, pill: HTMLEleme
       url: RSocketBinding.serviceUrl(`${scheme}//${location.host}`, service.address),
     });
     const status = await binding.requestResponse<{ readonly ready: boolean; readonly live: boolean }>(operation.route);
-    setServiceStatus(pill, status.ready, status.live);
+    if (!status.live) setServiceStatus(pill, "Not live", "unavailable");
+    else if (!status.ready) setServiceStatus(pill, "Starting", "starting");
+    else setServiceStatus(pill, "Ready", "ready");
   } catch {
-    setServiceStatus(pill, null, null);
+    setServiceStatus(pill, "Offline", "unavailable");
   } finally {
     binding?.close();
   }
 }
 
-function setServiceStatus(pill: HTMLElement, ready: boolean | null, live: boolean | null): void {
-  pill.replaceChildren(statusPart("Ready", ready), statusPart("Live", live));
-}
-
-function statusPart(label: string, value: boolean | null): HTMLSpanElement {
-  const part = document.createElement("span");
-  part.className = `service-status-part ${value === null ? "" : value ? "positive" : "negative"}`.trim();
-  part.textContent = value === null ? `${label} ?` : value ? label : `Not ${label.toLowerCase()}`;
-  return part;
+function setServiceStatus(
+  pill: HTMLElement,
+  label: string,
+  state: "unknown" | "ready" | "starting" | "unavailable",
+): void {
+  pill.textContent = label;
+  pill.className = `service-status ${state}`;
 }
 
 function renderOperation(
@@ -203,10 +291,10 @@ function renderOperation(
   operation: IfxOperationDescription,
   definitions: ReadonlyMap<string, IfxTypeDescription>,
 ): HTMLElement {
-  const article = document.createElement("article");
+  const article = document.createElement("details");
   article.className = "operation";
   article.innerHTML = `
-    <header class="operation-head"><span class="verb">${interactionLabel(operation.interaction)}</span><h2>${escapeHtml(operation.name)}</h2><span class="signature">${escapeHtml(operation.route)}</span></header>
+    <summary class="operation-head"><span class="verb">${interactionLabel(operation.interaction)}</span><span class="operation-name">${escapeHtml(operation.name)}</span><span class="signature">${escapeHtml(operation.route)}</span><span class="operation-toggle" aria-hidden="true"></span></summary>
     <div class="operation-body">
       <section class="request"><div class="panel-title"><span>Request</span><span class="type-label">${escapeHtml(typeLabel(operation.request))}</span></div><div class="form"></div><button class="invoke" type="button">Invoke <span>→</span></button></section>
       <section class="response"><div class="panel-title"><span>Response</span><span class="response-tools"><span class="status">Not invoked</span><button class="cancel" type="button" hidden>Cancel stream</button></span></div><pre class="result muted">The response will appear here.</pre></section>
