@@ -83,9 +83,9 @@ const styles = `
   .interaction-label { flex: 0 0 auto; margin-left: auto; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--service-accent) 42%, transparent); border-radius: 999px; background: var(--service-tint); color: #59665e; font: 700 9px ui-monospace, monospace; letter-spacing: .07em; text-transform: uppercase; }
   .operation-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .85fr); min-height: 250px; }
   .request, .response { padding: 24px; min-width: 0; }
-  .response { background: #17231c; color: #dce9df; }
+  .response { border-left: 1px solid #d2dbd4; background: #eef2ef; color: #33483a; }
   .panel-title { display: flex; justify-content: space-between; margin-bottom: 18px; color: #6b786f; font: 700 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
-  .response .panel-title { color: #8fac97; }
+  .response .panel-title { color: #697a6e; }
   .type-label { letter-spacing: 0; text-transform: none; font-weight: 500; }
   .field { display: grid; gap: 7px; margin-bottom: 14px; }
   .field > label, .legend { color: #45534a; font-size: 12px; font-weight: 700; }
@@ -101,20 +101,30 @@ const styles = `
   .small-button { border: 1px solid #c7d2c9; padding: 8px 10px; background: white; color: #456350; font-size: 12px; }
   .invoke { display: inline-flex; align-items: center; gap: 9px; border: 0; padding: 11px 17px; background: #29633a; color: #fff; font-weight: 750; font-size: 13px; }
   .invoke:hover { background: #1d502d; }
+  .invoke.cancel-stream { background: #a04735; }
+  .invoke.cancel-stream:hover { background: #843728; }
   .invoke:disabled { cursor: wait; opacity: .6; }
-  .result { margin: 0; min-height: 145px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #cae0cf; font: 12px/1.65 ui-monospace, monospace; }
-  .result.muted { color: #7e9585; }
-  .result.error { color: #ffb7a6; }
-  .response-tools { display: flex; gap: 8px; align-items: center; }
-  .cancel { border: 1px solid #4e6255; padding: 5px 8px; background: transparent; color: #b9cabe; font-size: 11px; }
-  .status { color: #91a597; font-size: 11px; text-transform: none; letter-spacing: 0; }
+  .invoke-controls { display: flex; align-items: center; gap: 11px; }
+  .result { min-height: 145px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #33483a; font: 12px/1.65 ui-monospace, monospace; }
+  .result.muted { color: #718077; }
+  .result.error { color: #a04432; }
+  .response-value { min-width: 0; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: inherit; font: inherit; }
+  .json-key { color: #326b91; }
+  .json-string { color: #9a542f; }
+  .json-number { color: #7250a0; }
+  .json-boolean { color: #18766c; }
+  .json-null { color: #8b5970; }
+  .stream-event { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .stream-event + .stream-event { margin-top: 16px; padding-top: 16px; border-top: 1px solid #d5ddd7; }
+  .stream-index { align-self: stretch; padding-right: 10px; border-right: 1px solid #c8d3cb; color: #829087; text-align: right; user-select: none; }
+  .status { color: #718278; font-size: 11px; text-transform: none; letter-spacing: 0; }
   ::view-transition-group(service-surface) { animation-duration: 460ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
   ::view-transition-old(root) { animation: 150ms ease-out both fade-away; }
   ::view-transition-new(root) { animation: 280ms 100ms ease-out both fade-in; }
   @keyframes fade-away { to { opacity: 0; } }
   @keyframes fade-in { from { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .001ms; animation-delay: 0ms; } }
-  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .response { border-top: 1px solid #d2dbd4; border-left: 0; } }
 `;
 
 const OMIT = Symbol("omit");
@@ -325,42 +335,51 @@ function renderOperation(
 ): HTMLElement {
   const article = document.createElement("details");
   article.className = "operation";
+  const context: SchemaContext = { definitions, parameters: new Map() };
   const inputType = operation.parameterName ? typeLabel(operation.request) : "";
   const returnType = operation.interaction === "requestStream"
     ? `Flow<${typeLabel(operation.response)}>`
     : typeLabel(operation.response);
+  const responseExample = exampleValue(operation.response, context);
   article.innerHTML = `
     <summary class="operation-head"><span class="operation-signature"><span class="operation-name">${escapeHtml(operation.name)}</span><span class="signature-punctuation">(</span><span class="signature-type">${escapeHtml(inputType)}</span><span class="signature-punctuation">) : </span><span class="signature-type">${escapeHtml(returnType)}</span></span><span class="interaction-label">${interactionLabel(operation.interaction)}</span></summary>
     <div class="operation-body">
-      <section class="request"><div class="panel-title"><span>Request</span><span class="type-label">${escapeHtml(typeLabel(operation.request))}</span></div><div class="form"></div><button class="invoke" type="button">Invoke <span>→</span></button></section>
-      <section class="response"><div class="panel-title"><span>Response</span><span class="response-tools"><span class="status">Not invoked</span><button class="cancel" type="button" hidden>Cancel stream</button></span></div><pre class="result muted">The response will appear here.</pre></section>
+      <section class="request"><div class="panel-title"><span>Request</span><span class="type-label">${escapeHtml(typeLabel(operation.request))}</span></div><div class="form"></div><div class="invoke-controls"><button class="invoke" type="button">Invoke <span>→</span></button><span class="status">Example</span></div></section>
+      <section class="response"><div class="panel-title"><span>Response</span></div><div class="result muted"></div></section>
     </div>`;
 
   const form = article.querySelector<HTMLElement>(".form")!;
   const button = article.querySelector<HTMLButtonElement>(".invoke")!;
-  const cancel = article.querySelector<HTMLButtonElement>(".cancel")!;
   const result = article.querySelector<HTMLElement>(".result")!;
   const status = article.querySelector<HTMLElement>(".status")!;
-  const context: SchemaContext = { definitions, parameters: new Map() };
+  if (operation.interaction === "requestStream") appendStreamEvent(result, 0, responseExample);
+  else renderResponseValue(result, responseExample);
   const control = createControl(operation.request, context, operation.parameterName ?? "request");
   if (operation.parameterName) form.append(control.element);
   else form.innerHTML = `<p class="address">This operation has no request body.</p>`;
 
   let binding: RSocketBinding | undefined;
   let invocation = 0;
-  cancel.addEventListener("click", () => {
-    invocation += 1;
-    binding?.close();
-    binding = undefined;
-    button.disabled = false;
-    cancel.hidden = true;
-    status.textContent = "Cancelled";
-  });
+  let activeStreamInvocation: number | undefined;
   button.addEventListener("click", async () => {
+    if (activeStreamInvocation !== undefined) {
+      invocation += 1;
+      activeStreamInvocation = undefined;
+      binding?.close();
+      binding = undefined;
+      setInvokeButtonState(button);
+      status.textContent = "Cancelled";
+      return;
+    }
+
     const current = ++invocation;
+    const streaming = operation.interaction === "requestStream";
     let callBinding: RSocketBinding | undefined;
-    button.disabled = true;
-    cancel.hidden = operation.interaction !== "requestStream";
+    button.disabled = !streaming;
+    if (streaming) {
+      activeStreamInvocation = current;
+      setInvokeButtonState(button, true);
+    }
     result.className = "result muted";
     result.textContent = "Connecting…";
     status.textContent = "Running";
@@ -380,16 +399,18 @@ function renderOperation(
         const value = operation.parameterName
           ? await callBinding.requestResponse(operation.route, request)
           : await callBinding.requestResponse(operation.route);
-        result.textContent = pretty(value);
+        renderResponseValue(result, value);
       } else {
-        result.textContent = "";
+        result.replaceChildren();
+        result.className = "result";
         let count = 0;
         const stream = operation.parameterName
           ? callBinding.requestStream(operation.route, request)
           : callBinding.requestStream(operation.route);
         for await (const value of stream) {
           if (current !== invocation) break;
-          result.textContent += `${count ? "\n\n" : ""}[${++count}] ${pretty(value)}`;
+          appendStreamEvent(result, count, value);
+          count += 1;
           status.textContent = `${count} event${count === 1 ? "" : "s"}`;
         }
         if (current === invocation && count === 0) result.textContent = "Stream completed without values.";
@@ -408,12 +429,68 @@ function renderOperation(
       callBinding?.close();
       if (binding === callBinding) binding = undefined;
       if (current === invocation) {
+        activeStreamInvocation = undefined;
         button.disabled = false;
-        cancel.hidden = true;
+        setInvokeButtonState(button);
       }
     }
   });
   return article;
+}
+
+function setInvokeButtonState(button: HTMLButtonElement, streaming = false): void {
+  button.classList.toggle("cancel-stream", streaming);
+  if (streaming) {
+    button.textContent = "Cancel stream";
+    return;
+  }
+  const arrow = document.createElement("span");
+  arrow.textContent = "→";
+  button.replaceChildren(document.createTextNode("Invoke "), arrow);
+}
+
+function renderResponseValue(container: HTMLElement, value: unknown): void {
+  const body = document.createElement("pre");
+  body.className = "response-value";
+  renderHighlightedJson(body, value);
+  container.replaceChildren(body);
+}
+
+function appendStreamEvent(container: HTMLElement, index: number, value: unknown): void {
+  const row = document.createElement("div");
+  row.className = "stream-event";
+  const marker = document.createElement("span");
+  marker.className = "stream-index";
+  marker.textContent = `[${index}]`;
+  const body = document.createElement("pre");
+  body.className = "response-value";
+  renderHighlightedJson(body, value);
+  row.append(marker, body);
+  container.append(row);
+}
+
+function renderHighlightedJson(container: HTMLElement, value: unknown): void {
+  const source = pretty(value);
+  const tokens = /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+  let cursor = 0;
+  for (const match of source.matchAll(tokens)) {
+    const index = match.index;
+    container.append(document.createTextNode(source.slice(cursor, index)));
+    const quoted = match[1];
+    const separator = match[2];
+    const token = quoted ?? match[0];
+    const span = document.createElement("span");
+    span.className = quoted
+      ? separator ? "json-key" : "json-string"
+      : token === "null" ? "json-null"
+      : token === "true" || token === "false" ? "json-boolean"
+      : "json-number";
+    span.textContent = token;
+    container.append(span);
+    if (separator) container.append(document.createTextNode(separator));
+    cursor = index + match[0].length;
+  }
+  container.append(document.createTextNode(source.slice(cursor)));
 }
 
 function createControl(reference: IfxTypeReference, context: SchemaContext, label: string, optional = false): Control {
@@ -597,6 +674,49 @@ function typeLabel(reference: IfxTypeReference): string {
     case "parameter": return reference.name;
     default: return reference.type;
   }
+}
+
+function exampleValue(
+  reference: IfxTypeReference,
+  context: SchemaContext,
+  ancestors: ReadonlySet<string> = new Set(),
+): unknown {
+  switch (reference.type) {
+    case "string": return "string";
+    case "number": return 0;
+    case "boolean": return true;
+    case "void": return undefined;
+    case "nullable": return exampleValue(reference.value, context, ancestors);
+    case "array": return [exampleValue(reference.element, context, ancestors)];
+    case "record": return { key: exampleValue(reference.value, context, ancestors) };
+    case "parameter": return exampleValue(context.parameters.get(reference.name) ?? { type: "string" }, context, ancestors);
+    case "named": break;
+  }
+
+  const definition = context.definitions.get(reference.name);
+  if (!definition) return {};
+  const identity = `${reference.name}<${reference.arguments.map(typeLabel).join(",")}>`;
+  if (ancestors.has(identity)) return {};
+  const nestedAncestors = new Set(ancestors).add(identity);
+  const parameters = new Map(context.parameters);
+  definition.typeParameters.forEach((name, index) => parameters.set(name, reference.arguments[index] ?? { type: "string" }));
+  const nested: SchemaContext = { definitions: context.definitions, parameters };
+
+  if (definition.type === "alias") return exampleValue(definition.target, nested, nestedAncestors);
+  if (definition.type === "stringUnion") return definition.values[0] ?? "value";
+  if (definition.type === "sealedUnion") {
+    const variant = definition.variants[0];
+    if (!variant) return {};
+    const value = exampleValue(variant.type, nested, nestedAncestors);
+    return {
+      [definition.discriminator]: variant.serialName,
+      ...(typeof value === "object" && value !== null && !Array.isArray(value) ? value : { value }),
+    };
+  }
+  return Object.fromEntries(definition.properties.map((property) => [
+    property.name,
+    exampleValue(property.type, nested, nestedAncestors),
+  ]));
 }
 
 function simpleName(value: string): string { return value.split(".").at(-1) ?? value; }
