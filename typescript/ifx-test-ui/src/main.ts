@@ -42,6 +42,7 @@ const styles = `
   .service-card.access { background: #e3e4e3; }
   .service-card.unclassified { background: #dec6e8; }
   .service-card:hover, .service-card:focus-visible { transform: translateY(-3px); box-shadow: 0 7px 18px rgba(23, 41, 31, .16); filter: saturate(1.05); outline: none; }
+  .service-card.transition-source { view-transition-name: service-surface; }
   .stereotype { color: #6d7a72; font: 11px ui-monospace, monospace; }
   .service-status { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 5px; border: 1px solid rgba(53, 58, 55, .24); border-radius: 999px; background: rgba(255, 255, 255, .72); color: #6b776f; font-size: 8px; font-weight: 750; letter-spacing: .02em; }
   .service-status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
@@ -49,6 +50,7 @@ const styles = `
   .service-status.starting { color: #8a6613; }
   .service-status.unavailable { color: #a04735; }
   .service-card h2 { margin: 0; font-size: 17px; line-height: 1.08; letter-spacing: -.025em; text-align: center; }
+  .service-operation-count { position: absolute; top: calc(50% + 24px); left: 12px; right: 12px; color: rgba(28, 33, 30, .6); font-size: 10px; line-height: 1; text-align: center; }
   .address { overflow-wrap: anywhere; color: #718078; font: 12px/1.5 ui-monospace, monospace; }
   .empty { margin-top: 42px; padding: 28px; background: #fff; border: 1px solid #d6ddd7; color: #68766d; }
   .back { display: inline-flex; gap: 8px; align-items: center; color: #426d4d; text-decoration: none; font-size: 13px; font-weight: 700; }
@@ -56,14 +58,17 @@ const styles = `
   .service-page.engine { --service-accent: #e97014; --service-tint: #ffe0bf; }
   .service-page.access { --service-accent: #858b87; --service-tint: #eceeed; }
   .service-page.unclassified { --service-accent: #9b68aa; --service-tint: #f0e2f4; }
-  .service-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-top: 30px; padding: 30px 32px; border: 1px solid #4c524e; border-top: 7px solid var(--service-accent); background: var(--service-tint); }
+  .service-surface { overflow: hidden; margin-top: 30px; border: 1px solid #4c524e; border-top: 7px solid var(--service-accent); border-radius: 9px; background: var(--service-tint); view-transition-name: service-surface; }
+  .service-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; padding: 30px 32px; }
   .service-head h1 { font-size: clamp(34px, 4vw, 52px); }
   .service-meta { max-width: 420px; text-align: right; }
   .service-meta .address { display: block; margin-top: 6px; }
-  .operations-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-top: 42px; }
+  .service-contract { padding: 0 32px 32px; border-top: 1px solid color-mix(in srgb, var(--service-accent) 40%, transparent); background: color-mix(in srgb, var(--service-tint) 88%, #59635d); }
+  .operations-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-top: 27px; }
   .operations-intro h2 { margin: 7px 0 0; font-size: 25px; letter-spacing: -.035em; }
   .operations-intro p { margin: 0; color: #727e76; font-size: 13px; }
   .operations { display: grid; gap: 10px; margin-top: 17px; }
+  .operations .empty { margin-top: 0; }
   .operation { overflow: hidden; background: #fff; border: 1px solid #cfd7d1; }
   .operation[open] { border-color: #aeb9b1; box-shadow: 0 8px 24px rgba(23, 41, 31, .06); }
   .operation-head { display: flex; align-items: center; gap: 13px; padding: 17px 20px; cursor: pointer; list-style: none; user-select: none; }
@@ -71,12 +76,11 @@ const styles = `
   .operation[open] > .operation-head { border-bottom: 1px solid #e2e7e3; }
   .operation-head:hover { background: #fafbf9; }
   .operation-head:focus-visible { outline: 3px solid color-mix(in srgb, var(--service-accent) 28%, transparent); outline-offset: -3px; }
-  .verb { padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--service-accent) 45%, transparent); background: var(--service-tint); color: #39433c; font: 700 9px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+  .operation-signature { min-width: 0; overflow-wrap: anywhere; }
   .operation-name { font-size: 17px; font-weight: 720; letter-spacing: -.02em; }
-  .signature { margin-left: auto; color: #7a877f; font: 11px ui-monospace, monospace; }
-  .operation-toggle { display: grid; place-items: center; width: 23px; height: 23px; margin-left: 4px; border: 1px solid #c9d1cb; border-radius: 50%; color: #68746c; font-size: 15px; line-height: 1; }
-  .operation-toggle::before { content: "+"; }
-  .operation[open] .operation-toggle::before { content: "−"; }
+  .signature-punctuation { color: #7a877f; font-size: 14px; }
+  .signature-type { color: #53665a; font: 12px ui-monospace, monospace; }
+  .interaction-label { flex: 0 0 auto; margin-left: auto; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--service-accent) 42%, transparent); border-radius: 999px; background: var(--service-tint); color: #59665e; font: 700 9px ui-monospace, monospace; letter-spacing: .07em; text-transform: uppercase; }
   .operation-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .85fr); min-height: 250px; }
   .request, .response { padding: 24px; min-width: 0; }
   .response { background: #17231c; color: #dce9df; }
@@ -104,7 +108,13 @@ const styles = `
   .response-tools { display: flex; gap: 8px; align-items: center; }
   .cancel { border: 1px solid #4e6255; padding: 5px 8px; background: transparent; color: #b9cabe; font-size: 11px; }
   .status { color: #91a597; font-size: 11px; text-transform: none; letter-spacing: 0; }
-  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .signature { display: none; } }
+  ::view-transition-group(service-surface) { animation-duration: 460ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
+  ::view-transition-old(root) { animation: 150ms ease-out both fade-away; }
+  ::view-transition-new(root) { animation: 280ms 100ms ease-out both fade-in; }
+  @keyframes fade-away { to { opacity: 0; } }
+  @keyframes fade-in { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .001ms; animation-delay: 0ms; } }
+  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } }
 `;
 
 const OMIT = Symbol("omit");
@@ -129,10 +139,26 @@ async function start(): Promise<void> {
     const catalog = await response.json() as IfxServiceCatalog;
     const render = () => renderRoute(catalog);
     window.addEventListener("hashchange", render);
+    app.addEventListener("click", (event) => navigateFromServiceCard(event, render));
     render();
   } catch (error) {
     app.innerHTML = `<div class="shell"><header class="topbar"><div class="brand"><span class="mark">iFX</span> Service Explorer</div></header><main><div class="empty">${escapeHtml(messageOf(error))}</div></main></div>`;
   }
+}
+
+function navigateFromServiceCard(event: MouseEvent, render: () => void): void {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  if (!(event.target instanceof Element)) return;
+  const card = event.target.closest<HTMLAnchorElement>(".service-card[href]");
+  const destination = card?.getAttribute("href");
+  if (!card || !destination || typeof document.startViewTransition !== "function") return;
+
+  event.preventDefault();
+  card.classList.add("transition-source");
+  document.startViewTransition(() => {
+    history.pushState(null, "", destination);
+    render();
+  });
 }
 
 function renderRoute(catalog: IfxServiceCatalog): void {
@@ -198,9 +224,11 @@ function renderArchitectureLayer(
 }
 
 function renderServiceCard({ service, index, kind }: CatalogService): string {
+  const operationCount = visibleOperations(service).length;
   return `
     <a class="service-card ${kind}" data-service-index="${index}" href="#/services/${encodeURIComponent(service.address)}" title="${escapeHtml(service.address)}">
       <h2>${escapeHtml(service.name)}</h2>
+      <span class="service-operation-count">${operationCount} operation${operationCount === 1 ? "" : "s"}</span>
       <span class="service-status">Checking</span>
     </a>`;
 }
@@ -227,15 +255,19 @@ function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescriptio
   chrome(catalog, `
     <div class="service-page ${kind}">
       <a class="back" href="#/">← All service components</a>
-      <section class="service-head">
-        <div><div class="eyebrow">${escapeHtml(serviceTypeLabel(kind))}</div><h1>${escapeHtml(service.name)}</h1></div>
-        <div class="service-meta"><span class="stereotype">RSocket endpoint</span><span class="address">${escapeHtml(service.address)}</span></div>
+      <section class="service-surface">
+        <header class="service-head">
+          <div><div class="eyebrow">${escapeHtml(serviceTypeLabel(kind))}</div><h1>${escapeHtml(service.name)}</h1></div>
+          <div class="service-meta"><span class="stereotype">RSocket endpoint</span><span class="address">${escapeHtml(service.address)}</span></div>
+        </header>
+        <div class="service-contract">
+          <div class="operations-intro">
+            <div><div class="eyebrow">Contract</div><h2>Operations</h2></div>
+            <p>Select an operation to configure and invoke it.</p>
+          </div>
+          <section class="operations" aria-label="Operations"></section>
+        </div>
       </section>
-      <div class="operations-intro">
-        <div><div class="eyebrow">Contract</div><h2>Operations</h2></div>
-        <p>Select an operation to configure and invoke it.</p>
-      </div>
-      <section class="operations" aria-label="Operations"></section>
     </div>`);
 
   const container = app.querySelector<HTMLElement>(".operations");
@@ -293,8 +325,12 @@ function renderOperation(
 ): HTMLElement {
   const article = document.createElement("details");
   article.className = "operation";
+  const inputType = operation.parameterName ? typeLabel(operation.request) : "";
+  const returnType = operation.interaction === "requestStream"
+    ? `Flow<${typeLabel(operation.response)}>`
+    : typeLabel(operation.response);
   article.innerHTML = `
-    <summary class="operation-head"><span class="verb">${interactionLabel(operation.interaction)}</span><span class="operation-name">${escapeHtml(operation.name)}</span><span class="signature">${escapeHtml(operation.route)}</span><span class="operation-toggle" aria-hidden="true"></span></summary>
+    <summary class="operation-head"><span class="operation-signature"><span class="operation-name">${escapeHtml(operation.name)}</span><span class="signature-punctuation">(</span><span class="signature-type">${escapeHtml(inputType)}</span><span class="signature-punctuation">) : </span><span class="signature-type">${escapeHtml(returnType)}</span></span><span class="interaction-label">${interactionLabel(operation.interaction)}</span></summary>
     <div class="operation-body">
       <section class="request"><div class="panel-title"><span>Request</span><span class="type-label">${escapeHtml(typeLabel(operation.request))}</span></div><div class="form"></div><button class="invoke" type="button">Invoke <span>→</span></button></section>
       <section class="response"><div class="panel-title"><span>Response</span><span class="response-tools"><span class="status">Not invoked</span><button class="cancel" type="button" hidden>Cancel stream</button></span></div><pre class="result muted">The response will appear here.</pre></section>
@@ -554,7 +590,7 @@ function interactionLabel(interaction: IfxOperationDescription["interaction"]): 
 
 function typeLabel(reference: IfxTypeReference): string {
   switch (reference.type) {
-    case "named": return simpleName(reference.name);
+    case "named": return `${simpleName(reference.name)}${reference.arguments.length > 0 ? `<${reference.arguments.map(typeLabel).join(", ")}>` : ""}`;
     case "array": return `${typeLabel(reference.element)}[]`;
     case "record": return `Record<string, ${typeLabel(reference.value)}>`;
     case "nullable": return `${typeLabel(reference.value)} | null`;
