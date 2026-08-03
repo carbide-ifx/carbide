@@ -1,8 +1,7 @@
 apply: [ ../common.module-template.yaml ]
 
 product:
-  type: macos/app
-  platforms: [ macosArm64 ]
+  type: jvm/app
 
 settings:
   kotlin:
