@@ -5,6 +5,7 @@ import {
   type IfxServiceDescription,
   type IfxTypeDescription,
   type IfxTypeReference,
+  type IfxUnionVariantDescription,
 } from "@ifx/rpc-client";
 
 const styles = `
@@ -87,18 +88,28 @@ const styles = `
   .panel-title { display: flex; justify-content: space-between; margin-bottom: 18px; color: #6b786f; font: 700 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
   .response .panel-title { color: #697a6e; }
   .type-label { letter-spacing: 0; text-transform: none; font-weight: 500; }
-  .field { display: grid; gap: 7px; margin-bottom: 14px; }
-  .field > label, .legend { color: #45534a; font-size: 12px; font-weight: 700; }
-  .required { color: #a34e3a; }
-  input[type=text], input[type=number], select, textarea { width: 100%; border: 1px solid #cbd4cd; border-radius: 0; padding: 10px 11px; color: #17211c; background: #fbfcfa; outline: none; }
-  input:focus, select:focus, textarea:focus { border-color: #4e7c5a; box-shadow: 0 0 0 3px rgba(78, 124, 90, .11); }
-  textarea { min-height: 90px; resize: vertical; font: 12px/1.5 ui-monospace, monospace; }
-  fieldset { min-width: 0; margin: 0 0 14px; padding: 16px; border: 1px solid #dde3de; }
-  legend { padding: 0 7px; }
-  .toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #56645b; font-size: 12px; }
-  .array-items { display: grid; gap: 10px; }
-  .array-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
-  .small-button { border: 1px solid #c7d2c9; padding: 8px 10px; background: white; color: #456350; font-size: 12px; }
+  .json-editor { min-height: 145px; margin-bottom: 18px; padding: 13px 15px; overflow: auto; border: 1px solid #d2ddd5; border-left: 3px solid #8da996; background: #f0f5f1; color: #526159; white-space: pre; font: 12px/1.75 ui-monospace, monospace; }
+  .json-editor:focus-within { border-color: #91aa98; border-left-color: #4e7c5a; background: #edf4ef; }
+  .json-composite { display: inline-block; min-width: 0; vertical-align: top; }
+  .json-indent { display: block; padding-left: 19px; }
+  .json-property { display: grid; grid-template-columns: auto minmax(0, 1fr); min-width: 0; }
+  .json-array-item { display: flex; align-items: flex-start; min-width: 0; }
+  .json-property-key { flex: 0 0 auto; color: #326b91; }
+  .json-property-value { min-width: 0; }
+  .json-token-input, .json-enum-select { min-width: 2ch; max-width: 34ch; margin: 0; border: 0; border-bottom: 1px dotted transparent; outline: 0; background: transparent; font: inherit; }
+  .json-token-input:hover, .json-token-input:focus, .json-enum-select:hover, .json-enum-select:focus { border-bottom-color: currentColor; }
+  .json-token-input.string { color: #9a542f; }
+  .json-token-input.number { color: #7250a0; }
+  .json-enum-select { width: auto; padding: 0 15px 0 0; color: #9a542f; cursor: pointer; }
+  .json-boolean-select { padding-right: 15px; color: #18766c; }
+  .json-null-button { margin: 0; border: 0; border-bottom: 1px dotted #8b5970; padding: 0; background: transparent; color: #8b5970; font: inherit; cursor: pointer; }
+  .json-null-active { display: inline-flex; align-items: flex-start; gap: 6px; }
+  .json-null-checkbox { width: 11px; height: 11px; margin: 5px 0 0; accent-color: #8b5970; cursor: pointer; }
+  .json-array-item { gap: 7px; }
+  .json-array-item > .json-property-value { flex: 0 1 auto; }
+  .json-array-action { margin: 0; border: 0; padding: 0 3px; background: transparent; color: #829087; font: 11px/1.75 ui-monospace, monospace; cursor: pointer; }
+  .json-array-action:hover, .json-array-action:focus-visible { color: #426d4d; outline: none; }
+  .json-raw-input { display: block; width: min(100%, 48ch); min-height: 70px; border: 0; border-left: 1px solid #cbd6ce; padding: 5px 9px; outline: 0; resize: vertical; background: rgba(255, 255, 255, .42); color: #33483a; font: inherit; }
   .invoke { display: inline-flex; align-items: center; gap: 9px; border: 0; padding: 11px 17px; background: #29633a; color: #fff; font-weight: 750; font-size: 13px; }
   .invoke:hover { background: #1d502d; }
   .invoke.cancel-stream { background: #a04735; }
@@ -127,11 +138,11 @@ const styles = `
   @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .response { border-top: 1px solid #d2dbd4; border-left: 0; } }
 `;
 
-const OMIT = Symbol("omit");
 const I_SERVICE_OPERATIONS = new Set(["status", "init", "isReady", "isLive"]);
-type ReadValue = () => unknown | typeof OMIT;
-interface Control { readonly element: HTMLElement; readonly read: ReadValue }
+interface JsonInput { readonly element: HTMLElement; readonly read: () => unknown }
 interface SchemaContext { readonly definitions: ReadonlyMap<string, IfxTypeDescription>; readonly parameters: ReadonlyMap<string, IfxTypeReference> }
+interface JsonObjectMembers { readonly element: HTMLElement; readonly count: number; readonly read: () => Record<string, unknown> }
+interface ResolvedObject { readonly definition: Extract<IfxTypeDescription, { type: "object" }>; readonly context: SchemaContext }
 type ServiceKind = "manager" | "engine" | "access" | "unclassified";
 interface CatalogService { readonly service: IfxServiceDescription; readonly index: number; readonly kind: ServiceKind }
 
@@ -354,9 +365,14 @@ function renderOperation(
   const status = article.querySelector<HTMLElement>(".status")!;
   if (operation.interaction === "requestStream") appendStreamEvent(result, 0, responseExample);
   else renderResponseValue(result, responseExample);
-  const control = createControl(operation.request, context, operation.parameterName ?? "request");
-  if (operation.parameterName) form.append(control.element);
-  else form.innerHTML = `<p class="address">This operation has no request body.</p>`;
+  let readRequest = (): unknown => undefined;
+  if (operation.parameterName) {
+    const input = createJsonInput(operation.request, context, operation.parameterName);
+    form.append(input.element);
+    readRequest = input.read;
+  } else {
+    form.innerHTML = `<p class="address">This operation has no request body.</p>`;
+  }
 
   let binding: RSocketBinding | undefined;
   let invocation = 0;
@@ -384,7 +400,7 @@ function renderOperation(
     result.textContent = "Connecting…";
     status.textContent = "Running";
     try {
-      const request = control.read();
+      const request = readRequest();
       const scheme = location.protocol === "https:" ? "wss:" : "ws:";
       const baseUrl = `${scheme}//${location.host}`;
       callBinding = await RSocketBinding.connect({ url: RSocketBinding.serviceUrl(baseUrl, service.address) });
@@ -470,7 +486,10 @@ function appendStreamEvent(container: HTMLElement, index: number, value: unknown
 }
 
 function renderHighlightedJson(container: HTMLElement, value: unknown): void {
-  const source = pretty(value);
+  renderHighlightedJsonSource(container, pretty(value));
+}
+
+function renderHighlightedJsonSource(container: HTMLElement, source: string): void {
   const tokens = /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
   let cursor = 0;
   for (const match of source.matchAll(tokens)) {
@@ -493,167 +512,287 @@ function renderHighlightedJson(container: HTMLElement, value: unknown): void {
   container.append(document.createTextNode(source.slice(cursor)));
 }
 
-function createControl(reference: IfxTypeReference, context: SchemaContext, label: string, optional = false): Control {
-  const core = createRequiredControl(reference, context, label);
-  if (!optional) return core;
+function createJsonInput(reference: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
   const wrapper = document.createElement("div");
-  const toggle = document.createElement("label");
-  toggle.className = "toggle";
-  const include = Object.assign(document.createElement("input"), { type: "checkbox" });
-  toggle.append(include, document.createTextNode(` Include optional ${label}`));
-  core.element.hidden = true;
-  include.addEventListener("change", () => { core.element.hidden = !include.checked; });
-  wrapper.append(toggle, core.element);
-  return { element: wrapper, read: () => include.checked ? core.read() : OMIT };
+  wrapper.className = "json-editor";
+  const control = createJsonControl(reference, context, label);
+  wrapper.append(control.element);
+  return { element: wrapper, read: control.read };
 }
 
-function createRequiredControl(reference: IfxTypeReference, context: SchemaContext, label: string): Control {
-  if (reference.type === "nullable") {
-    const wrapper = document.createElement("div");
-    const toggle = document.createElement("label");
-    toggle.className = "toggle";
-    const sendNull = Object.assign(document.createElement("input"), { type: "checkbox" });
-    toggle.append(sendNull, document.createTextNode(` Send ${label} as null`));
-    const inner = createRequiredControl(reference.value, context, label);
-    sendNull.addEventListener("change", () => { inner.element.hidden = sendNull.checked; });
-    wrapper.append(toggle, inner.element);
-    return { element: wrapper, read: () => sendNull.checked ? null : inner.read() };
-  }
+function createJsonControl(reference: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
+  if (reference.type === "nullable") return createNullableJsonControl(reference.value, context, label);
   if (reference.type === "parameter") {
-    return createRequiredControl(context.parameters.get(reference.name) ?? { type: "string" }, context, label);
+    return createJsonControl(context.parameters.get(reference.name) ?? { type: "string" }, context, label);
   }
-  if (reference.type === "string" || reference.type === "number") {
-    const wrapper = field(label);
-    const input = document.createElement("input");
-    input.type = reference.type === "number" ? "number" : "text";
-    if (reference.type === "number") input.step = "any";
-    wrapper.append(input);
-    return { element: wrapper, read: () => reference.type === "number" ? requiredNumber(input, label) : input.value };
-  }
-  if (reference.type === "boolean") {
-    const wrapper = field(label);
-    const select = document.createElement("select");
-    select.append(new Option("true", "true"), new Option("false", "false"));
-    wrapper.append(select);
-    return { element: wrapper, read: () => select.value === "true" };
-  }
-  if (reference.type === "void") return { element: document.createElement("div"), read: () => undefined };
+  if (reference.type === "string") return createStringJsonControl(label);
+  if (reference.type === "number") return createNumberJsonControl(label);
+  if (reference.type === "boolean") return createBooleanJsonControl(label);
+  if (reference.type === "void") return staticJsonControl("null", undefined, "json-null");
+  if (reference.type === "array") return createArrayJsonControl(reference.element, context, label);
   if (reference.type === "record") {
-    const wrapper = field(label);
-    const textarea = document.createElement("textarea");
-    textarea.value = "{}";
-    wrapper.append(textarea);
-    return { element: wrapper, read: () => parseJson(textarea.value, label) };
+    return createRawJsonControl(pretty(exampleValue(reference, context)), label);
   }
-  if (reference.type === "array") return arrayControl(reference.element, context, label);
 
   const definition = context.definitions.get(reference.name);
-  if (!definition) {
-    const wrapper = field(label);
-    const textarea = document.createElement("textarea");
-    textarea.value = "{}";
-    wrapper.append(textarea);
-    return { element: wrapper, read: () => parseJson(textarea.value, label) };
-  }
+  if (!definition) return createRawJsonControl("{}", label);
   const parameters = new Map(context.parameters);
   definition.typeParameters.forEach((name, index) => parameters.set(name, reference.arguments[index] ?? { type: "string" }));
-  const nested = { definitions: context.definitions, parameters };
-  if (definition.type === "alias") return createRequiredControl(definition.target, nested, label);
-  if (definition.type === "stringUnion") {
-    const wrapper = field(label);
-    const select = document.createElement("select");
-    for (const value of definition.values) select.append(new Option(value, value));
-    wrapper.append(select);
-    return { element: wrapper, read: () => select.value };
-  }
-  if (definition.type === "sealedUnion") return unionControl(definition, nested, label);
-  return objectControl(definition, nested, label);
+  const nested: SchemaContext = { definitions: context.definitions, parameters };
+  if (definition.type === "alias") return createJsonControl(definition.target, nested, label);
+  if (definition.type === "stringUnion") return createEnumJsonControl(definition.values, label);
+  if (definition.type === "sealedUnion") return createUnionJsonControl(definition, nested, label);
+  return createObjectJsonControl(definition, nested);
 }
 
-function objectControl(definition: Extract<IfxTypeDescription, { type: "object" }>, context: SchemaContext, label: string): Control {
-  const group = document.createElement("fieldset");
-  group.innerHTML = `<legend class="legend">${escapeHtml(label)} <span class="address">${escapeHtml(simpleName(definition.name))}</span></legend>`;
-  const controls = definition.properties.map((property) => {
-    const control = createControl(property.type, context, property.name, property.optional);
-    group.append(control.element);
-    return [property.name, control] as const;
-  });
-  return {
-    element: group,
-    read: () => Object.fromEntries(controls.flatMap(([name, control]) => {
-      const value = control.read();
-      return value === OMIT ? [] : [[name, value]];
-    })),
-  };
+function createStringJsonControl(label: string): JsonInput {
+  const wrapper = document.createElement("span");
+  wrapper.className = "json-string";
+  const input = document.createElement("input");
+  input.className = "json-token-input string";
+  input.type = "text";
+  input.value = "string";
+  input.setAttribute("aria-label", label);
+  const resize = () => { input.style.width = `${Math.max(2, Math.min(34, input.value.length + 1))}ch`; };
+  input.addEventListener("input", resize);
+  resize();
+  wrapper.append(document.createTextNode('"'), input, document.createTextNode('"'));
+  return { element: wrapper, read: () => input.value };
 }
 
-function unionControl(definition: Extract<IfxTypeDescription, { type: "sealedUnion" }>, context: SchemaContext, label: string): Control {
-  const group = document.createElement("fieldset");
-  group.innerHTML = `<legend class="legend">${escapeHtml(label)} <span class="address">${escapeHtml(simpleName(definition.name))}</span></legend>`;
-  const selectorField = field("Variant");
-  const select = document.createElement("select");
-  definition.variants.forEach((variant, index) => select.append(new Option(simpleName(variant.serialName), String(index))));
-  selectorField.append(select);
-  const slot = document.createElement("div");
-  group.append(selectorField, slot);
-  let active = createRequiredControl(definition.variants[0]?.type ?? { type: "record", value: { type: "string" } }, context, "Fields");
-  const refresh = () => {
-    const variant = definition.variants[Number(select.value)];
-    active = createRequiredControl(variant.type, context, "Fields");
-    slot.replaceChildren(active.element);
-  };
-  select.addEventListener("change", refresh);
-  refresh();
+function createNumberJsonControl(label: string): JsonInput {
+  const input = document.createElement("input");
+  input.className = "json-token-input number";
+  input.type = "text";
+  input.inputMode = "decimal";
+  input.value = "0";
+  input.setAttribute("aria-label", label);
+  input.style.width = "4ch";
   return {
-    element: group,
+    element: input,
     read: () => {
-      const variant = definition.variants[Number(select.value)];
-      return { [definition.discriminator]: variant.serialName, ...(active.read() as object) };
+      const value = Number(input.value);
+      if (!Number.isFinite(value)) throw new Error(`${label} must be a number`);
+      return value;
     },
   };
 }
 
-function arrayControl(elementType: IfxTypeReference, context: SchemaContext, label: string): Control {
-  const group = document.createElement("fieldset");
-  group.innerHTML = `<legend class="legend">${escapeHtml(label)} <span class="address">array</span></legend>`;
-  const rows = document.createElement("div");
-  rows.className = "array-items";
-  const controls: Control[] = [];
-  const add = document.createElement("button");
-  add.type = "button";
-  add.className = "small-button";
-  add.textContent = "+ Add item";
-  add.addEventListener("click", () => {
-    const row = document.createElement("div");
-    row.className = "array-row";
-    const control = createRequiredControl(elementType, context, `Item ${controls.length + 1}`);
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "small-button";
-    remove.textContent = "Remove";
-    remove.addEventListener("click", () => { controls.splice(controls.indexOf(control), 1); row.remove(); });
-    controls.push(control);
-    row.append(control.element, remove);
-    rows.append(row);
+function createBooleanJsonControl(label: string): JsonInput {
+  const select = document.createElement("select");
+  select.className = "json-enum-select json-boolean-select";
+  select.setAttribute("aria-label", label);
+  select.append(new Option("true", "true"), new Option("false", "false"));
+  return { element: select, read: () => select.value === "true" };
+}
+
+function createEnumJsonControl(values: readonly string[], label: string): JsonInput {
+  const wrapper = document.createElement("span");
+  wrapper.className = "json-string";
+  const select = document.createElement("select");
+  select.className = "json-enum-select";
+  select.setAttribute("aria-label", label);
+  for (const value of values) select.append(new Option(value, value));
+  wrapper.append(document.createTextNode('"'), select, document.createTextNode('"'));
+  return { element: wrapper, read: () => select.value };
+}
+
+function createNullableJsonControl(reference: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
+  const wrapper = document.createElement("span");
+  let isNull = true;
+  let active: JsonInput | undefined;
+  const renderNull = () => {
+    isNull = true;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "json-null-button";
+    button.textContent = "null";
+    button.title = `Set ${label}`;
+    button.addEventListener("click", () => {
+      isNull = false;
+      active = createJsonControl(reference, context, label);
+      const state = document.createElement("span");
+      state.className = "json-null-active";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "json-null-checkbox";
+      checkbox.setAttribute("aria-label", `Set ${label} to null`);
+      checkbox.title = "Set to null";
+      checkbox.addEventListener("change", () => { if (checkbox.checked) renderNull(); });
+      state.append(checkbox, active.element);
+      wrapper.replaceChildren(state);
+      active.element.querySelector<HTMLElement>("input, select, textarea, button")?.focus();
+    });
+    wrapper.replaceChildren(button);
+  };
+  renderNull();
+  return { element: wrapper, read: () => isNull ? null : active?.read() };
+}
+
+function createObjectJsonControl(
+  definition: Extract<IfxTypeDescription, { type: "object" }>,
+  context: SchemaContext,
+): JsonInput {
+  const wrapper = document.createElement("span");
+  wrapper.className = "json-composite";
+  const members = createObjectMembers(definition, context);
+  wrapper.append(document.createTextNode("{"), members.element, document.createTextNode("}"));
+  return { element: wrapper, read: members.read };
+}
+
+function createObjectMembers(
+  definition: Extract<IfxTypeDescription, { type: "object" }>,
+  context: SchemaContext,
+): JsonObjectMembers {
+  const container = document.createElement("span");
+  container.className = "json-indent";
+  const controls = definition.properties.map((property) => [
+    property.name,
+    createJsonControl(property.type, context, property.name),
+  ] as const);
+  controls.forEach(([name, control], index) => {
+    const row = document.createElement("span");
+    row.className = "json-property";
+    const key = document.createElement("span");
+    key.className = "json-property-key";
+    key.textContent = `${JSON.stringify(name)}: `;
+    const value = document.createElement("span");
+    value.className = "json-property-value";
+    value.append(control.element, document.createTextNode(index < controls.length - 1 ? "," : ""));
+    row.append(key, value);
+    container.append(row);
   });
-  group.append(rows, add);
-  return { element: group, read: () => controls.map((control) => control.read()) };
+  return {
+    element: container,
+    count: controls.length,
+    read: () => Object.fromEntries(controls.map(([name, control]) => [name, control.read()])),
+  };
 }
 
-function field(label: string): HTMLDivElement {
-  const wrapper = document.createElement("div");
-  wrapper.className = "field";
-  const element = document.createElement("label");
-  element.textContent = label;
-  wrapper.append(element);
-  return wrapper;
+function createArrayJsonControl(elementType: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
+  const wrapper = document.createElement("span");
+  wrapper.className = "json-composite";
+  const rows = document.createElement("span");
+  rows.className = "json-indent";
+  const controls: JsonInput[] = [createJsonControl(elementType, context, `${label} item 0`)];
+  const refresh = () => {
+    rows.replaceChildren();
+    controls.forEach((control, index) => {
+      const row = document.createElement("span");
+      row.className = "json-array-item";
+      const value = document.createElement("span");
+      value.className = "json-property-value";
+      value.append(control.element, document.createTextNode(index < controls.length - 1 ? "," : ""));
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "json-array-action";
+      remove.textContent = "×";
+      remove.title = "Remove item";
+      remove.addEventListener("click", () => { controls.splice(index, 1); refresh(); });
+      row.append(value, remove);
+      rows.append(row);
+    });
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "json-array-action";
+    add.textContent = "+ item";
+    add.addEventListener("click", () => {
+      controls.push(createJsonControl(elementType, context, `${label} item ${controls.length}`));
+      refresh();
+    });
+    const addRow = document.createElement("span");
+    addRow.className = "json-array-item";
+    addRow.append(add);
+    rows.append(addRow);
+  };
+  refresh();
+  wrapper.append(document.createTextNode("["), rows, document.createTextNode("]"));
+  return { element: wrapper, read: () => controls.map((control) => control.read()) };
 }
 
-function requiredNumber(input: HTMLInputElement, label: string): number {
-  if (input.value.trim() === "") throw new Error(`${label} is required`);
-  const value = Number(input.value);
-  if (!Number.isFinite(value)) throw new Error(`${label} must be a number`);
-  return value;
+function createUnionJsonControl(
+  definition: Extract<IfxTypeDescription, { type: "sealedUnion" }>,
+  context: SchemaContext,
+  label: string,
+): JsonInput {
+  const wrapper = document.createElement("span");
+  wrapper.className = "json-composite";
+  const body = document.createElement("span");
+  body.className = "json-indent";
+  const discriminatorRow = document.createElement("span");
+  discriminatorRow.className = "json-property";
+  const key = document.createElement("span");
+  key.className = "json-property-key";
+  key.textContent = `${JSON.stringify(definition.discriminator)}: `;
+  const discriminator = createEnumJsonControl(definition.variants.map((variant) => variant.serialName), `${label} variant`);
+  const discriminatorValue = document.createElement("span");
+  discriminatorValue.className = "json-property-value";
+  discriminatorRow.append(key, discriminatorValue);
+  const slot = document.createElement("span");
+  let variantRead: () => Record<string, unknown> = () => ({});
+  const refresh = () => {
+    const selected = String(discriminator.read());
+    const variant = definition.variants.find((candidate) => candidate.serialName === selected) ?? definition.variants[0];
+    const resolved = variant && resolveObjectReference(unionVariantType(variant), context);
+    if (resolved) {
+      const members = createObjectMembers(resolved.definition, resolved.context);
+      members.element.style.paddingLeft = "0";
+      variantRead = members.read;
+      slot.replaceChildren(members.element);
+      discriminatorValue.replaceChildren(discriminator.element, document.createTextNode(members.count > 0 ? "," : ""));
+    } else {
+      variantRead = () => ({});
+      slot.replaceChildren();
+      discriminatorValue.replaceChildren(discriminator.element);
+    }
+  };
+  discriminator.element.querySelector("select")?.addEventListener("change", refresh);
+  body.append(discriminatorRow, slot);
+  wrapper.append(document.createTextNode("{"), body, document.createTextNode("}"));
+  refresh();
+  return {
+    element: wrapper,
+    read: () => ({ [definition.discriminator]: discriminator.read(), ...variantRead() }),
+  };
+}
+
+function resolveObjectReference(reference: IfxTypeReference, context: SchemaContext): ResolvedObject | undefined {
+  if (reference.type === "parameter") {
+    return resolveObjectReference(context.parameters.get(reference.name) ?? { type: "string" }, context);
+  }
+  if (reference.type === "nullable") return resolveObjectReference(reference.value, context);
+  if (reference.type !== "named") return undefined;
+  const definition = context.definitions.get(reference.name);
+  if (!definition) return undefined;
+  const parameters = new Map(context.parameters);
+  definition.typeParameters.forEach((name, index) => parameters.set(name, reference.arguments[index] ?? { type: "string" }));
+  const nested: SchemaContext = { definitions: context.definitions, parameters };
+  if (definition.type === "alias") return resolveObjectReference(definition.target, nested);
+  if (definition.type !== "object") return undefined;
+  return { definition, context: nested };
+}
+
+function unionVariantType(variant: IfxUnionVariantDescription): IfxTypeReference {
+  const reference = variant.type as IfxUnionVariantDescription["type"] & { readonly type?: "named" };
+  return reference.type === "named"
+    ? reference
+    : { type: "named", name: reference.name, arguments: reference.arguments };
+}
+
+function createRawJsonControl(initialValue: string, label: string): JsonInput {
+  const input = document.createElement("textarea");
+  input.className = "json-raw-input";
+  input.spellcheck = false;
+  input.value = initialValue;
+  input.setAttribute("aria-label", label);
+  return { element: input, read: () => parseJson(input.value, label) };
+}
+
+function staticJsonControl(text: string, value: unknown, className: string): JsonInput {
+  const element = document.createElement("span");
+  element.className = className;
+  element.textContent = text;
+  return { element, read: () => value };
 }
 
 function parseJson(value: string, label: string): unknown {
@@ -707,7 +846,7 @@ function exampleValue(
   if (definition.type === "sealedUnion") {
     const variant = definition.variants[0];
     if (!variant) return {};
-    const value = exampleValue(variant.type, nested, nestedAncestors);
+    const value = exampleValue(unionVariantType(variant), nested, nestedAncestors);
     return {
       [definition.discriminator]: variant.serialName,
       ...(typeof value === "object" && value !== null && !Array.isArray(value) ? value : { value }),

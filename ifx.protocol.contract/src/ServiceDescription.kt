@@ -116,5 +116,9 @@ data class PropertyDescription(
 @Serializable
 data class UnionVariantDescription(
     val serialName: String,
-    val type: TypeReference.Named,
-)
+    val type: TypeReference,
+) {
+    init {
+        require(type is TypeReference.Named) { "Union variants must reference named types" }
+    }
+}
