@@ -7,4 +7,5 @@ import ifx.protocol.rsocket.RSocketProtocol
 class Host(
     val port: Int,
     val name: String = "Service Host",
-) : IHost by HostBase(RSocketProtocol(port), name)
+    val testUi: Boolean = false,
+) : IHost by HostBase(RSocketProtocol(port, name, testUi), name)

@@ -2,9 +2,13 @@ package ifx.protocol.contract
 
 import kotlinx.coroutines.flow.Flow
 
+@kotlinx.serialization.Serializable
 enum class InteractionType {
+    @kotlinx.serialization.SerialName("fireAndForget")
     FIRE_AND_FORGET,
+    @kotlinx.serialization.SerialName("requestResponse")
     REQUEST_RESPONSE,
+    @kotlinx.serialization.SerialName("requestStream")
     REQUEST_STREAM,
 }
 

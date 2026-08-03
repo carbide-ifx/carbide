@@ -57,6 +57,7 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
         val functions = contract.getAllFunctions().filterNot(::isAnyMethod).toList()
         val address = contract.qualifiedName!!.asString()
         val packageDeclaration = packageName.takeIf { it.isNotBlank() }?.let { "package $it\n" }.orEmpty()
+        val description = ServiceDescriptionRenderer().render(contract)
         val output = codeGenerator.createNewFile(
             Dependencies(false, contract.containingFile!!), packageName, descriptorName
         )
@@ -72,6 +73,7 @@ import kotlinx.coroutines.flow.map
 public object $descriptorName : ServiceDescriptor<$contractName> {
     override val contract = $contractName::class
     override val address = "$address"
+    override val description = $description
     override fun createClient(binding: IBinding): $contractName = object : $contractName {
 ${functions.joinToString("\n") { clientMethod(it) }}
     }

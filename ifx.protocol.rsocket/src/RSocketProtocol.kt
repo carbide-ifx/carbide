@@ -4,9 +4,13 @@ import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IProtocol
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.RpcFormat
+import ifx.protocol.contract.ServiceCatalog
+import ifx.protocol.contract.ServiceDescription
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.http.ContentType
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -17,16 +21,33 @@ import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
 
-class RSocketProtocol(private val requestedPort: Int = 0) : IProtocol {
+class RSocketProtocol(
+    private val requestedPort: Int = 0,
+    private val hostName: String = "Service Host",
+    private val testUiEnabled: Boolean = false,
+) : IProtocol {
 
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
+    private val descriptions = mutableMapOf<String, ServiceDescription>()
     private val server = embeddedServer(CIO, requestedPort) {
         install(WebSockets)
         install(RSocketSupport)
         routing {
-            get("/") {
-                call.respondText("TODO: Service Descriptors, test client, MEX should be here.")
+            if (testUiEnabled) {
+                get("/") {
+                    call.respondText(TestUiAssets.html, ContentType.Text.Html)
+                }
+                get("/ifx/services") {
+                    call.respondText(
+                        RpcFormat.encodeToString(ServiceCatalog(hostName, descriptions.values.toList())),
+                        ContentType.Application.Json,
+                    )
+                }
+                get("/ifx/test-ui.js") {
+                    call.respondText(TestUiAssets.javascript, ContentType.Application.JavaScript)
+                }
             }
             acceptors.forEach { (route, acceotor) ->
                 rSocket(path = route, acceptor = acceotor)
@@ -53,6 +74,7 @@ class RSocketProtocol(private val requestedPort: Int = 0) : IProtocol {
     }
 
     override fun expose(endpoint: Endpoint): IProtocol = apply {
+        descriptions[endpoint.address] = endpoint.description
         acceptors[endpoint.address] = ConnectionAcceptor {
             RSocketRequestHandler {
                 fireAndForget { payload ->

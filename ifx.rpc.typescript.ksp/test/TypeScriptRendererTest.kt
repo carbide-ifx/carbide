@@ -52,10 +52,31 @@ class TypeScriptRendererTest {
             import {
               RSocketBinding as __IfxRSocketBinding,
               type IfxBinding as __IfxBinding,
+              type IfxServiceDescription as __IfxServiceDescription,
               type RSocketBindingOptions as __IfxRSocketBindingOptions,
             } from "@ifx/rpc-client";
 
             export const CatalogServiceAddress = "example.CatalogService";
+
+            export const CatalogServiceDescription = {
+              name: "CatalogService",
+              address: CatalogServiceAddress,
+              operations: [
+                {
+                  name: "find",
+                  route: "find(example.Criteria)",
+                  parameterName: "criteria",
+                  request: { type: "named", name: "example.Criteria", arguments: [] },
+                  response: { type: "named", name: "example.Product", arguments: [] },
+                  interaction: "requestStream",
+                },
+              ],
+              types: [
+                { type: "object", name: "example.Criteria", typeParameters: [], properties: [{ name: "ids", type: { type: "nullable", value: { type: "array", element: { type: "string" } } }, optional: true }] },
+                { type: "sealedUnion", name: "example.Product", typeParameters: [], discriminator: "type", variants: [{ serialName: "example.Car", type: { type: "named", name: "example.Car", arguments: [] } }] },
+                { type: "object", name: "example.Car", typeParameters: [], properties: [{ name: "serial-number", type: { type: "number" }, optional: false }] },
+              ],
+            } as const satisfies __IfxServiceDescription;
 
             export namespace CatalogService {
               export type FindRequest = Criteria;

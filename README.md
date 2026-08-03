@@ -149,6 +149,28 @@ types. User-defined request and response types must use `@Serializable` and
 custom or contextual serializers are rejected because their wire shape cannot
 be inferred from KSP symbols.
 
+## Interactive service explorer
+
+An RSocket host created with `testUi = true` serves a generated test UI at its
+root URL. The option is off by default because the explorer can invoke mutating
+operations. The landing page shows the service components registered by that
+host. Selecting a component
+opens its operations, generates request controls from the serialized wire
+types, and displays request/response, fire-and-forget, and streaming results.
+
+For example, a host resolved to port `8080` exposes the UI at
+`http://localhost:8080/` and its machine-readable service catalog at
+`http://localhost:8080/ifx/services`.
+
+```kotlin
+val host = Host(port = 8080, name = "Test System", testUi = true)
+```
+
+Generated TypeScript contracts export a `{Service}Description` value in
+addition to their typed client. It contains the same operations and runtime
+wire-type schema used by the hosted explorer, so other development tools can
+reuse the metadata without attempting to reflect on erased TypeScript types.
+
 Each generated contract also contains a concrete `{Service}Client`. Its
 `connect()` factory uses the TypeScript runtime in
 `typescript/ifx-rpc-client`, appends the qualified service address to the

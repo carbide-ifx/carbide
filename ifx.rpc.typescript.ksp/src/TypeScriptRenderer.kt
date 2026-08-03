@@ -9,10 +9,13 @@ internal class TypeScriptRenderer {
             appendLine("import {")
             appendLine("  RSocketBinding as __IfxRSocketBinding,")
             appendLine("  type IfxBinding as __IfxBinding,")
+            appendLine("  type IfxServiceDescription as __IfxServiceDescription,")
             appendLine("  type RSocketBindingOptions as __IfxRSocketBindingOptions,")
             appendLine("} from \"@ifx/rpc-client\";")
             appendLine()
             appendLine("export const ${identifier(service.name)}Address = ${stringLiteral(service.address)};")
+            appendLine()
+            append(renderDescription(service))
             appendLine()
             appendLine("export namespace ${identifier(service.name)} {")
             service.operations.forEachIndexed { index, operation ->
@@ -63,6 +66,71 @@ internal class TypeScriptRenderer {
                 append(renderDeclaration(declaration, names))
             }
         }
+    }
+
+    private fun renderDescription(service: ServiceModel): String = buildString {
+        appendLine("export const ${identifier(service.name)}Description = {")
+        appendLine("  name: ${stringLiteral(service.name)},")
+        appendLine("  address: ${identifier(service.name)}Address,")
+        appendLine("  operations: [")
+        service.operations.forEach { operation ->
+            val interaction = when (operation.interaction) {
+                Interaction.FIRE_AND_FORGET -> "fireAndForget"
+                Interaction.REQUEST_RESPONSE -> "requestResponse"
+                Interaction.REQUEST_STREAM -> "requestStream"
+            }
+            appendLine("    {")
+            appendLine("      name: ${stringLiteral(operation.name)},")
+            appendLine("      route: ${stringLiteral(operation.route)},")
+            appendLine("      parameterName: ${operation.parameterName?.let(::stringLiteral) ?: "null"},")
+            appendLine("      request: ${renderTypeReference(operation.request)},")
+            appendLine("      response: ${renderTypeReference(operation.response)},")
+            appendLine("      interaction: ${stringLiteral(interaction)},")
+            appendLine("    },")
+        }
+        appendLine("  ],")
+        appendLine("  types: [")
+        service.declarations.forEach { declaration ->
+            appendLine("    ${renderTypeDescription(declaration)},")
+        }
+        appendLine("  ],")
+        appendLine("} as const satisfies __IfxServiceDescription;")
+    }
+
+    private fun renderTypeReference(type: TypeRef): String = when (type) {
+        TypeRef.StringType -> "{ type: \"string\" }"
+        TypeRef.NumberType -> "{ type: \"number\" }"
+        TypeRef.BooleanType -> "{ type: \"boolean\" }"
+        TypeRef.VoidType -> "{ type: \"void\" }"
+        is TypeRef.TypeParameter -> "{ type: \"parameter\", name: ${stringLiteral(type.name)} }"
+        is TypeRef.Named -> "{ type: \"named\", name: ${stringLiteral(type.qualifiedName)}, arguments: [${type.arguments.joinToString { renderTypeReference(it) }}] }"
+        is TypeRef.ArrayType -> "{ type: \"array\", element: ${renderTypeReference(type.element)} }"
+        is TypeRef.RecordType -> "{ type: \"record\", value: ${renderTypeReference(type.value)} }"
+        is TypeRef.Nullable -> "{ type: \"nullable\", value: ${renderTypeReference(type.value)} }"
+    }
+
+    private fun renderTypeDescription(declaration: TypeDeclaration): String = when (declaration) {
+        is TypeDeclaration.ObjectType -> "{" +
+            " type: \"object\", name: ${stringLiteral(declaration.qualifiedName)}," +
+            " typeParameters: [${declaration.typeParameters.joinToString { stringLiteral(it) }}]," +
+            " properties: [${declaration.properties.joinToString { property ->
+                "{ name: ${stringLiteral(property.name)}, type: ${renderTypeReference(property.type)}, optional: ${property.optional} }"
+            }}] }"
+        is TypeDeclaration.StringUnion -> "{" +
+            " type: \"stringUnion\", name: ${stringLiteral(declaration.qualifiedName)}," +
+            " typeParameters: [${declaration.typeParameters.joinToString { stringLiteral(it) }}]," +
+            " values: [${declaration.values.joinToString { stringLiteral(it) }}] }"
+        is TypeDeclaration.SealedUnion -> "{" +
+            " type: \"sealedUnion\", name: ${stringLiteral(declaration.qualifiedName)}," +
+            " typeParameters: [${declaration.typeParameters.joinToString { stringLiteral(it) }}]," +
+            " discriminator: ${stringLiteral(declaration.discriminator)}," +
+            " variants: [${declaration.variants.joinToString { variant ->
+                "{ serialName: ${stringLiteral(variant.serialName)}, type: ${renderTypeReference(variant.type)} }"
+            }}] }"
+        is TypeDeclaration.Alias -> "{" +
+            " type: \"alias\", name: ${stringLiteral(declaration.qualifiedName)}," +
+            " typeParameters: [${declaration.typeParameters.joinToString { stringLiteral(it) }}]," +
+            " target: ${renderTypeReference(declaration.target)} }"
     }
 
     private fun renderClientMethod(service: ServiceModel, operation: OperationModel): String {
@@ -129,9 +197,15 @@ internal class TypeScriptRenderer {
 
     private fun allocateNames(service: ServiceModel): Map<String, String> {
         val bySimpleName = service.declarations.groupBy { it.qualifiedName.substringAfterLast('.') }
+        val generatedNames = setOf(
+            service.name,
+            "${service.name}Address",
+            "${service.name}Client",
+            "${service.name}Description",
+        )
         return service.declarations.associate { declaration ->
             val simpleName = declaration.qualifiedName.substringAfterLast('.')
-            val allocated = if (bySimpleName.getValue(simpleName).size == 1 && simpleName != service.name) {
+            val allocated = if (bySimpleName.getValue(simpleName).size == 1 && simpleName !in generatedNames) {
                 simpleName
             } else {
                 declaration.qualifiedName.replace(Regex("[^A-Za-z0-9_$]"), "_")

@@ -1,0 +1,14 @@
+{
+  "name": "@ifx/test-ui",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && node build.mjs"
+  },
+  "dependencies": {
+    "@ifx/rpc-client": "file:../ifx-rpc-client"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.8",
+    "typescript": "7.0.2"
+  }
+}

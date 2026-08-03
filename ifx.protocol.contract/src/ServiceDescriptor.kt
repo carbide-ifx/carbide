@@ -7,6 +7,7 @@ import kotlin.reflect.KClass
 interface ServiceDescriptor<T : IService> {
     val contract: KClass<T>
     val address: String
+    val description: ServiceDescription
     fun createClient(binding: IBinding): T
     fun bind(instance: T): IBinding
 }
