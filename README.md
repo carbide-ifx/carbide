@@ -92,6 +92,29 @@ reversed server ordering will decrypt the headers before context extraction.
 Generic JSON headers can be inspected or changed with `Message.headers()` and
 `Message.withHeader(...)`.
 
+## Actuator logs
+
+Service application logs can carry their generated service identity through
+Kermit's string tag while retaining a readable console tag:
+
+```kotlin
+class AwesomeServiceImpl : AwesomeService {
+    private val log = Log.forService<AwesomeService>(this)
+    private val repositoryLog = log.withTag("Repository")
+
+    override suspend fun awesome(request: AwesomeRequest): AwesomeResponse {
+        repositoryLog.info { "Loading $request" }
+        // ...
+    }
+}
+```
+
+The standard writer renders this as `AwesomeServiceImpl.Repository`. The
+actuator writer retains the structured contract address, implementation class,
+tag path, severity, message, and throwable. Plain framework log tags continue
+to reach the standard writer but are not retained. `ActuatorLogs.logs(address)`
+returns the latest 500 entries for that service address in sequence order.
+
 ## OpenTelemetry traces
 
 `ifx.telemetry.otel` provides tracing without depending on a platform-specific
