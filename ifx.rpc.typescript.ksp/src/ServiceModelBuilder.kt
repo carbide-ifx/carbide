@@ -34,6 +34,7 @@ internal class ServiceModelBuilder {
         }
         return ServiceModel(
             name = contract.simpleName.asString(),
+            address = contract.qualifiedName!!.asString(),
             operations = operations,
             declarations = declarations.values.sortedBy(TypeDeclaration::qualifiedName),
         )
@@ -65,9 +66,12 @@ internal class ServiceModelBuilder {
         return OperationModel(
             name = function.simpleName.asString(),
             typeName = typeName,
+            route = operationRoute(function),
             parameterName = parameter?.name?.asString(),
             request = parameter?.type?.resolve()?.let(::typeRef) ?: TypeRef.VoidType,
-            requestOptional = parameter?.hasDefault == true,
+            // Kotlin callers evaluate parameter defaults before invoking the generated proxy.
+            // TypeScript cannot reproduce an arbitrary Kotlin default expression, so RPC inputs stay required.
+            requestOptional = false,
             response = response,
             interaction = interaction,
         )
@@ -259,6 +263,19 @@ internal class ServiceModelBuilder {
     private fun typeArgument(type: KSType, index: Int): TypeRef =
         type.arguments.getOrNull(index)?.type?.resolve()?.let(::typeRef)
             ?: fail("Missing type argument $index for ${type.declaration.qualifiedName?.asString()}", type.declaration)
+
+    private fun operationRoute(function: KSFunctionDeclaration): String {
+        val parameter = function.parameters.singleOrNull()?.type?.resolve()?.let(::kotlinTypeName).orEmpty()
+        return "${function.simpleName.asString()}($parameter)"
+    }
+
+    private fun kotlinTypeName(type: KSType): String {
+        val raw = type.declaration.qualifiedName?.asString() ?: type.toString()
+        val arguments = type.arguments.joinToString(prefix = "<", postfix = ">") { argument ->
+            argument.type?.resolve()?.let(::kotlinTypeName) ?: "*"
+        }.takeIf { type.arguments.isNotEmpty() }.orEmpty()
+        return raw + arguments + if (type.nullability == Nullability.NULLABLE) "?" else ""
+    }
 
     private fun fail(message: String, node: KSNode): Nothing = throw ModelException(message, node)
 

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "noEmit": true,
+    "paths": {
+      "@ifx/rpc-client": [
+        "./ifx-rpc-client/src/index.ts"
+      ]
+    },
+    "strict": true,
+    "target": "ES2022"
+  },
+  "include": [
+    "../build/generated/test.test-system/**/resources/ksp/**/*.ts"
+  ]
+}

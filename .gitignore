@@ -15,6 +15,7 @@ backend/.kotlin
 .settings
 .gradle
 build/
+node_modules/
 dist/
 reports/
 
@@ -33,4 +34,3 @@ logs/
 # localhost certificates for testing
 certificates
 *.pem
-

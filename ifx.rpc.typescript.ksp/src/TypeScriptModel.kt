@@ -2,6 +2,7 @@ package ifx.rpc.typescript.ksp
 
 internal data class ServiceModel(
     val name: String,
+    val address: String,
     val operations: List<OperationModel>,
     val declarations: List<TypeDeclaration>,
 )
@@ -9,6 +10,7 @@ internal data class ServiceModel(
 internal data class OperationModel(
     val name: String,
     val typeName: String,
+    val route: String,
     val parameterName: String?,
     val request: TypeRef,
     val requestOptional: Boolean,

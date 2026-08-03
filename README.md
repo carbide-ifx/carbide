@@ -149,6 +149,29 @@ types. User-defined request and response types must use `@Serializable` and
 custom or contextual serializers are rejected because their wire shape cannot
 be inferred from KSP symbols.
 
+Each generated contract also contains a concrete `{Service}Client`. Its
+`connect()` factory uses the TypeScript runtime in
+`typescript/ifx-rpc-client`, appends the qualified service address to the
+WebSocket base URL, and sends the exact Kotlin operation signatures as RSocket
+routing metadata:
+
+```typescript
+const client = await ISalesManagerClient.connect("ws://localhost:8080")
+
+try {
+    for await (const product of client.listProducts()) {
+        console.log(product)
+    }
+} finally {
+    client.close()
+}
+```
+
+The runtime exposes raw message-stream interceptors for context propagation,
+encryption, tracing, or other cross-cutting wire behavior. Its RSocket
+dependencies are pinned to the newest published TypeScript line,
+`1.0.0-alpha.3`; this upstream API is still an alpha.
+
 Amper consumes compiler plugins as Maven artifacts, so publish the compiler-plugin
 module locally before building modules that use it:
 
