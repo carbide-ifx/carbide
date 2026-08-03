@@ -8,20 +8,36 @@ import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.atomicArrayOfNulls
 import kotlin.concurrent.atomics.updateAt
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 
 const val DEFAULT_ACTUATOR_LOG_CAPACITY = 500
 
+@Serializable
 data class ActuatorLogEntry(
     val sequence: Long,
     val timestampEpochMilliseconds: Long,
     val serviceInterface: String,
     val serviceClassName: String?,
     val path: List<String>,
-    val severity: Severity,
+    val severity: ActuatorLogSeverity,
     val message: String,
     val throwable: String?,
 )
+
+@Serializable
+enum class ActuatorLogSeverity {
+    Verbose,
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Assert,
+}
 
 /** Thread-safe in-memory retention of the latest log entries for each service interface. */
 class ActuatorLogStore(
@@ -43,7 +59,7 @@ class ActuatorLogStore(
         bufferFor(serviceInterface).append(
             timestampEpochMilliseconds = Clock.System.now().toEpochMilliseconds(),
             tag = tag,
-            severity = severity,
+            severity = severity.toActuatorLogSeverity(),
             message = message,
             throwable = throwable?.stackTraceToString(),
         )
@@ -51,6 +67,9 @@ class ActuatorLogStore(
 
     fun logs(serviceInterface: String): List<ActuatorLogEntry> =
         buffers.load()[serviceInterface]?.snapshot().orEmpty()
+
+    fun latest(serviceInterface: String): Flow<ActuatorLogEntry> =
+        bufferFor(serviceInterface).latest()
 
     fun serviceInterfaces(): Set<String> = buffers.load().keys
 
@@ -65,10 +84,21 @@ class ActuatorLogStore(
     }
 }
 
+private fun Severity.toActuatorLogSeverity(): ActuatorLogSeverity = when (this) {
+    Severity.Verbose -> ActuatorLogSeverity.Verbose
+    Severity.Debug -> ActuatorLogSeverity.Debug
+    Severity.Info -> ActuatorLogSeverity.Info
+    Severity.Warn -> ActuatorLogSeverity.Warn
+    Severity.Error -> ActuatorLogSeverity.Error
+    Severity.Assert -> ActuatorLogSeverity.Assert
+}
+
 object ActuatorLogs {
     private val store = ActuatorLogStore()
 
     fun logs(serviceInterface: String): List<ActuatorLogEntry> = store.logs(serviceInterface)
+
+    fun latest(serviceInterface: String): Flow<ActuatorLogEntry> = store.latest(serviceInterface)
 
     fun serviceInterfaces(): Set<String> = store.serviceInterfaces()
 
@@ -86,11 +116,15 @@ private class ServiceLogBuffer(
 ) {
     private val sequence = AtomicLong(0L)
     private val entries: AtomicArray<ActuatorLogEntry?> = atomicArrayOfNulls(capacity)
+    private val latest = MutableSharedFlow<ActuatorLogEntry>(
+        replay = capacity,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
 
     fun append(
         timestampEpochMilliseconds: Long,
         tag: LogTag,
-        severity: Severity,
+        severity: ActuatorLogSeverity,
         message: String,
         throwable: String?,
     ) {
@@ -109,7 +143,10 @@ private class ServiceLogBuffer(
         entries.updateAt(index) { current ->
             if (current == null || current.sequence < nextSequence) entry else current
         }
+        if (entries.loadAt(index)?.sequence == nextSequence) latest.tryEmit(entry)
     }
+
+    fun latest(): Flow<ActuatorLogEntry> = latest.asSharedFlow()
 
     fun snapshot(): List<ActuatorLogEntry> = buildList {
         repeat(entries.size) { index ->

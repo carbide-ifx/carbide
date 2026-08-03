@@ -51,7 +51,7 @@ class TestSystemTest {
 
             assertEquals("Test System", catalog.name)
             assertEquals(
-                listOf("IProductAccess", "IPricingEngine", "ISalesManager"),
+                listOf("IProductAccess", "IPricingEngine", "ISalesManager", "IActuator"),
                 catalog.services.map { it.name },
             )
             assertEquals(

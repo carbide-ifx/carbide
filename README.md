@@ -114,6 +114,21 @@ actuator writer retains the structured contract address, implementation class,
 tag path, severity, message, and throwable. Plain framework log tags continue
 to reach the standard writer but are not retained. `ActuatorLogs.logs(address)`
 returns the latest 500 entries for that service address in sequence order.
+`ActuatorLogs.latest(address)` exposes the retained tail and future entries as
+a non-blocking `Flow<ActuatorLogEntry>`.
+
+Register the separate actuator service to expose that flow through the normal
+service transport. Callers use the generated actuator client or an iFX proxy;
+there is no separate HTTP streaming endpoint:
+
+```kotlin
+host.registerActuator()
+
+val actuator = proxyFactory.create<IActuator>()
+actuator.latestLogs<AwesomeService>().collect { entry ->
+    println(entry.message)
+}
+```
 
 ## OpenTelemetry traces
 

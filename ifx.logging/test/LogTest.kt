@@ -4,10 +4,13 @@ import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.loggerConfigInit
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -36,7 +39,7 @@ class LogTest {
         assertEquals(PRICING_INTERFACE, entry.serviceInterface)
         assertEquals("engine.pricing.service.PricingEngine", entry.serviceClassName)
         assertEquals(listOf("Repository"), entry.path)
-        assertEquals(Severity.Info, entry.severity)
+        assertEquals(ActuatorLogSeverity.Info, entry.severity)
         assertEquals("Price loaded", entry.message)
         assertNull(entry.throwable)
     }
@@ -72,6 +75,24 @@ class LogTest {
         val entries = store.logs(PRICING_INTERFACE)
         assertEquals(listOf(3L, 4L, 5L), entries.map(ActuatorLogEntry::sequence))
         assertEquals(listOf("message-2", "message-3", "message-4"), entries.map(ActuatorLogEntry::message))
+    }
+
+    @Test
+    fun `latest flow replays the retained tail and continues with future entries`() = runBlocking {
+        val store = ActuatorLogStore(capacityPerService = 3)
+        val writer = ActuatorLogWriter(store)
+        val encodedTag = LogTagCodec.encode(LogTag(serviceInterface = PRICING_INTERFACE))
+
+        repeat(3) { index -> writer.log(Severity.Info, "message-$index", encodedTag) }
+        val entries = mutableListOf<ActuatorLogEntry>()
+        val collection = launch(start = CoroutineStart.UNDISPATCHED) {
+            store.latest(PRICING_INTERFACE).take(4).toList(entries)
+        }
+
+        writer.log(Severity.Info, "message-3", encodedTag)
+        collection.join()
+
+        assertEquals(listOf(1L, 2L, 3L, 4L), entries.map(ActuatorLogEntry::sequence))
     }
 
     @Test

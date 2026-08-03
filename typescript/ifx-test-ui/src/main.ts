@@ -41,6 +41,7 @@ const styles = `
   .service-card.manager { background: #ffdc73; }
   .service-card.engine { background: #ff9635; }
   .service-card.access { background: #e3e4e3; }
+  .service-card.utility { width: 100%; min-width: 0; background: #bcd8c5; }
   .service-card.unclassified { background: #dec6e8; }
   .service-card:hover, .service-card:focus-visible { transform: translateY(-3px); box-shadow: 0 7px 18px rgba(23, 41, 31, .16); filter: saturate(1.05); outline: none; }
   .service-card.transition-source { view-transition-name: service-surface; }
@@ -58,6 +59,7 @@ const styles = `
   .service-page.manager { --service-accent: #d5a619; --service-tint: #fff1b8; }
   .service-page.engine { --service-accent: #e97014; --service-tint: #ffe0bf; }
   .service-page.access { --service-accent: #858b87; --service-tint: #eceeed; }
+  .service-page.utility { --service-accent: #568164; --service-tint: #dcebe1; }
   .service-page.unclassified { --service-accent: #9b68aa; --service-tint: #f0e2f4; }
   .service-surface { overflow: hidden; margin-top: 30px; border: 1px solid #4c524e; border-top: 7px solid var(--service-accent); border-radius: 9px; background: var(--service-tint); view-transition-name: service-surface; }
   .service-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; padding: 30px 32px; }
@@ -65,6 +67,30 @@ const styles = `
   .service-meta { max-width: 420px; text-align: right; }
   .service-meta .address { display: block; margin-top: 6px; }
   .service-contract { padding: 0 32px 32px; border-top: 1px solid color-mix(in srgb, var(--service-accent) 40%, transparent); background: color-mix(in srgb, var(--service-tint) 88%, #59635d); }
+  .service-logs { padding: 29px 32px 32px; border-top: 1px solid #35443b; background: #111914; color: #dce7df; }
+  .logs-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+  .logs-intro h2 { margin: 7px 0 0; font-size: 25px; letter-spacing: -.035em; }
+  .logs-intro .eyebrow { color: #78a887; }
+  .logs-controls { display: flex; align-items: center; gap: 12px; }
+  .logs-status { display: inline-flex; align-items: center; gap: 6px; color: #9aada0; font: 11px ui-monospace, monospace; }
+  .logs-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #87958c; }
+  .logs-status.live::before { background: #68ce83; box-shadow: 0 0 0 3px rgba(104, 206, 131, .12); }
+  .logs-status.reconnecting::before { background: #d4a849; }
+  .logs-refresh { border: 1px solid #526158; padding: 7px 10px; background: #1d2921; color: #dce7df; font-size: 11px; }
+  .logs-refresh:hover { border-color: #799083; background: #26352b; }
+  .log-stream { max-height: 430px; min-height: 118px; overflow: auto; margin-top: 18px; border: 1px solid #334038; background: #0b110d; font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; }
+  .log-empty { display: grid; min-height: 116px; place-items: center; padding: 24px; color: #708078; text-align: center; }
+  .log-entry { display: grid; grid-template-columns: 92px 58px minmax(150px, 220px) minmax(0, 1fr); gap: 11px; align-items: baseline; padding: 8px 12px; border-bottom: 1px solid #1b261f; }
+  .log-entry:last-child { border-bottom: 0; }
+  .log-time { color: #718079; }
+  .log-severity { font-weight: 750; text-transform: uppercase; }
+  .log-severity.verbose, .log-severity.debug { color: #81928a; }
+  .log-severity.info { color: #76c98d; }
+  .log-severity.warn { color: #e2b95c; }
+  .log-severity.error, .log-severity.assert { color: #ec7e68; }
+  .log-tag { overflow: hidden; color: #89a997; text-overflow: ellipsis; white-space: nowrap; }
+  .log-message { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .log-throwable { grid-column: 4; margin: 4px 0 2px; color: #e39a8d; white-space: pre-wrap; overflow-wrap: anywhere; }
   .operations-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-top: 27px; }
   .operations-intro h2 { margin: 7px 0 0; font-size: 25px; letter-spacing: -.035em; }
   .operations-intro p { margin: 0; color: #727e76; font-size: 13px; }
@@ -136,7 +162,7 @@ const styles = `
   @keyframes fade-away { to { opacity: 0; } }
   @keyframes fade-in { from { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .001ms; animation-delay: 0ms; } }
-  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .response { border-top: 1px solid #d2dbd4; border-left: 0; } }
+  @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .response { border-top: 1px solid #d2dbd4; border-left: 0; } .service-logs { padding: 24px 22px; } .logs-intro { display: block; } .logs-controls { margin-top: 14px; justify-content: space-between; } .log-entry { grid-template-columns: 82px 54px minmax(0, 1fr); } .log-message, .log-throwable { grid-column: 1 / -1; } }
 `;
 
 const I_SERVICE_OPERATIONS = new Set(["status", "init", "isReady", "isLive"]);
@@ -144,12 +170,24 @@ interface JsonInput { readonly element: HTMLElement; readonly read: () => unknow
 interface SchemaContext { readonly definitions: ReadonlyMap<string, IfxTypeDescription>; readonly parameters: ReadonlyMap<string, IfxTypeReference> }
 interface JsonObjectMembers { readonly element: HTMLElement; readonly count: number; readonly read: () => Record<string, unknown> }
 interface ResolvedObject { readonly definition: Extract<IfxTypeDescription, { type: "object" }>; readonly context: SchemaContext }
-type ServiceKind = "manager" | "engine" | "access" | "unclassified";
+type ServiceKind = "manager" | "engine" | "access" | "utility" | "unclassified";
 interface CatalogService { readonly service: IfxServiceDescription; readonly index: number; readonly kind: ServiceKind }
+interface ActuatorLogMessage {
+  readonly sequence: number;
+  readonly timestampEpochMilliseconds: number;
+  readonly serviceInterface: string;
+  readonly serviceClassName: string | null;
+  readonly path: readonly string[];
+  readonly severity: string;
+  readonly message: string;
+  readonly throwable: string | null;
+}
 
 const appElement = document.querySelector<HTMLElement>("#app");
 if (!appElement) throw new Error("Missing #app element");
 const app: HTMLElement = appElement;
+let activeLogBinding: RSocketBinding | undefined;
+let logConnectionGeneration = 0;
 document.head.append(Object.assign(document.createElement("style"), { textContent: styles }));
 
 void start();
@@ -184,6 +222,9 @@ function navigateFromServiceCard(event: MouseEvent, render: () => void): void {
 }
 
 function renderRoute(catalog: IfxServiceCatalog): void {
+  logConnectionGeneration += 1;
+  activeLogBinding?.close();
+  activeLogBinding = undefined;
   const match = /^#\/services\/(.+)$/.exec(location.hash);
   const service = match && catalog.services.find((item) => item.address === decodeURIComponent(match[1]));
   if (service) renderService(catalog, service);
@@ -203,6 +244,7 @@ function renderCatalog(catalog: IfxServiceCatalog): void {
   const managers = services.filter(({ kind }) => kind === "manager");
   const engines = services.filter(({ kind }) => kind === "engine");
   const access = services.filter(({ kind }) => kind === "access");
+  const utilities = services.filter(({ kind }) => kind === "utility");
   const unclassified = services.filter(({ kind }) => kind === "unclassified");
   const architecture = `
     ${renderArchitectureLayer("Client / UI", [], "client-layer", "Client applications will appear here")}
@@ -210,7 +252,9 @@ function renderCatalog(catalog: IfxServiceCatalog): void {
     ${renderArchitectureLayer("Resource<br>Access", [access], "access-layer", "No access services registered")}
     <aside class="utilities-layer">
       <div class="utilities-label">Utilities</div>
-      <div class="utilities-content"><div class="layer-placeholder">Utilities will appear here</div></div>
+      <div class="utilities-content">${utilities.length > 0
+        ? utilities.map(renderServiceCard).join("")
+        : `<div class="layer-placeholder">Utilities will appear here</div>`}</div>
     </aside>
     ${renderArchitectureLayer("Resources", [], "resources-layer", "Resources will appear here")}
     ${unclassified.length > 0 ? renderArchitectureLayer("Unclassified", [unclassified], "unclassified-layer", "") : ""}`;
@@ -256,6 +300,7 @@ function renderServiceCard({ service, index, kind }: CatalogService): string {
 }
 
 function serviceKind(service: IfxServiceDescription): ServiceKind {
+  if (service.name === "IActuator") return "utility";
   const name = service.name.replace(/^I(?=[A-Z])/, "");
   if (/Manager$/i.test(name)) return "manager";
   if (/Engine$/i.test(name)) return "engine";
@@ -268,6 +313,7 @@ function serviceTypeLabel(kind: ServiceKind): string {
     case "manager": return "Business Logic · Manager";
     case "engine": return "Business Logic · Engine";
     case "access": return "Resource Access";
+    case "utility": return "Utility · Actuator";
     case "unclassified": return "Unclassified Service";
   }
 }
@@ -289,9 +335,17 @@ function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescriptio
           </div>
           <section class="operations" aria-label="Operations"></section>
         </div>
+        <section class="service-logs" aria-label="Application logs">
+          <div class="logs-intro">
+            <div><div class="eyebrow">Actuator</div><h2>Application logs</h2></div>
+            <div class="logs-controls"><span class="logs-status">Connecting</span><button class="logs-refresh" type="button">Reconnect</button></div>
+          </div>
+          <div class="log-stream" role="log" aria-live="polite"><div class="log-empty">Connecting to retained service logs…</div></div>
+        </section>
       </section>
     </div>`);
 
+  connectServiceLogs(catalog, service);
   const container = app.querySelector<HTMLElement>(".operations");
   if (!container) return;
   const definitions = new Map(service.types.map((definition) => [definition.name, definition]));
@@ -301,6 +355,99 @@ function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescriptio
     return;
   }
   for (const operation of operations) container.append(renderOperation(service, operation, definitions));
+}
+
+function connectServiceLogs(catalog: IfxServiceCatalog, service: IfxServiceDescription): void {
+  const stream = app.querySelector<HTMLElement>(".log-stream");
+  const status = app.querySelector<HTMLElement>(".logs-status");
+  const reconnect = app.querySelector<HTMLButtonElement>(".logs-refresh");
+  if (!stream || !status || !reconnect) return;
+
+  const entries = new Map<number, ActuatorLogMessage>();
+  const actuator = catalog.services.find((candidate) => candidate.name === "IActuator");
+  const operation = actuator?.operations.find((candidate) => candidate.name === "latestLogs");
+  if (!actuator || !operation) {
+    reconnect.disabled = true;
+    setLogStatus(status, "Unavailable", "reconnecting");
+    stream.innerHTML = `<div class="log-empty">No actuator service is registered on this host.</div>`;
+    return;
+  }
+
+  const connect = async () => {
+    const current = ++logConnectionGeneration;
+    activeLogBinding?.close();
+    activeLogBinding = undefined;
+    entries.clear();
+    stream.innerHTML = `<div class="log-empty">Connecting to retained service logs…</div>`;
+    setLogStatus(status, "Connecting");
+    reconnect.disabled = true;
+
+    let binding: RSocketBinding | undefined;
+    try {
+      const scheme = location.protocol === "https:" ? "wss:" : "ws:";
+      binding = await RSocketBinding.connect({
+        url: RSocketBinding.serviceUrl(`${scheme}//${location.host}`, actuator.address),
+      });
+      if (current !== logConnectionGeneration) {
+        binding.close();
+        return;
+      }
+      activeLogBinding = binding;
+      reconnect.disabled = false;
+      setLogStatus(status, "Live", "live");
+      stream.innerHTML = `<div class="log-empty">Waiting for application logs from ${escapeHtml(service.name)}…</div>`;
+
+      for await (const entry of binding.requestStream<ActuatorLogMessage>(operation.route, service.address)) {
+        if (current !== logConnectionGeneration) break;
+        entries.set(entry.sequence, entry);
+        while (entries.size > 500) entries.delete(Math.min(...entries.keys()));
+        renderServiceLogs(stream, service, [...entries.values()].sort((left, right) => left.sequence - right.sequence));
+      }
+      if (current === logConnectionGeneration) setLogStatus(status, "Ended", "reconnecting");
+    } catch (error) {
+      if (current === logConnectionGeneration) {
+        reconnect.disabled = false;
+        setLogStatus(status, "Unavailable", "reconnecting");
+        stream.innerHTML = `<div class="log-empty">${escapeHtml(messageOf(error))}</div>`;
+      }
+    } finally {
+      binding?.close();
+      if (activeLogBinding === binding) activeLogBinding = undefined;
+    }
+  };
+
+  reconnect.addEventListener("click", () => void connect());
+  void connect();
+}
+
+function setLogStatus(element: HTMLElement, label: string, state = ""): void {
+  element.textContent = label;
+  element.className = `logs-status ${state}`.trim();
+}
+
+function renderServiceLogs(
+  container: HTMLElement,
+  service: IfxServiceDescription,
+  entries: readonly ActuatorLogMessage[],
+): void {
+  container.innerHTML = entries.map((entry) => {
+    const severity = entry.severity.toLowerCase();
+    const implementation = entry.serviceClassName?.split(".").pop() ?? service.name;
+    const tag = [implementation, ...entry.path].filter(Boolean).join(".");
+    return `<div class="log-entry">
+      <span class="log-time">${escapeHtml(logTimestamp(entry.timestampEpochMilliseconds))}</span>
+      <span class="log-severity ${escapeHtml(severity)}">${escapeHtml(entry.severity)}</span>
+      <span class="log-tag" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>
+      <span class="log-message">${escapeHtml(entry.message)}</span>
+      ${entry.throwable ? `<pre class="log-throwable">${escapeHtml(entry.throwable)}</pre>` : ""}
+    </div>`;
+  }).join("");
+  container.scrollTop = container.scrollHeight;
+}
+
+function logTimestamp(epochMilliseconds: number): string {
+  const date = new Date(epochMilliseconds);
+  return `${date.toLocaleTimeString([], { hour12: false })}.${String(date.getMilliseconds()).padStart(3, "0")}`;
 }
 
 function visibleOperations(service: IfxServiceDescription): readonly IfxOperationDescription[] {

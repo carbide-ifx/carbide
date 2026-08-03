@@ -2,6 +2,7 @@ import access.product.contract.IProductAccess
 import access.product.service.ProductAccessEmulator
 import engine.pricing.contract.IPricingEngine
 import engine.pricing.service.PricingEngine
+import ifx.actuator.registerActuator
 import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
 import ifx.host.rsocket.Host
@@ -32,6 +33,7 @@ suspend fun startTestSystem(
     host.registerService<IProductAccess> { ProductAccessEmulator().apply { seedTestData() } }
         .registerService<IPricingEngine> { PricingEngine(proxyFactory) }
         .registerService<ISalesManager> { SalesManager(proxyFactory) }
+        .registerActuator()
         .open()
 
     return host
