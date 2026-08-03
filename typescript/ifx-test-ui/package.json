@@ -2,7 +2,8 @@
   "name": "@ifx/test-ui",
   "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit && node build.mjs"
+    "build": "tsc -p tsconfig.json --noEmit && node build.mjs",
+    "dev": "tsc -p tsconfig.json --noEmit && node dev.mjs"
   },
   "dependencies": {
     "@ifx/rpc-client": "file:../ifx-rpc-client"

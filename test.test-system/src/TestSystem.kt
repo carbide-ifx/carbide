@@ -20,7 +20,12 @@ import manager.sales.service.SalesManager
 suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
 ): IHost {
-    val host = Host(0, "Test System", testUi = true)
+    val host = Host(
+        port = 7070,
+        name = "Test System",
+        testUi = true,
+        testUiDevelopmentDirectory = "typescript/ifx-test-ui/dist",
+    )
         .addInterceptors(interceptors)
     val proxyFactory = ProxyFactory.forHost(host)
 

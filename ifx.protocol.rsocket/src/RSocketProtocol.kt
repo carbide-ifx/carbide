@@ -11,6 +11,7 @@ import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -27,17 +28,24 @@ class RSocketProtocol(
     private val requestedPort: Int = 0,
     private val hostName: String = "Service Host",
     private val testUiEnabled: Boolean = false,
+    private val testUiDevelopmentDirectory: String? = null,
 ) : IProtocol {
 
     private val acceptors = mutableMapOf<String, ConnectionAcceptor>()
     private val descriptions = mutableMapOf<String, ServiceDescription>()
+    private val testUiDevelopmentAssetPath = testUiDevelopmentDirectory?.let { directory ->
+        "${directory.trimEnd('/', '\\')}/test-ui.js"
+    }
     private val server = embeddedServer(CIO, requestedPort) {
         install(WebSockets)
         install(RSocketSupport)
         routing {
             if (testUiEnabled) {
                 get("/") {
-                    call.respondText(TestUiAssets.html, ContentType.Text.Html)
+                    if (testUiDevelopmentAssetPath != null) {
+                        call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                    }
+                    call.respondText(testUiHtml(), ContentType.Text.Html)
                 }
                 get("/ifx/services") {
                     call.respondText(
@@ -46,7 +54,22 @@ class RSocketProtocol(
                     )
                 }
                 get("/ifx/test-ui.js") {
-                    call.respondText(TestUiAssets.javascript, ContentType.Application.JavaScript)
+                    if (testUiDevelopmentAssetPath != null) {
+                        call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                    }
+                    call.respondText(
+                        developmentTestUiAsset() ?: TestUiAssets.javascript,
+                        ContentType.Application.JavaScript,
+                    )
+                }
+                if (testUiDevelopmentAssetPath != null) {
+                    get("/ifx/test-ui-version") {
+                        call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                        call.respondText(
+                            developmentTestUiAsset()?.hashCode()?.toString() ?: "missing",
+                            ContentType.Text.Plain,
+                        )
+                    }
                 }
             }
             acceptors.forEach { (route, acceotor) ->
@@ -65,6 +88,35 @@ class RSocketProtocol(
     }
 
     override fun close(): IProtocol = apply { server.stop() }
+
+    private fun developmentTestUiAsset(): String? =
+        testUiDevelopmentAssetPath?.let(::readTestUiDevelopmentAsset)
+
+    private fun testUiHtml(): String {
+        if (testUiDevelopmentAssetPath == null) return TestUiAssets.html
+
+        val liveReloadScript = """
+            <script>
+              (() => {
+                let currentVersion;
+                const checkForChanges = async () => {
+                  try {
+                    const response = await fetch("/ifx/test-ui-version", { cache: "no-store" });
+                    if (response.ok) {
+                      const nextVersion = await response.text();
+                      if (currentVersion === undefined) currentVersion = nextVersion;
+                      else if (nextVersion !== currentVersion) location.reload();
+                    }
+                  } catch {}
+                  setTimeout(checkForChanges, 500);
+                };
+                checkForChanges();
+              })();
+            </script>
+        """.trimIndent()
+
+        return TestUiAssets.html.replace("</body>", "$liveReloadScript\n</body>")
+    }
 
 
     override fun createClientBinding(address: String): IBinding = try {

@@ -8,4 +8,5 @@ class Host(
     val port: Int,
     val name: String = "Service Host",
     val testUi: Boolean = false,
-) : IHost by HostBase(RSocketProtocol(port, name, testUi), name)
+    val testUiDevelopmentDirectory: String? = null,
+) : IHost by HostBase(RSocketProtocol(port, name, testUi, testUiDevelopmentDirectory), name)
