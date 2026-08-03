@@ -5,6 +5,7 @@ import ifx.protocol.contract.Message
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.WebSockets
 import io.rsocket.kotlin.RSocket
+import io.rsocket.kotlin.RSocketLoggingApi
 import io.rsocket.kotlin.core.WellKnownMimeType
 import io.rsocket.kotlin.ktor.client.RSocketSupport
 import io.rsocket.kotlin.ktor.client.rSocket
@@ -19,12 +20,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
+@OptIn(RSocketLoggingApi::class)
 class RSocketClient(url: String) : IBinding {
     val httpClient = HttpClient {
         this.install(WebSockets) // rsocket requires websockets plugin installed
         this.install(RSocketSupport) {
             // configure rSocket connector (all values have defaults)
             connector {
+                loggerFactory = KermitRSocketLoggerFactory
                 connectionConfig {
                     // payload for setup frame
                     setupPayload {

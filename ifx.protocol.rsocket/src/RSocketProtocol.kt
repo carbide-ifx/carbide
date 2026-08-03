@@ -9,6 +9,8 @@ import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescription
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
+import io.ktor.server.engine.EngineConnectorBuilder
+import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.engine.embeddedServer
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -18,12 +20,14 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.rsocket.kotlin.ConnectionAcceptor
 import io.rsocket.kotlin.RSocketRequestHandler
+import io.rsocket.kotlin.RSocketLoggingApi
 import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 
+@OptIn(RSocketLoggingApi::class)
 class RSocketProtocol(
     private val requestedPort: Int = 0,
     private val hostName: String = "Service Host",
@@ -36,9 +40,21 @@ class RSocketProtocol(
     private val testUiDevelopmentAssetPath = testUiDevelopmentDirectory?.let { directory ->
         "${directory.trimEnd('/', '\\')}/test-ui.js"
     }
-    private val server = embeddedServer(CIO, requestedPort) {
+    private val server = embeddedServer(
+        factory = CIO,
+        environment = applicationEnvironment {
+            log = kermitKtorLogger("Ktor")
+        },
+        configure = {
+            connectors.add(EngineConnectorBuilder().apply { port = requestedPort })
+        },
+    ) {
         install(WebSockets)
-        install(RSocketSupport)
+        install(RSocketSupport) {
+            server {
+                loggerFactory = KermitRSocketLoggerFactory
+            }
+        }
         routing {
             if (testUiEnabled) {
                 get("/") {
