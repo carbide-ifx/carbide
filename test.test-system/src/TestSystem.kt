@@ -21,7 +21,7 @@ suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
 ): IHost {
     val host = Host(
-        port = 7070,
+        port = 0,
         name = "Test System",
         testUi = true,
         testUiDevelopmentDirectory = "typescript/ifx-test-ui/dist",
