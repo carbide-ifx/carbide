@@ -76,14 +76,18 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 
+private class ${contractName}Proxy(
+    private val binding: IBinding,
+) : $contractName {
+    override val logger = ifx.logging.Log("${address}Proxy")
+${functions.joinToString("\n") { clientMethod(it) }}
+}
+
 public object $descriptorName : ServiceDescriptor<$contractName> {
     override val contract = $contractName::class
     override val address = "$address"
     override val description = $description
-    override fun createClient(binding: IBinding): $contractName = object : $contractName {
-        override val logger = ifx.logging.Log("${address}Proxy")
-${functions.joinToString("\n") { clientMethod(it) }}
-    }
+    override fun createClient(binding: IBinding): $contractName = ${contractName}Proxy(binding)
     override fun bind(instance: $contractName): IBinding = object : IBinding {
         override suspend fun fireAndForget(operation: String, message: Message) {
             when (operation) {
@@ -114,15 +118,15 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
         val argument = parameter?.name?.asString()
         return when (declaration) {
             "kotlin.Unit" -> if (function.isFireAndForget()) {
-                "        override suspend fun $name($params) { binding.fireAndForget(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
+                "    override suspend fun $name($params) { binding.fireAndForget(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
             } else {
-                "        override suspend fun $name($params) { binding.requestResponse(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
+                "    override suspend fun $name($params) { binding.requestResponse(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
             }
             "kotlinx.coroutines.flow.Flow" -> {
                 val element = function.returnType!!.resolve().arguments.single().type!!.resolve()
-                "        override fun $name($params): ${typeName(function.returnType!!.resolve())} = flow { emitAll(binding.requestStream(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).map { it.decode<${typeName(element)}>() }) }"
+                "    override fun $name($params): ${typeName(function.returnType!!.resolve())} = flow { emitAll(binding.requestStream(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).map { it.decode<${typeName(element)}>() }) }"
             }
-            else -> "        override suspend fun $name($params): ${typeName(function.returnType!!.resolve())} = binding.requestResponse(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).decode()"
+            else -> "    override suspend fun $name($params): ${typeName(function.returnType!!.resolve())} = binding.requestResponse(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).decode()"
         }
     }
 

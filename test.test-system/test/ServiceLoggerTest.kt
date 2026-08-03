@@ -18,9 +18,13 @@ class ServiceLoggerTest {
     }
 
     @Test
-    fun `generated client logger uses its qualified contract proxy name as tag`() {
+    fun `generated client uses a named proxy class and matching logger tag`() {
         val client = IProductAccessDescriptor.createClient(UnusedBinding)
 
+        assertEquals(
+            "access.product.contract.IProductAccessProxy",
+            client::class.qualifiedName,
+        )
         assertEquals(
             "access.product.contract.IProductAccessProxy",
             client.logger.tag,
