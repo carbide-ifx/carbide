@@ -1,11 +1,9 @@
 package ifx.protocol.contract
 
-import ifx.context.Context
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.single
 
 /** Executes pre-ordered interceptor onion layers around [nextBinding]. */
@@ -59,7 +57,7 @@ class ClientInterceptorPipeline(
     private val service: String,
     interceptors: List<IInterceptor> = emptyList(),
     nextBinding: IBinding,
-) : InterceptorPipeline(listOf(ContextPropagationInterceptor) + interceptors, nextBinding) {
+) : InterceptorPipeline(interceptors, nextBinding) {
     override fun createCall(
         interactionType: InteractionType,
         operation: String,
@@ -75,29 +73,10 @@ class ServerInterceptorPipeline(
     private val service: String,
     interceptors: List<IInterceptor> = emptyList(),
     nextBinding: IBinding,
-) : InterceptorPipeline(interceptors.asReversed() + ContextPropagationInterceptor, nextBinding) {
+) : InterceptorPipeline(interceptors.asReversed(), nextBinding) {
     override fun createCall(
         interactionType: InteractionType,
         operation: String,
         message: Message,
     ): ServerCall = ServerCall(service, interactionType, operation, message)
-}
-
-/**
- * Injects the caller's Context before client interceptors and extracts it after
- * server interceptors have decoded the incoming message.
- */
-private object ContextPropagationInterceptor : IInterceptor {
-    override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
-        val context = when (call) {
-            is ClientCall -> Context.currentOrNull() ?: call.message.contextOrNull() ?: Context()
-            is ServerCall -> call.message.context()
-        }
-        val message = when (call) {
-            is ClientCall -> call.message.withContext(context)
-            is ServerCall -> call.message
-        }
-
-        emitAll(next(call.withMessage(message)).flowOn(context))
-    }
 }

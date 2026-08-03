@@ -53,10 +53,43 @@ produces a symmetric onion:
 client logging -> client encryption -> transport -> server encryption -> server logging -> service
 ```
 
-The pipeline writes the current `ifx.context.Context` to the client message header
-and installs the received header value as a coroutine-context element around the
-server binding. This remains active while request streams are collected. Generic
-JSON headers can be inspected or changed with `Message.headers()` and
+`Context` is an immutable ambient container with no predefined application
+fields. Every value placed in it is serialized immediately and propagated by a
+zero-configuration `ContextInterceptor`:
+
+```kotlin
+@Serializable
+@SerialName("ifx.caller")
+data class Caller(val subject: String)
+
+@Serializable
+@SerialName("ifx.request")
+data class RequestMetadata(val requestId: String)
+
+val contextInterceptor = ContextInterceptor()
+
+val interceptors = listOf(
+    LoggingInterceptor(),
+    contextInterceptor,
+    Encryption,
+)
+
+host.addInterceptors(interceptors)
+proxyFactory.addInterceptors(interceptors)
+
+withContext(Context().set(Caller("user-42"))) {
+    client.awesome(request)
+}
+```
+
+On the server, propagated values are installed in the coroutine context
+for the complete invocation, including stream collection, and can be read with
+`Context.current().getOrNull<Caller>()`. Context values must be serializable;
+use a stable `@SerialName` as their cross-system identity. Unknown values remain
+as opaque JSON and can pass through systems that do not understand them. Place
+the context interceptor before interceptors that encode or encrypt headers;
+reversed server ordering will decrypt the headers before context extraction.
+Generic JSON headers can be inspected or changed with `Message.headers()` and
 `Message.withHeader(...)`.
 
 ## OpenTelemetry traces

@@ -1,7 +1,6 @@
 package ifx.protocol.contract
 
 import ifx.context.Context
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
@@ -12,16 +11,12 @@ val RpcFormat = kotlinx.serialization.json.Json {
 }
 
 suspend inline fun <reified T> T.encodeToMessage(): Message = Message(
-    header = RpcFormat.encodeToString(
-        mapOf(Context.HEADER_KEY to Context.currentOrNull()).mapNotNullValues()
-    ),
+    header = "{}",
     body = RpcFormat.encodeToString(this),
 )
 
 suspend fun emptyMessage(): Message = Message(
-    header = RpcFormat.encodeToString(
-        mapOf(Context.HEADER_KEY to Context.currentOrNull()).mapNotNullValues()
-    ),
+    header = "{}",
     body = "",
 )
 
@@ -44,17 +39,10 @@ fun Message.contextOrNull(): Context? = try {
 } catch (exception: ProtocolException) {
     throw exception
 } catch (exception: Exception) {
-    throw ProtocolException(exception) { "Failed to parse message context: ${exception.message}" }
+    throw ProtocolException(exception) { "Failed to read message context: ${exception.message}" }
 }
 
-fun Message.context(): Context = contextOrNull() ?: Context()
+fun Message.context(): Context = contextOrNull() ?: Context.Empty
 
 fun Message.withContext(context: Context?): Message =
     withHeader(Context.HEADER_KEY, context?.let(RpcFormat::encodeToJsonElement))
-
-@Deprecated("Use context()", ReplaceWith("context()"))
-fun Message.parseContext(): Context = context()
-
-@PublishedApi
-internal fun <K, V> Map<K, V?>.mapNotNullValues(): Map<K, V> =
-    mapNotNull { (key, value) -> value?.let { key to it } }.toMap()

@@ -1,12 +1,17 @@
 package ifx.protocol.contract
 
 import ifx.context.Context
+import ifx.context.getOrNull
+import ifx.context.set
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -86,45 +91,95 @@ class InterceptorPipelineTest {
     }
 
     @Test
-    fun `client context is injected into headers and coroutine context`() = runBlocking {
-        val expected = Context(traceId = "client-trace")
-        val observed = mutableListOf<Pair<String, String>>()
+    fun `client context is injected into its reserved header`() = runBlocking {
+        val expected = Caller("client-user")
+        val contextInterceptor = ContextInterceptor()
+        val observed = mutableListOf<Pair<Caller?, Caller?>>()
         val inspector = IInterceptor { call, next ->
             flow {
-                observed += Context.current().traceId to call.message.context().traceId
+                observed += Context.current().getOrNull<Caller>() to
+                    call.message.context().getOrNull<Caller>()
                 emitAll(next(call))
             }
         }
         val binding = object : EmptyBinding() {
             override suspend fun requestResponse(operation: String, message: Message): Message {
-                observed += Context.current().traceId to message.context().traceId
+                observed += Context.current().getOrNull<Caller>() to
+                    message.context().getOrNull<Caller>()
                 return Message("{}", "response")
             }
         }
-        val pipeline = ClientInterceptorPipeline("test.Service", listOf(inspector), binding)
+        val pipeline = ClientInterceptorPipeline("test.Service", listOf(contextInterceptor, inspector), binding)
 
-        withContext(expected) {
+        withContext(Context().set(expected)) {
             pipeline.requestResponse("response", Message("{}", "request"))
         }
 
-        assertEquals(listOf("client-trace" to "client-trace", "client-trace" to "client-trace"), observed)
+        val expectedObservations: List<Pair<Caller?, Caller?>> = listOf(
+            expected to expected,
+            expected to expected,
+        )
+        assertEquals(
+            expectedObservations,
+            observed,
+        )
     }
 
     @Test
-    fun `server context from headers remains active while stream is collected`() = runBlocking {
-        val expected = Context(traceId = "server-trace")
-        val observed = mutableListOf<String>()
+    fun `server context types remain active while stream is collected`() = runBlocking {
+        val expectedCaller = Caller("server-user")
+        val expectedRequest = RequestMetadata("request-42")
+        val contextInterceptor = ContextInterceptor()
+        val observed = mutableListOf<Pair<Caller?, RequestMetadata?>>()
         val binding = object : EmptyBinding() {
             override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flow {
-                observed += Context.current().traceId
+                observed += Context.current().getOrNull<Caller>() to
+                    Context.current().getOrNull<RequestMetadata>()
                 emit(Message("{}", "response"))
             }
         }
-        val pipeline = ServerInterceptorPipeline("test.Service", nextBinding = binding)
+        val pipeline = ServerInterceptorPipeline(
+            "test.Service",
+            interceptors = listOf(contextInterceptor),
+            nextBinding = binding,
+        )
+        val message = Message("{}", "request")
+            .withContext(Context().set(expectedCaller).set(expectedRequest))
 
-        pipeline.requestStream("stream", Message("{}", "request").withContext(expected)).toList()
+        pipeline.requestStream("stream", message).toList()
 
-        assertEquals(listOf("server-trace"), observed)
+        val expectedObservations: List<Pair<Caller?, RequestMetadata?>> =
+            listOf(expectedCaller to expectedRequest)
+        assertEquals(expectedObservations, observed)
+    }
+
+    @Test
+    fun `serializable context types propagate without registration`() = runBlocking {
+        val expected = RequestMetadata("automatic")
+        val contextInterceptor = ContextInterceptor()
+        val binding = object : EmptyBinding() {
+            override suspend fun requestResponse(operation: String, message: Message): Message {
+                assertEquals(expected, message.context().getOrNull<RequestMetadata>())
+                return Message("{}", "response")
+            }
+        }
+        val pipeline = ClientInterceptorPipeline("test.Service", listOf(contextInterceptor), binding)
+
+        val response = withContext(Context().set(expected)) {
+            pipeline.requestResponse("response", Message("{}", "request"))
+        }
+        assertEquals("response", response.body)
+    }
+
+    @Test
+    fun `unknown context elements survive serialization`() {
+        val rawContext = JsonObject(mapOf("future.context" to JsonPrimitive("opaque")))
+        val incoming = Message("{}", "request")
+            .withHeader(Context.HEADER_KEY, rawContext)
+
+        val outgoing = Message("{}", "request").withContext(incoming.context())
+
+        assertEquals(rawContext, outgoing.headers()[Context.HEADER_KEY])
     }
 
     @Test
@@ -135,6 +190,14 @@ class InterceptorPipelineTest {
         assertEquals(JsonPrimitive("00-trace-span-01"), message.headers()["traceparent"])
     }
 }
+
+@Serializable
+@SerialName("ifx.caller")
+private data class Caller(val name: String)
+
+@Serializable
+@SerialName("ifx.request")
+private data class RequestMetadata(val requestId: String)
 
 private class RecordingInterceptor(
     private val name: String,
