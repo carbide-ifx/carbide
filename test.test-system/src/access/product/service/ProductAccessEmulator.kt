@@ -12,6 +12,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ProductAccessEmulator(val db: MutableMap<String, Product> = mutableMapOf()) : IProductAccess {
     override suspend fun store(product: Product) = db.set(product.id, product)
+    override suspend fun notifyProductViewed(productId: String) = Unit
+
     override suspend fun filter(criteria: ProductCriteria): List<Product> = db
         .filterKeysIfPresent(criteria.ids){ key, criteria -> key in criteria}
         .values

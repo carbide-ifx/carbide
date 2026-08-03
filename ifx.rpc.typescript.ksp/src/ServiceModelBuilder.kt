@@ -47,14 +47,17 @@ internal class ServiceModelBuilder {
         val returnType = function.returnType?.resolve()
             ?: fail("Service operation ${function.simpleName.asString()} has no return type", function)
         val returnName = returnType.declaration.qualifiedName?.asString()
-        val interaction = when (returnName) {
-            "kotlin.Unit" -> Interaction.FIRE_AND_FORGET
-            FLOW -> Interaction.REQUEST_STREAM
+        val interaction = when {
+            function.isFireAndForget() -> Interaction.FIRE_AND_FORGET
+            returnName == FLOW -> Interaction.REQUEST_STREAM
             else -> Interaction.REQUEST_RESPONSE
         }
         val isSuspend = Modifier.SUSPEND in function.modifiers
         if ((interaction == Interaction.REQUEST_STREAM && isSuspend) || (interaction != Interaction.REQUEST_STREAM && !isSuspend)) {
             fail("Service operation ${function.simpleName.asString()} has an invalid suspend/Flow combination", function)
+        }
+        if (function.isFireAndForget() && (returnName != "kotlin.Unit" || !isSuspend)) {
+            fail("@FireAndForget may only be used on suspending IFX service methods returning Unit", function)
         }
         val parameter = function.parameters.singleOrNull()
         val response = if (interaction == Interaction.REQUEST_STREAM) {
@@ -282,11 +285,16 @@ internal class ServiceModelBuilder {
     private fun isAnyMethod(function: KSFunctionDeclaration): Boolean =
         function.simpleName.asString() in setOf("equals", "hashCode", "toString")
 
+    private fun KSFunctionDeclaration.isFireAndForget(): Boolean = annotations.any { annotation ->
+        annotation.annotationType.resolve().declaration.qualifiedName?.asString() == FIRE_AND_FORGET
+    }
+
     private fun String.upperCamelCase(): String = replaceFirstChar { character ->
         if (character.isLowerCase()) character.titlecase() else character.toString()
     }
 
     private companion object {
+        const val FIRE_AND_FORGET = "ifx.service.FireAndForget"
         const val FLOW = "kotlinx.coroutines.flow.Flow"
         const val SERIALIZABLE = "kotlinx.serialization.Serializable"
         const val SERIAL_NAME = "kotlinx.serialization.SerialName"

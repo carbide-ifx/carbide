@@ -55,7 +55,7 @@ class TestSystemTest {
                 catalog.services.map { it.name },
             )
             assertEquals(
-                listOf("filter", "generateRandowProduct", "store", "status", "init", "isReady", "isLive"),
+                listOf("filter", "generateRandowProduct", "store", "notifyProductViewed", "status", "init", "isReady", "isLive"),
                 catalog.services.first().operations.map { it.name },
             )
         } finally {

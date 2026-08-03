@@ -33,9 +33,9 @@ internal class ServiceDescriptionRenderer {
     private fun operation(function: KSFunctionDeclaration): String {
         val returnType = function.returnType!!.resolve()
         val returnName = returnType.declaration.qualifiedName?.asString()
-        val interaction = when (returnName) {
-            "kotlin.Unit" -> "InteractionType.FIRE_AND_FORGET"
-            FLOW -> "InteractionType.REQUEST_STREAM"
+        val interaction = when {
+            function.isFireAndForget() -> "InteractionType.FIRE_AND_FORGET"
+            returnName == FLOW -> "InteractionType.REQUEST_STREAM"
             else -> "InteractionType.REQUEST_RESPONSE"
         }
         val parameter = function.parameters.singleOrNull()
@@ -214,7 +214,12 @@ internal class ServiceDescriptionRenderer {
     private fun isAnyMethod(function: KSFunctionDeclaration): Boolean =
         function.simpleName.asString() in setOf("equals", "hashCode", "toString")
 
+    private fun KSFunctionDeclaration.isFireAndForget(): Boolean = annotations.any { annotation ->
+        annotation.annotationType.resolve().declaration.qualifiedName?.asString() == FIRE_AND_FORGET
+    }
+
     private companion object {
+        const val FIRE_AND_FORGET = "ifx.service.FireAndForget"
         const val FLOW = "kotlinx.coroutines.flow.Flow"
         const val SERIAL_NAME = "kotlinx.serialization.SerialName"
         const val TRANSIENT = "kotlinx.serialization.Transient"

@@ -41,13 +41,19 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
         getAllFunctions().filterNot(::isAnyMethod).all { function ->
             val returnDeclaration = function.returnType?.resolve()?.declaration?.qualifiedName?.asString()
             val isFlow = returnDeclaration == "kotlinx.coroutines.flow.Flow"
-            val valid = function.typeParameters.isEmpty() && function.parameters.size <= 1 &&
+            val validShape = function.typeParameters.isEmpty() && function.parameters.size <= 1 &&
                 ((isFlow && !function.modifiers.contains(Modifier.SUSPEND)) || (!isFlow && function.modifiers.contains(Modifier.SUSPEND)))
-            if (!valid) logger.error(
+            if (!validShape) logger.error(
                 "IFX service method ${function.simpleName.asString()} must be a suspend unary/Unit method or a non-suspending Flow method, with at most one parameter and no type parameters.",
                 function
             )
-            valid
+            val validFireAndForget = !function.isFireAndForget() ||
+                (returnDeclaration == "kotlin.Unit" && function.modifiers.contains(Modifier.SUSPEND))
+            if (!validFireAndForget) logger.error(
+                "@FireAndForget may only be used on suspending IFX service methods returning Unit.",
+                function,
+            )
+            validShape && validFireAndForget
         }
 
     private fun generate(contract: KSClassDeclaration) {
@@ -80,12 +86,12 @@ ${functions.joinToString("\n") { clientMethod(it) }}
     override fun bind(instance: $contractName): IBinding = object : IBinding {
         override suspend fun fireAndForget(operation: String, message: Message) {
             when (operation) {
-${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() == "kotlin.Unit" }.joinToString("\n") { serverUnitBranch(it) }}
+${functions.filter { it.isFireAndForget() }.joinToString("\n") { serverUnitBranch(it) }}
                 else -> error("No fire-and-forget operation: ${'$'}operation")
             }
         }
         override suspend fun requestResponse(operation: String, message: Message): Message = when (operation) {
-${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() !in setOf("kotlin.Unit", "kotlinx.coroutines.flow.Flow") }.joinToString("\n") { serverResponseBranch(it) }}
+${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() != "kotlinx.coroutines.flow.Flow" && !it.isFireAndForget() }.joinToString("\n") { serverResponseBranch(it) }}
             else -> error("No request-response operation: ${'$'}operation")
         }
         override suspend fun requestStream(operation: String, message: Message): Flow<Message> = when (operation) {
@@ -106,7 +112,11 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
         val params = parameter?.let { "${it.name!!.asString()}: ${typeName(it.type.resolve())}" } ?: ""
         val argument = parameter?.name?.asString()
         return when (declaration) {
-            "kotlin.Unit" -> "        override suspend fun $name($params) { binding.fireAndForget(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
+            "kotlin.Unit" -> if (function.isFireAndForget()) {
+                "        override suspend fun $name($params) { binding.fireAndForget(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
+            } else {
+                "        override suspend fun $name($params) { binding.requestResponse(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()"}) }"
+            }
             "kotlinx.coroutines.flow.Flow" -> {
                 val element = function.returnType!!.resolve().arguments.single().type!!.resolve()
                 "        override fun $name($params): ${typeName(function.returnType!!.resolve())} = flow { emitAll(binding.requestStream(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).map { it.decode<${typeName(element)}>() }) }"
@@ -119,7 +129,11 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
         "                    \"${signature(function)}\" -> instance.${call(function)}"
 
     private fun serverResponseBranch(function: KSFunctionDeclaration): String =
-        "                    \"${signature(function)}\" -> instance.${call(function)}.encodeToMessage()"
+        if (function.returnType!!.resolve().declaration.qualifiedName?.asString() == "kotlin.Unit") {
+            "                    \"${signature(function)}\" -> { instance.${call(function)}; Unit.encodeToMessage() }"
+        } else {
+            "                    \"${signature(function)}\" -> instance.${call(function)}.encodeToMessage()"
+        }
 
     private fun serverStreamBranch(function: KSFunctionDeclaration): String {
         val element = function.returnType!!.resolve().arguments.single().type!!.resolve()
@@ -136,6 +150,10 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
 
     private fun isAnyMethod(function: KSFunctionDeclaration): Boolean =
         function.simpleName.asString() in setOf("equals", "hashCode", "toString")
+
+    private fun KSFunctionDeclaration.isFireAndForget(): Boolean = annotations.any { annotation ->
+        annotation.annotationType.resolve().declaration.qualifiedName?.asString() == "ifx.service.FireAndForget"
+    }
 
     private fun typeName(type: KSType): String = type.declaration.qualifiedName?.asString()?.let { raw ->
         if (type.arguments.isEmpty()) raw + if (type.nullability.name == "NULLABLE") "?" else ""

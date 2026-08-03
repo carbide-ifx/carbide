@@ -1,6 +1,7 @@
 package ifx.rpc.typescript.ksp
 
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 class TypeScriptRendererTest {
@@ -120,5 +121,51 @@ class TypeScriptRendererTest {
             """.trimIndent() + "\n",
             TypeScriptRenderer().render(model),
         )
+    }
+
+    @Test
+    fun `renders Unit request-response separately from explicit fire-and-forget`() {
+        val model = ServiceModel(
+            name = "CommandService",
+            address = "example.CommandService",
+            operations = listOf(
+                OperationModel(
+                    name = "store",
+                    typeName = "Store",
+                    route = "store(example.Command)",
+                    parameterName = "command",
+                    request = TypeRef.Named("example.Command"),
+                    requestOptional = false,
+                    response = TypeRef.VoidType,
+                    interaction = Interaction.REQUEST_RESPONSE,
+                ),
+                OperationModel(
+                    name = "notify",
+                    typeName = "Notify",
+                    route = "notify(example.Command)",
+                    parameterName = "command",
+                    request = TypeRef.Named("example.Command"),
+                    requestOptional = false,
+                    response = TypeRef.VoidType,
+                    interaction = Interaction.FIRE_AND_FORGET,
+                ),
+            ),
+            declarations = listOf(
+                TypeDeclaration.ObjectType(
+                    qualifiedName = "example.Command",
+                    typeParameters = emptyList(),
+                    properties = emptyList(),
+                ),
+            ),
+        )
+
+        val source = TypeScriptRenderer().render(model)
+
+        assertContains(source, "interaction: \"requestResponse\"")
+        assertContains(source, "interaction: \"fireAndForget\"")
+        assertContains(source, "  async store(command: CommandService.StoreRequest): Promise<CommandService.StoreResponse> {")
+        assertContains(source, "    await this.binding.requestResponse<CommandService.StoreResponse>(\"store(example.Command)\", command);")
+        assertContains(source, "  notify(command: CommandService.NotifyRequest): Promise<CommandService.NotifyResponse> {")
+        assertContains(source, "    return this.binding.fireAndForget(\"notify(example.Command)\", command);")
     }
 }

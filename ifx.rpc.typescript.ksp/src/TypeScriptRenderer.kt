@@ -150,8 +150,14 @@ internal class TypeScriptRenderer {
             Interaction.FIRE_AND_FORGET, Interaction.REQUEST_RESPONSE -> "Promise<$response>"
         }
         return buildString {
-            appendLine("  ${propertyName(operation.name)}($parameter): $result {")
-            appendLine("    return $invocation;")
+            val awaitsVoidResponse = operation.interaction == Interaction.REQUEST_RESPONSE &&
+                operation.response == TypeRef.VoidType
+            appendLine("  ${if (awaitsVoidResponse) "async " else ""}${propertyName(operation.name)}($parameter): $result {")
+            if (awaitsVoidResponse) {
+                appendLine("    await $invocation;")
+            } else {
+                appendLine("    return $invocation;")
+            }
             appendLine("  }")
         }
     }
