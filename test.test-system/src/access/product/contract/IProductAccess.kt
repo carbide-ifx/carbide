@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 
 interface IProductAccess: IService {
     fun filter(criteria: ProductCriteria): Flow<Product>
+    fun generateRandowProduct(): Flow<Product>
     suspend fun store(product: Product)
 }
 
