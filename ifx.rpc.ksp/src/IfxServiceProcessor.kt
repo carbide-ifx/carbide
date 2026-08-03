@@ -81,6 +81,7 @@ public object $descriptorName : ServiceDescriptor<$contractName> {
     override val address = "$address"
     override val description = $description
     override fun createClient(binding: IBinding): $contractName = object : $contractName {
+        override val logger = ifx.logging.Log("${address}Proxy")
 ${functions.joinToString("\n") { clientMethod(it) }}
     }
     override fun bind(instance: $contractName): IBinding = object : IBinding {

@@ -6,6 +6,4 @@ product:
 
 dependencies:
   - ../ifx.context: exported
-
-test-dependencies@jvm:
-  - ../ifx.logging
+  - ../ifx.logging: exported
