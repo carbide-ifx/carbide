@@ -82,11 +82,12 @@ const styles = `
   .signature-punctuation { color: #7a877f; font-size: 14px; }
   .signature-type { color: #53665a; font: 12px ui-monospace, monospace; }
   .interaction-label { flex: 0 0 auto; margin-left: auto; padding: 4px 7px; border: 1px solid color-mix(in srgb, var(--service-accent) 42%, transparent); border-radius: 999px; background: var(--service-tint); color: #59665e; font: 700 9px ui-monospace, monospace; letter-spacing: .07em; text-transform: uppercase; }
-  .operation-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .85fr); min-height: 250px; }
-  .request, .response { padding: 24px; min-width: 0; }
-  .response { border-left: 1px solid #d2dbd4; background: #eef2ef; color: #33483a; }
+  .operation-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .85fr); min-height: var(--response-height, 250px); }
+  .request, .response { min-width: 0; min-height: 0; padding: 24px; }
+  .response { position: relative; display: flex; flex-direction: column; overflow: hidden; contain: size; padding-bottom: 0; border-left: 1px solid #d2dbd4; background: #eef2ef; color: #33483a; }
+  .response::after { content: ""; position: absolute; z-index: 2; right: 0; bottom: 0; left: 0; height: 10px; pointer-events: none; box-shadow: inset 0 -9px 9px -9px rgb(48 65 53 / 32%); }
   .panel-title { display: flex; justify-content: space-between; margin-bottom: 18px; color: #6b786f; font: 700 10px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
-  .response .panel-title { color: #697a6e; }
+  .response .panel-title { flex: 0 0 auto; color: #697a6e; }
   .type-label { letter-spacing: 0; text-transform: none; font-weight: 500; }
   .json-editor { min-height: 145px; margin-bottom: 18px; padding: 13px 15px; overflow: auto; border: 1px solid #d2ddd5; border-left: 3px solid #8da996; background: #f0f5f1; color: #526159; white-space: pre; font: 12px/1.75 ui-monospace, monospace; }
   .json-editor:focus-within { border-color: #91aa98; border-left-color: #4e7c5a; background: #edf4ef; }
@@ -116,7 +117,7 @@ const styles = `
   .invoke.cancel-stream:hover { background: #843728; }
   .invoke:disabled { cursor: wait; opacity: .6; }
   .invoke-controls { display: flex; align-items: center; gap: 11px; }
-  .result { min-height: 145px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #33483a; font: 12px/1.65 ui-monospace, monospace; }
+  .result { flex: 1 1 145px; min-height: 0; overflow: auto; overscroll-behavior: contain; white-space: pre-wrap; overflow-wrap: anywhere; color: #33483a; font: 12px/1.65 ui-monospace, monospace; }
   .result.muted { color: #718077; }
   .result.error { color: #a04432; }
   .response-value { min-width: 0; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: inherit; font: inherit; }
@@ -361,6 +362,8 @@ function renderOperation(
 
   const form = article.querySelector<HTMLElement>(".form")!;
   const button = article.querySelector<HTMLButtonElement>(".invoke")!;
+  const operationBody = article.querySelector<HTMLElement>(".operation-body")!;
+  const response = article.querySelector<HTMLElement>(".response")!;
   const result = article.querySelector<HTMLElement>(".result")!;
   const status = article.querySelector<HTMLElement>(".status")!;
   if (operation.interaction === "requestStream") appendStreamEvent(result, 0, responseExample);
@@ -373,6 +376,26 @@ function renderOperation(
   } else {
     form.innerHTML = `<p class="address">This operation has no request body.</p>`;
   }
+
+  let responseHeightPending = false;
+  const syncResponseHeight = (): void => {
+    if (responseHeightPending || !article.open) return;
+    responseHeightPending = true;
+    requestAnimationFrame(() => {
+      responseHeightPending = false;
+      const title = response.querySelector<HTMLElement>(".panel-title")!;
+      const responseStyle = getComputedStyle(response);
+      const titleStyle = getComputedStyle(title);
+      const chromeHeight = parseFloat(responseStyle.paddingTop)
+        + parseFloat(responseStyle.paddingBottom)
+        + title.offsetHeight
+        + parseFloat(titleStyle.marginBottom);
+      const naturalHeight = chromeHeight + result.scrollHeight;
+      operationBody.style.setProperty("--response-height", `${Math.max(250, Math.min(560, naturalHeight))}px`);
+    });
+  };
+  new MutationObserver(syncResponseHeight).observe(result, { childList: true, subtree: true, characterData: true });
+  article.addEventListener("toggle", syncResponseHeight);
 
   let binding: RSocketBinding | undefined;
   let invocation = 0;
