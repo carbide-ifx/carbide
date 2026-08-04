@@ -15,6 +15,7 @@ settings:
         dependency: sonat:ifx-rpc-compiler-plugin:0.0.6
 
 dependencies:
+  - co.touchlab:kermit:2.1.0
   - ../ifx.host.contract
   - ../ifx.logging: exported
   - ../ifx.protocol.contract: exported

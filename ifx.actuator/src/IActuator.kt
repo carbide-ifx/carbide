@@ -1,6 +1,5 @@
 package ifx.actuator
 
-import ifx.logging.ActuatorLogEntry
 import ifx.protocol.contract.serviceDescriptorOf
 import ifx.service.IService
 import kotlinx.coroutines.flow.Flow

@@ -1,7 +1,7 @@
 import access.product.contract.IProductAccess
 import access.product.contract.IProductAccessDescriptor
 import access.product.service.ProductAccessEmulator
-import ifx.logging.ActuatorLogs
+import ifx.actuator.ActuatorLogs
 import ifx.logging.Log
 import ifx.protocol.contract.forService
 import kotlin.test.Test
@@ -15,6 +15,7 @@ class ServiceLogTest {
         val log = Log.forService<IProductAccess>(service).withTag("Repository")
         val message = "service-scoped actuator log"
 
+        ActuatorLogs.install()
         log.info { message }
 
         val entry = assertNotNull(

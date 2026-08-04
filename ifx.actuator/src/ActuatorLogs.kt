@@ -1,8 +1,10 @@
 @file:OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
 
-package ifx.logging
+package ifx.actuator
 
 import co.touchlab.kermit.Severity
+import ifx.logging.LogTag
+import ifx.logging.installLogWriter
 import kotlin.concurrent.atomics.AtomicArray
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.AtomicReference
@@ -95,19 +97,15 @@ private fun Severity.toActuatorLogSeverity(): ActuatorLogSeverity = when (this) 
 
 object ActuatorLogs {
     private val store = ActuatorLogStore()
+    private val writer = ActuatorLogWriter(store)
+
+    fun install() = installLogWriter(writer)
 
     fun logs(serviceInterface: String): List<ActuatorLogEntry> = store.logs(serviceInterface)
 
     fun latest(serviceInterface: String): Flow<ActuatorLogEntry> = store.latest(serviceInterface)
 
     fun serviceInterfaces(): Set<String> = store.serviceInterfaces()
-
-    internal fun append(
-        tag: LogTag,
-        severity: Severity,
-        message: String,
-        throwable: Throwable?,
-    ) = store.append(tag, severity, message, throwable)
 }
 
 private class ServiceLogBuffer(
