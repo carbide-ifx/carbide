@@ -172,7 +172,7 @@ interface JsonObjectMembers { readonly element: HTMLElement; readonly count: num
 interface ResolvedObject { readonly definition: Extract<IfxTypeDescription, { type: "object" }>; readonly context: SchemaContext }
 type ServiceKind = "manager" | "engine" | "access" | "utility" | "unclassified";
 interface CatalogService { readonly service: IfxServiceDescription; readonly index: number; readonly kind: ServiceKind }
-interface ActuatorLogMessage {
+interface LogTailEntry {
   readonly sequence: number;
   readonly timestampEpochMilliseconds: number;
   readonly serviceInterface: string;
@@ -363,9 +363,9 @@ function connectServiceLogs(catalog: IfxServiceCatalog, service: IfxServiceDescr
   const reconnect = app.querySelector<HTMLButtonElement>(".logs-refresh");
   if (!stream || !status || !reconnect) return;
 
-  const entries = new Map<number, ActuatorLogMessage>();
+  const entries = new Map<number, LogTailEntry>();
   const actuator = catalog.services.find((candidate) => candidate.name === "IActuator");
-  const operation = actuator?.operations.find((candidate) => candidate.name === "latestLogs");
+  const operation = actuator?.operations.find((candidate) => candidate.name === "logTail");
   if (!actuator || !operation) {
     reconnect.disabled = true;
     setLogStatus(status, "Unavailable", "reconnecting");
@@ -397,7 +397,7 @@ function connectServiceLogs(catalog: IfxServiceCatalog, service: IfxServiceDescr
       setLogStatus(status, "Live", "live");
       stream.innerHTML = `<div class="log-empty">Waiting for application logs from ${escapeHtml(service.name)}…</div>`;
 
-      for await (const entry of binding.requestStream<ActuatorLogMessage>(operation.route, service.address)) {
+      for await (const entry of binding.requestStream<LogTailEntry>(operation.route, service.address)) {
         if (current !== logConnectionGeneration) break;
         entries.set(entry.sequence, entry);
         while (entries.size > 500) entries.delete(Math.min(...entries.keys()));
@@ -428,7 +428,7 @@ function setLogStatus(element: HTMLElement, label: string, state = ""): void {
 function renderServiceLogs(
   container: HTMLElement,
   service: IfxServiceDescription,
-  entries: readonly ActuatorLogMessage[],
+  entries: readonly LogTailEntry[],
 ): void {
   container.innerHTML = entries.map((entry) => {
     const severity = entry.severity.toLowerCase();

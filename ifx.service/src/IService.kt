@@ -19,3 +19,5 @@ interface IService {
 
 @Serializable
 data class Status(val ready: Boolean, val live: Boolean)
+
+interface IUtility : IService

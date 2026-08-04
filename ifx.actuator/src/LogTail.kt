@@ -17,22 +17,22 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 
-const val DEFAULT_ACTUATOR_LOG_CAPACITY = 500
+const val DEFAULT_LOG_TAIL_CAPACITY = 500
 
 @Serializable
-data class ActuatorLogEntry(
+data class LogTailEntry(
     val sequence: Long,
     val timestampEpochMilliseconds: Long,
     val serviceInterface: String,
     val serviceClassName: String?,
     val path: List<String>,
-    val severity: ActuatorLogSeverity,
+    val severity: LogTailSeverity,
     val message: String,
     val throwable: String?,
 )
 
 @Serializable
-enum class ActuatorLogSeverity {
+enum class LogTailSeverity {
     Verbose,
     Debug,
     Info,
@@ -42,8 +42,8 @@ enum class ActuatorLogSeverity {
 }
 
 /** Thread-safe in-memory retention of the latest log entries for each service interface. */
-class ActuatorLogStore(
-    val capacityPerService: Int = DEFAULT_ACTUATOR_LOG_CAPACITY,
+class LogTailStore(
+    val capacityPerService: Int = DEFAULT_LOG_TAIL_CAPACITY,
 ) {
     init {
         require(capacityPerService > 0) { "Actuator log capacity must be greater than zero" }
@@ -61,16 +61,16 @@ class ActuatorLogStore(
         bufferFor(serviceInterface).append(
             timestampEpochMilliseconds = Clock.System.now().toEpochMilliseconds(),
             tag = tag,
-            severity = severity.toActuatorLogSeverity(),
+            severity = severity.toLogTailSeverity(),
             message = message,
             throwable = throwable?.stackTraceToString(),
         )
     }
 
-    fun logs(serviceInterface: String): List<ActuatorLogEntry> =
+    fun logs(serviceInterface: String): List<LogTailEntry> =
         buffers.load()[serviceInterface]?.snapshot().orEmpty()
 
-    fun latest(serviceInterface: String): Flow<ActuatorLogEntry> =
+    fun latest(serviceInterface: String): Flow<LogTailEntry> =
         bufferFor(serviceInterface).latest()
 
     fun serviceInterfaces(): Set<String> = buffers.load().keys
@@ -86,24 +86,24 @@ class ActuatorLogStore(
     }
 }
 
-private fun Severity.toActuatorLogSeverity(): ActuatorLogSeverity = when (this) {
-    Severity.Verbose -> ActuatorLogSeverity.Verbose
-    Severity.Debug -> ActuatorLogSeverity.Debug
-    Severity.Info -> ActuatorLogSeverity.Info
-    Severity.Warn -> ActuatorLogSeverity.Warn
-    Severity.Error -> ActuatorLogSeverity.Error
-    Severity.Assert -> ActuatorLogSeverity.Assert
+private fun Severity.toLogTailSeverity(): LogTailSeverity = when (this) {
+    Severity.Verbose -> LogTailSeverity.Verbose
+    Severity.Debug -> LogTailSeverity.Debug
+    Severity.Info -> LogTailSeverity.Info
+    Severity.Warn -> LogTailSeverity.Warn
+    Severity.Error -> LogTailSeverity.Error
+    Severity.Assert -> LogTailSeverity.Assert
 }
 
-object ActuatorLogs {
-    private val store = ActuatorLogStore()
-    private val writer = ActuatorLogWriter(store)
+object LogTail {
+    private val store = LogTailStore()
+    private val writer = LogTailWriter(store)
 
     fun install() = installLogWriter(writer)
 
-    fun logs(serviceInterface: String): List<ActuatorLogEntry> = store.logs(serviceInterface)
+    fun logs(serviceInterface: String): List<LogTailEntry> = store.logs(serviceInterface)
 
-    fun latest(serviceInterface: String): Flow<ActuatorLogEntry> = store.latest(serviceInterface)
+    fun latest(serviceInterface: String): Flow<LogTailEntry> = store.latest(serviceInterface)
 
     fun serviceInterfaces(): Set<String> = store.serviceInterfaces()
 }
@@ -113,8 +113,8 @@ private class ServiceLogBuffer(
     capacity: Int,
 ) {
     private val sequence = AtomicLong(0L)
-    private val entries: AtomicArray<ActuatorLogEntry?> = atomicArrayOfNulls(capacity)
-    private val latest = MutableSharedFlow<ActuatorLogEntry>(
+    private val entries: AtomicArray<LogTailEntry?> = atomicArrayOfNulls(capacity)
+    private val latest = MutableSharedFlow<LogTailEntry>(
         replay = capacity,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
@@ -122,12 +122,12 @@ private class ServiceLogBuffer(
     fun append(
         timestampEpochMilliseconds: Long,
         tag: LogTag,
-        severity: ActuatorLogSeverity,
+        severity: LogTailSeverity,
         message: String,
         throwable: String?,
     ) {
         val nextSequence = sequence.addAndFetch(1L)
-        val entry = ActuatorLogEntry(
+        val entry = LogTailEntry(
             sequence = nextSequence,
             timestampEpochMilliseconds = timestampEpochMilliseconds,
             serviceInterface = serviceInterface,
@@ -144,11 +144,11 @@ private class ServiceLogBuffer(
         if (entries.loadAt(index)?.sequence == nextSequence) latest.tryEmit(entry)
     }
 
-    fun latest(): Flow<ActuatorLogEntry> = latest.asSharedFlow()
+    fun latest(): Flow<LogTailEntry> = latest.asSharedFlow()
 
-    fun snapshot(): List<ActuatorLogEntry> = buildList {
+    fun snapshot(): List<LogTailEntry> = buildList {
         repeat(entries.size) { index ->
             entries.loadAt(index)?.let(::add)
         }
-    }.sortedBy(ActuatorLogEntry::sequence)
+    }.sortedBy(LogTailEntry::sequence)
 }

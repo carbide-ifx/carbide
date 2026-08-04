@@ -5,10 +5,10 @@ import co.touchlab.kermit.Severity
 import ifx.logging.LogTag
 import ifx.logging.LogTagCodec
 
-class ActuatorLogWriter internal constructor(
+class LogTailWriter internal constructor(
     private val append: (LogTag, Severity, String, Throwable?) -> Unit,
 ) : LogWriter() {
-    constructor(store: ActuatorLogStore) : this(store::append)
+    constructor(store: LogTailStore) : this(store::append)
 
     override fun isLoggable(tag: String, severity: Severity): Boolean =
         LogTagCodec.decodeOrNull(tag)?.serviceInterface != null

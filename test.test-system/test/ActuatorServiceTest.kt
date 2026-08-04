@@ -1,7 +1,7 @@
 import access.product.contract.IProductAccess
 import access.product.service.ProductAccessEmulator
 import ifx.actuator.IActuator
-import ifx.actuator.latestLogs
+import ifx.actuator.logTail
 import ifx.logging.Log
 import ifx.protocol.contract.forService
 import ifx.proxy.contract.create
@@ -15,9 +15,9 @@ import kotlin.time.Duration.Companion.seconds
 
 class ActuatorServiceTest {
     @Test
-    fun `actuator streams retained and future service logs through IFX`() = runBlocking {
+    fun `actuator streams retained and future log-tail entries through IFX`() = runBlocking {
         val system = startTestSystem(emptyList())
-        val message = "streamed actuator log"
+        val message = "streamed log-tail entry"
         try {
             Log.forService<IProductAccess>(ProductAccessEmulator())
                 .withTag("Repository")
@@ -26,7 +26,7 @@ class ActuatorServiceTest {
             val entry = withTimeout(10.seconds) {
                 ProxyFactory.forHost(system)
                     .create<IActuator>()
-                    .latestLogs<IProductAccess>()
+                    .logTail<IProductAccess>()
                     .first { it.message == message }
             }
 

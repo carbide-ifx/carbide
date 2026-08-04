@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 class Actuator : IActuator {
     init {
-        ActuatorLogs.install()
+        LogTail.install()
     }
 
-    override fun latestLogs(serviceInterface: String): Flow<ActuatorLogEntry> =
-        ActuatorLogs.latest(serviceInterface)
+    override fun logTail(serviceInterface: String): Flow<LogTailEntry> =
+        LogTail.latest(serviceInterface)
 }
 
 suspend fun IHost.registerActuator(): IHost {
-    ActuatorLogs.install()
+    LogTail.install()
     return registerService<IActuator> { Actuator() }
 }

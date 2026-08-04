@@ -92,7 +92,7 @@ reversed server ordering will decrypt the headers before context extraction.
 Generic JSON headers can be inspected or changed with `Message.headers()` and
 `Message.withHeader(...)`.
 
-## Actuator logs
+## Log tail actuator
 
 Service application logs can carry their generated service identity through
 Kermit's string tag while retaining a readable console tag:
@@ -109,15 +109,15 @@ class AwesomeServiceImpl : AwesomeService {
 }
 ```
 
-The standard writer renders this as `AwesomeServiceImpl.Repository`. The
-actuator writer retains the structured contract address, implementation class,
-tag path, severity, message, and throwable. Plain framework log tags continue
-to reach the standard writer but are not retained. `ActuatorLogs.logs(address)`
-returns the latest 500 entries for that service address in sequence order.
-`ActuatorLogs.latest(address)` exposes the retained tail and future entries as
-a non-blocking `Flow<ActuatorLogEntry>`. The writer, retention store, and entry
-model belong to the `ifx.actuator` module; `ifx.logging` only provides structured
-tags and the generic writer installation point.
+The standard writer renders this as `AwesomeServiceImpl.Repository`. The log-tail
+writer retains the structured contract address, implementation class, tag path,
+severity, message, and throwable. Plain framework log tags continue to reach the
+standard writer but are not retained. `LogTail.logs(address)` returns the latest
+500 entries for that service address in sequence order. `LogTail.latest(address)`
+exposes the retained tail and future entries as a non-blocking
+`Flow<LogTailEntry>`. The writer, retention store, and entry model belong to the
+`ifx.actuator` module; `ifx.logging` only provides structured tags and the generic
+writer installation point.
 
 Register the separate actuator service to expose that flow through the normal
 service transport. Callers use the generated actuator client or an iFX proxy;
@@ -127,7 +127,7 @@ there is no separate HTTP streaming endpoint:
 host.registerActuator()
 
 val actuator = proxyFactory.create<IActuator>()
-actuator.latestLogs<AwesomeService>().collect { entry ->
+actuator.logTail<AwesomeService>().collect { entry ->
     println(entry.message)
 }
 ```
