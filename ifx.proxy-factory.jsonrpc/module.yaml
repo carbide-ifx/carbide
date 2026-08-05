@@ -1,0 +1,11 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [jvm, macosArm64]
+
+dependencies:
+  - ../ifx.host.contract
+  - ../ifx.proxy-factory.contract: exported
+  - ../ifx.proxy-factory.base: exported
+  - ../ifx.protocol.jsonrpc: exported
+  - ../ifx.protocol.contract: exported

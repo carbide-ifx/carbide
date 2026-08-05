@@ -3,14 +3,18 @@ import access.product.service.ProductAccessEmulator
 import engine.pricing.contract.IPricingEngine
 import engine.pricing.service.PricingEngine
 import ifx.actuator.registerActuator
+import ifx.host.Host
+import ifx.host.HostTooling
 import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
-import ifx.host.rsocket.Host
+import ifx.host.ProtocolListener
 import ifx.logging.Log
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.interceptors.LoggingInterceptor
+import ifx.protocol.jsonrpc.JsonRpcServerProtocol
+import ifx.protocol.rsocket.RSocketServerProtocol
 import ifx.proxy.contract.create
-import ifx.proxy.factory.ProxyFactory
+import ifx.proxy.factory.RSocketProxyFactory
 import ifx.telemetry.otel.OpenTelemetryInterceptor
 import ifx.telemetry.otel.OtlpHttpSpanExporter
 import kotlinx.coroutines.runBlocking
@@ -22,13 +26,23 @@ suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
 ): IHost {
     val host = Host(
-        port = 0,
         name = "Test System",
-        testUi = true,
-        testUiDevelopmentDirectory = "typescript/ifx-test-ui/dist",
+        listeners = listOf(
+            ProtocolListener(
+                protocol = RSocketServerProtocol(),
+                port = 0,
+                tooling = HostTooling(
+                    developmentDirectory = "typescript/ifx-test-ui/dist",
+                ),
+            ),
+            ProtocolListener(
+                protocol = JsonRpcServerProtocol(),
+                port = 0,
+            ),
+        ),
     )
         .addInterceptors(interceptors)
-    val proxyFactory = ProxyFactory.forHost(host)
+    val proxyFactory = RSocketProxyFactory.forHost(host)
 
     host.registerService<IProductAccess> { ProductAccessEmulator().apply { seedTestData() } }
         .registerService<IPricingEngine> { PricingEngine(proxyFactory) }
@@ -49,7 +63,7 @@ fun main(): Unit = runBlocking {
         },
     )
     val system = startTestSystem(listOf(LoggingInterceptor(), telemetry))
-    val proxyFactory = ProxyFactory.forHost(system)
+    val proxyFactory = RSocketProxyFactory.forHost(system)
 
     try {
         proxyFactory.create<ISalesManager>().listProducts().collect {

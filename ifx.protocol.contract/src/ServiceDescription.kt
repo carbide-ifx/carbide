@@ -16,6 +16,14 @@ data class ServiceDescription(
 data class ServiceCatalog(
     val name: String,
     val services: List<ServiceDescription>,
+    val listeners: List<ProtocolListenerDescription> = emptyList(),
+)
+
+@Serializable
+data class ProtocolListenerDescription(
+    val protocolId: String,
+    val host: String,
+    val port: Int,
 )
 
 @Serializable

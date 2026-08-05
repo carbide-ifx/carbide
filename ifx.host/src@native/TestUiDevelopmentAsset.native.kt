@@ -1,6 +1,6 @@
 @file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 
-package ifx.protocol.rsocket
+package ifx.host
 
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert

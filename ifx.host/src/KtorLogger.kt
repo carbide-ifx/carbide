@@ -1,4 +1,4 @@
-package ifx.protocol.rsocket
+package ifx.host
 
 import io.ktor.util.logging.Logger
 

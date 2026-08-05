@@ -1,10 +1,32 @@
 package ifx.host
 
+import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IInterceptor
-import ifx.protocol.contract.IProtocol
 import ifx.service.IService
+import io.ktor.server.application.Application
 import kotlin.reflect.KClass
 
+interface IServerProtocol {
+    val id: String
+    fun install(application: Application, endpoints: List<Endpoint>)
+}
+
+data class HostTooling(
+    val developmentDirectory: String? = null,
+)
+
+data class ProtocolListener(
+    val protocol: IServerProtocol,
+    val port: Int = 0,
+    val host: String = "0.0.0.0",
+    val tooling: HostTooling? = null,
+)
+
+data class BoundProtocolListener(
+    val protocolId: String,
+    val host: String,
+    val port: Int,
+)
 
 interface IHost {
 
@@ -24,5 +46,7 @@ interface IHost {
     fun addInterceptors(vararg i: IInterceptor): IHost
     fun addInterceptors(interceptors: List<IInterceptor>): IHost
     val interceptors: List<IInterceptor>
-    val protocol: IProtocol
+    val boundListeners: List<BoundProtocolListener>
+
+    fun port(protocolId: String): Int = boundListeners.single { it.protocolId == protocolId }.port
 }

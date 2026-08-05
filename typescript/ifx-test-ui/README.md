@@ -1,6 +1,6 @@
 # iFX test UI
 
-Browser UI embedded by `ifx.protocol.rsocket` when a host enables `testUi`.
+Browser UI embedded by `ifx.host` on the listener where host tooling is enabled.
 It reads the registered service catalog from `/ifx/services` and invokes the
 services with the shared `@ifx/rpc-client` RSocket runtime.
 
@@ -20,10 +20,16 @@ Configure the host to read the development bundle from disk:
 
 ```kotlin
 Host(
-    port = 7070,
     name = "Test System",
-    testUi = true,
-    testUiDevelopmentDirectory = "typescript/ifx-test-ui/dist",
+    listeners = listOf(
+        ProtocolListener(
+            protocol = RSocketServerProtocol(),
+            port = 7070,
+            tooling = HostTooling(
+                developmentDirectory = "typescript/ifx-test-ui/dist",
+            ),
+        ),
+    ),
 )
 ```
 

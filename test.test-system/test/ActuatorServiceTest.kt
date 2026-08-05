@@ -5,7 +5,7 @@ import ifx.actuator.logTail
 import ifx.logging.Log
 import ifx.protocol.contract.forService
 import ifx.proxy.contract.create
-import ifx.proxy.factory.ProxyFactory
+import ifx.proxy.factory.RSocketProxyFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -24,7 +24,7 @@ class ActuatorServiceTest {
                 .info { message }
 
             val entry = withTimeout(10.seconds) {
-                ProxyFactory.forHost(system)
+                RSocketProxyFactory.forHost(system)
                     .create<IActuator>()
                     .logTail<IProductAccess>()
                     .first { it.message == message }

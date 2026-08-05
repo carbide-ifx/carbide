@@ -1,14 +1,15 @@
 modules:
   - ifx.actuator
   - ifx.context
-  - ifx.host.base
+  - ifx.host
   - ifx.host.contract
-  - ifx.host.rsocket
   - ifx.logging
   - ifx.protocol.contract
+  - ifx.protocol.jsonrpc
   - ifx.protocol.rsocket
   - ifx.proxy-factory.base
   - ifx.proxy-factory.contract
+  - ifx.proxy-factory.jsonrpc
   - ifx.proxy-factory.rsocket
   - ifx.rpc.compiler-plugin
   - ifx.rpc.ksp

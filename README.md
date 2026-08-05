@@ -21,6 +21,50 @@ host.registerService<AwesomeService> {
 val client = proxyFactory.create<AwesomeService>()
 ```
 
+## Multi-protocol hosting
+
+`Host` owns service registration and the lifecycle of its Ktor servers. Each
+configured listener exposes exactly one protocol on its own port, and every
+listener receives the same registered service endpoints. Protocol implementations
+only install their routes and wire handling into the listener provided by the
+host.
+
+```kotlin
+val host = Host(
+    name = "Example System",
+    listeners = listOf(
+        ProtocolListener(
+            protocol = RSocketServerProtocol(),
+            port = 7000,
+            tooling = HostTooling(),
+        ),
+        ProtocolListener(
+            protocol = JsonRpcServerProtocol(),
+            port = 7001,
+        ),
+    ),
+)
+
+host.registerService<AwesomeService> { AwesomeServiceImpl() }
+host.open()
+
+val rsocketClient = RSocketProxyFactory.forHost(host).create<AwesomeService>()
+val jsonRpcClient = JsonRpcProxyFactory.forHost(host).create<AwesomeService>()
+```
+
+Using separate Ktor applications prevents route and plugin collisions between
+protocols and gives each listener an independent port and network interface,
+with a boundary for protocol-specific TLS and authentication. A listener
+configured with `port = 0` receives an available port at startup; use
+`host.port(RSOCKET_PROTOCOL_ID)` or
+`host.port(JSON_RPC_PROTOCOL_ID)` to read the resolved value.
+
+RSocket supports fire-and-forget, request/response, and request-stream
+interactions. Regular JSON-RPC over HTTP supports fire-and-forget notifications
+and request/response. Calling a service operation that returns `Flow` through the
+JSON-RPC client fails explicitly because JSON-RPC has no standard streaming
+interaction.
+
 ## Interceptors
 
 An interceptor is one onion layer around a complete RPC invocation. The invocation
@@ -191,10 +235,11 @@ be inferred from KSP symbols.
 
 ## Interactive service explorer
 
-An RSocket host created with `testUi = true` serves a generated test UI at its
-root URL. The option is off by default because the explorer can invoke mutating
-operations. The landing page shows the service components registered by that
-host. Selecting a component
+Host tooling can be mounted on one listener by giving that listener a
+`HostTooling` configuration. The standard setup mounts it on the RSocket
+listener because the explorer invokes services through RSocket. Tooling is off
+by default because the explorer can invoke mutating operations. The landing page
+shows the service components registered by that host. Selecting a component
 opens its operations, generates request controls from the serialized wire
 types, and displays request/response, fire-and-forget, and streaming results.
 
@@ -203,7 +248,16 @@ For example, a host resolved to port `8080` exposes the UI at
 `http://localhost:8080/ifx/services`.
 
 ```kotlin
-val host = Host(port = 8080, name = "Test System", testUi = true)
+val host = Host(
+    name = "Test System",
+    listeners = listOf(
+        ProtocolListener(
+            protocol = RSocketServerProtocol(),
+            port = 8080,
+            tooling = HostTooling(),
+        ),
+    ),
+)
 ```
 
 Generated TypeScript contracts export a `{Service}Description` value in
@@ -257,7 +311,7 @@ module locally before building modules that use it:
     - Experiment: Transparent proxy
   - Protocols
     - √ RSocket
-    - JSON-RPC
+    - √ JSON-RPC over HTTP
     - GRPC
     - √ Invocation
       - √ sync 

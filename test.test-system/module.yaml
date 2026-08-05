@@ -15,8 +15,11 @@ settings:
 
 dependencies:
   - ../ifx.actuator
-  - ../ifx.host.rsocket
+  - ../ifx.host
+  - ../ifx.protocol.rsocket
+  - ../ifx.protocol.jsonrpc
   - ../ifx.proxy-factory.rsocket
+  - ../ifx.proxy-factory.jsonrpc
   - ../ifx.protocol.contract
   - ../ifx.telemetry.otel
   - ../ifx.logging

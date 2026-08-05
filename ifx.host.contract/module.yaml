@@ -7,3 +7,4 @@ dependencies:
   - ../ifx.protocol.contract
   - ../ifx.service
   - ../ifx.context
+  - io.ktor:ktor-server-core:3.1.1: exported

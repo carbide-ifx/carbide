@@ -1,7 +1,7 @@
 package ifx.proxy.factory
 
 import ifx.protocol.contract.IInterceptor
-import ifx.protocol.contract.IProtocol
+import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.contract.ClientInterceptorPipeline
 import ifx.protocol.contract.serviceDescriptorOf
 import ifx.proxy.contract.IProxyFactory
@@ -9,7 +9,7 @@ import ifx.service.IService
 import kotlin.reflect.KClass
 
 class ProxyFactoryBase(
-    val protocol: IProtocol,
+    val protocol: IClientProtocol,
 ) : IProxyFactory {
     val interceptors: MutableList<IInterceptor> = mutableListOf()
 

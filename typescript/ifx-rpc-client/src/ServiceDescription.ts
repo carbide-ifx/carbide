@@ -3,6 +3,13 @@ import type { IfxInteraction } from "./IfxBinding";
 export interface IfxServiceCatalog {
   readonly name: string;
   readonly services: readonly IfxServiceDescription[];
+  readonly listeners: readonly IfxProtocolListenerDescription[];
+}
+
+export interface IfxProtocolListenerDescription {
+  readonly protocolId: string;
+  readonly host: string;
+  readonly port: number;
 }
 
 export interface IfxServiceDescription {
