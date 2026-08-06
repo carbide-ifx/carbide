@@ -1,5 +1,5 @@
+import { RSocketBinding } from "@ifx/rpc-client-rsocket";
 import {
-  RSocketBinding,
   type IfxOperationDescription,
   type IfxServiceCatalog,
   type IfxServiceDescription,

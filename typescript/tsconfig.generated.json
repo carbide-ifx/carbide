@@ -10,12 +10,19 @@
     "paths": {
       "@ifx/rpc-client": [
         "./ifx-rpc-client/src/index.ts"
+      ],
+      "@ifx/rpc-client-jsonrpc": [
+        "./ifx-rpc-client-jsonrpc/src/index.ts"
+      ],
+      "@ifx/rpc-client-rsocket": [
+        "./ifx-rpc-client-rsocket/src/index.ts"
       ]
     },
     "strict": true,
     "target": "ES2022"
   },
   "include": [
-    "../build/generated/test.test-system/**/resources/ksp/**/*.ts"
+    "../build/generated/test.test-system/main/resources/ksp/**/*.ts",
+    "generated-client-smoke.ts"
   ]
 }

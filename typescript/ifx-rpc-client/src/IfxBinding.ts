@@ -8,6 +8,11 @@ export interface IfxBinding {
   close(): void;
 }
 
+export interface IfxClientConstructor<Client> {
+  readonly address: string;
+  new(binding: IfxBinding): Client;
+}
+
 export interface IfxMessage {
   readonly header: string;
   readonly body: string;
@@ -29,3 +34,8 @@ export interface IfxClientInterceptor {
 
 export type IfxHeaders = Readonly<Record<string, unknown>>;
 export type IfxHeaderProvider = () => IfxHeaders | Promise<IfxHeaders>;
+
+export interface IfxClientBindingOptions {
+  readonly headers?: IfxHeaders | IfxHeaderProvider;
+  readonly interceptors?: readonly IfxClientInterceptor[];
+}

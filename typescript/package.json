@@ -1,0 +1,15 @@
+{
+  "name": "@ifx/typescript",
+  "private": true,
+  "workspaces": [
+    "ifx-rpc-client",
+    "ifx-rpc-client-rsocket",
+    "ifx-rpc-client-jsonrpc",
+    "ifx-test-ui"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:generated": "npm run test:generated --workspace @ifx/rpc-client"
+  }
+}

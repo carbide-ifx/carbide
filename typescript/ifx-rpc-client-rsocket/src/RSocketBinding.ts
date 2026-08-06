@@ -12,22 +12,16 @@ import {
 } from "rsocket-composite-metadata";
 import { WebsocketClientTransport } from "rsocket-websocket-client";
 import {
-  type IfxBinding,
+  IfxClientBinding,
+  type IfxClientBindingOptions,
   type IfxClientCall,
-  type IfxClientInterceptor,
-  type IfxClientInterceptorNext,
-  type IfxHeaderProvider,
-  type IfxHeaders,
-  type IfxInteraction,
+  type IfxClientConstructor,
   type IfxMessage,
-} from "./IfxBinding";
+} from "@ifx/rpc-client";
 
 const IFX_HEADER_MIME_TYPE = "application/x-ifx-header";
 
-export interface RSocketBindingRuntimeOptions {
-  readonly headers?: IfxHeaders | IfxHeaderProvider;
-  readonly interceptors?: readonly IfxClientInterceptor[];
-}
+export type RSocketBindingRuntimeOptions = IfxClientBindingOptions;
 
 export interface RSocketBindingOptions extends RSocketBindingRuntimeOptions {
   readonly url: string;
@@ -36,7 +30,7 @@ export interface RSocketBindingOptions extends RSocketBindingRuntimeOptions {
   readonly wsCreator?: (url: string) => WebSocket;
 }
 
-export class RSocketBinding implements IfxBinding {
+export class RSocketBinding extends IfxClientBinding {
   static async connect(options: RSocketBindingOptions): Promise<RSocketBinding> {
     const connector = new RSocketConnector({
       setup: {
@@ -60,74 +54,18 @@ export class RSocketBinding implements IfxBinding {
     return `${baseUrl.replace(/\/+$/, "")}/${encodeURIComponent(serviceAddress)}`;
   }
 
-  private readonly headers: IfxHeaders | IfxHeaderProvider;
-  private readonly interceptors: readonly IfxClientInterceptor[];
-
   constructor(
     private readonly socket: RSocket,
     options: RSocketBindingRuntimeOptions = {},
   ) {
-    this.headers = options.headers ?? {};
-    this.interceptors = options.interceptors ?? [];
-  }
-
-  async fireAndForget(operation: string, request?: unknown): Promise<void> {
-    const responses = this.invoke("fireAndForget", operation, arguments.length > 1, request);
-    for await (const _response of responses) {
-      throw new Error(`Fire-and-forget operation ${operation} unexpectedly returned a response`);
-    }
-  }
-
-  async requestResponse<Response>(operation: string, request?: unknown): Promise<Response> {
-    const responses = this.invoke("requestResponse", operation, arguments.length > 1, request);
-    const iterator = responses[Symbol.asyncIterator]();
-    try {
-      const first = await iterator.next();
-      if (first.done) throw new Error(`Request-response operation ${operation} returned no response`);
-      const second = await iterator.next();
-      if (!second.done) throw new Error(`Request-response operation ${operation} returned more than one response`);
-      return decodeJson<Response>(first.value.body, operation);
-    } finally {
-      await iterator.return?.();
-    }
-  }
-
-  async *requestStream<Response>(operation: string, request?: unknown): AsyncIterable<Response> {
-    const responses = this.invoke("requestStream", operation, arguments.length > 1, request);
-    for await (const response of responses) {
-      yield decodeJson<Response>(response.body, operation);
-    }
+    super(options);
   }
 
   close(): void {
     this.socket.close();
   }
 
-  private invoke(
-    interaction: IfxInteraction,
-    operation: string,
-    hasRequest: boolean,
-    request: unknown,
-  ): AsyncIterable<IfxMessage> {
-    const self = this;
-    return (async function* invokeWithHeaders() {
-      const headerValues = typeof self.headers === "function" ? await self.headers() : self.headers;
-      const body = hasRequest ? encodeJson(request, operation) : "";
-      const call: IfxClientCall = {
-        interaction,
-        operation,
-        message: { header: JSON.stringify(headerValues), body },
-      };
-      let next: IfxClientInterceptorNext = self.exchange.bind(self);
-      for (const interceptor of [...self.interceptors].reverse()) {
-        const following = next;
-        next = (interceptedCall) => interceptor.intercept(interceptedCall, following);
-      }
-      yield* next(call);
-    })();
-  }
-
-  private exchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  protected exchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
     switch (call.interaction) {
       case "fireAndForget":
         return this.fireAndForgetExchange(call);
@@ -197,6 +135,17 @@ export class RSocketBinding implements IfxBinding {
   }
 }
 
+export class RSocketClient {
+  static async connect<Client>(
+    service: IfxClientConstructor<Client>,
+    baseUrl: string,
+    options: Omit<RSocketBindingOptions, "url"> = {},
+  ): Promise<Client> {
+    const url = RSocketBinding.serviceUrl(baseUrl, service.address);
+    return new service(await RSocketBinding.connect({ ...options, url }));
+  }
+}
+
 function toPayload(call: IfxClientCall): Payload {
   return {
     data: Buffer.from(call.message.body, "utf8"),
@@ -220,22 +169,6 @@ function fromPayload(payload: Payload): IfxMessage {
     header,
     body: payload.data?.toString("utf8") ?? "",
   };
-}
-
-function encodeJson(value: unknown, operation: string): string {
-  const encoded = JSON.stringify(value);
-  if (encoded === undefined) {
-    throw new Error(`Request for ${operation} cannot be represented as JSON`);
-  }
-  return encoded;
-}
-
-function decodeJson<Value>(value: string, operation: string): Value {
-  try {
-    return JSON.parse(value) as Value;
-  } catch (error) {
-    throw new Error(`Response from ${operation} is not valid JSON`, { cause: error });
-  }
 }
 
 class AsyncQueue<Value> implements AsyncIterable<Value> {

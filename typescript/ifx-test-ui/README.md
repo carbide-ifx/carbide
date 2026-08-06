@@ -2,14 +2,13 @@
 
 Browser UI embedded by `ifx.host` on the listener where host tooling is enabled.
 It reads the registered service catalog from `/ifx/services` and invokes the
-services with the shared `@ifx/rpc-client` RSocket runtime.
+services with `@ifx/rpc-client-rsocket`.
 
 The Kotlin host asset is checked in so normal Kotlin builds do not require
 Node.js. After changing the UI, rebuild the embedded asset with:
 
 ```shell
-npm --prefix ../ifx-rpc-client install
-npm --prefix ../ifx-rpc-client run build
+cd typescript
 npm install
 npm run build
 ```

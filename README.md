@@ -265,28 +265,43 @@ addition to their typed client. It contains the same operations and runtime
 wire-type schema used by the hosted explorer, so other development tools can
 reuse the metadata without attempting to reflect on erased TypeScript types.
 
-Each generated contract also contains a concrete `{Service}Client`. Its
-`connect()` factory uses the TypeScript runtime in
-`typescript/ifx-rpc-client`, appends the qualified service address to the
-WebSocket base URL, and sends the exact Kotlin operation signatures as RSocket
-routing metadata:
+Each generated contract also contains a protocol-neutral concrete
+`{Service}Client`. Choose a separate protocol package when connecting it. The
+protocol client appends the generated service address to its base URL, while the
+generated service client sends the exact Kotlin operation signatures through
+the selected binding:
 
 ```typescript
-const client = await ISalesManagerClient.connect("ws://localhost:8080")
+import { RSocketClient } from "@ifx/rpc-client-rsocket";
+import { JsonRpcClient } from "@ifx/rpc-client-jsonrpc";
+import { ISalesManagerClient } from "./generated/ISalesManager";
+
+const streamingClient = await RSocketClient.connect(
+    ISalesManagerClient,
+    "ws://localhost:7000",
+);
+const httpClient = await JsonRpcClient.connect(
+    ISalesManagerClient,
+    "http://localhost:7001",
+);
 
 try {
-    for await (const product of client.listProducts()) {
-        console.log(product)
-    }
+  for await (const product of streamingClient.listProducts()) {
+    console.log(product)
+  }
 } finally {
-    client.close()
+  streamingClient.close()
+  httpClient.close()
 }
 ```
 
-The runtime exposes raw message-stream interceptors for context propagation,
-encryption, tracing, or other cross-cutting wire behavior. Its RSocket
-dependencies are pinned to the newest published TypeScript line,
-`1.0.0-alpha.3`; this upstream API is still an alpha.
+`@ifx/rpc-client` contains only the shared binding, generated-client, service
+description, header, and interceptor contracts. `@ifx/rpc-client-rsocket` owns
+RSocket/WebSocket dependencies and supports all interaction types.
+`@ifx/rpc-client-jsonrpc` uses Fetch and supports notifications and
+request/response; request streams fail explicitly because JSON-RPC over HTTP
+has no standard streaming interaction. The RSocket dependencies remain pinned
+to `1.0.0-alpha.3`; this upstream API is still an alpha.
 
 Amper consumes compiler plugins as Maven artifacts, so publish the compiler-plugin
 module locally before building modules that use it:

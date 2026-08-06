@@ -1,7 +1,7 @@
 {
-  "name": "@ifx/rpc-client",
+  "name": "@ifx/rpc-client-jsonrpc",
   "version": "0.0.6",
-  "description": "Protocol-neutral TypeScript client runtime for iFX RPC services",
+  "description": "JSON-RPC over HTTP TypeScript client for iFX RPC services",
   "license": "UNLICENSED",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,8 +10,10 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build",
-    "test:generated": "tsc -p ../tsconfig.generated.json"
+    "test": "npm run build && node --test test/*.test.cjs"
+  },
+  "dependencies": {
+    "@ifx/rpc-client": "0.0.6"
   },
   "devDependencies": {
     "@types/node": "26.1.2",
