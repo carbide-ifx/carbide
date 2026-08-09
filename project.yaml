@@ -3,6 +3,7 @@ modules:
   - ifx.context
   - ifx.host
   - ifx.host.contract
+  - ifx.host.tooling
   - ifx.logging
   - ifx.protocol.contract
   - ifx.protocol.jsonrpc

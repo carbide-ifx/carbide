@@ -6,6 +6,7 @@ product:
 
 dependencies:
   - ../ifx.protocol.contract: exported
+  - ../ifx.host
   - ../ifx.host.contract
   - ../ifx.logging
   - io.rsocket.kotlin:ktor-server-rsocket:0.20.0: exported

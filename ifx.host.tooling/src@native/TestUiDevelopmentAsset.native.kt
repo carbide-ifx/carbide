@@ -1,6 +1,6 @@
 @file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 
-package ifx.host
+package ifx.host.tooling
 
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert

@@ -1,8 +1,9 @@
 # iFX test UI
 
-Browser UI embedded by `ifx.host` on the listener where host tooling is enabled.
-It reads the registered service catalog from `/ifx/services` and invokes the
-services with `@ifx/rpc-client-rsocket`.
+Browser UI provided by the optional `ifx.host.tooling` module. Its
+`ServiceExplorer` extension targets a listener, reads the registered service
+catalog from `/ifx/services`, and invokes services with
+`@ifx/rpc-client-rsocket`.
 
 The Kotlin host asset is checked in so normal Kotlin builds do not require
 Node.js. After changing the UI, rebuild the embedded asset with:
@@ -20,16 +21,15 @@ Configure the host to read the development bundle from disk:
 ```kotlin
 Host(
     name = "Test System",
-    listeners = listOf(
-        ProtocolListener(
-            protocol = RSocketServerProtocol(),
-            port = 7070,
-            tooling = HostTooling(
-                developmentDirectory = "typescript/ifx-test-ui/dist",
-            ),
+) {
+    val rsocket = listen(RSocketServerProtocol(), port = 7070)
+    install(
+        ServiceExplorer(
+            listener = rsocket,
+            developmentDirectory = "typescript/ifx-test-ui/dist",
         ),
-    ),
-)
+    )
+}
 ```
 
 Then keep this watcher running:

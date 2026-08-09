@@ -1,0 +1,11 @@
+apply: [ ../common.module-template.yaml ]
+product:
+  type: lib
+  platforms: [jvm, macosArm64]
+
+dependencies:
+  - ../ifx.host
+  - ../ifx.host.contract
+  - ../ifx.protocol.contract
+  - ../ifx.protocol.rsocket
+  - io.ktor:ktor-server-core:3.1.1

@@ -11,21 +11,29 @@ interface IServerProtocol {
     fun install(application: Application, endpoints: List<Endpoint>)
 }
 
-data class HostTooling(
-    val developmentDirectory: String? = null,
-)
-
 data class ProtocolListener(
     val protocol: IServerProtocol,
     val port: Int = 0,
     val host: String = "0.0.0.0",
-    val tooling: HostTooling? = null,
 )
 
 data class BoundProtocolListener(
     val protocolId: String,
     val host: String,
     val port: Int,
+)
+
+/** Additional routes or capabilities installed into one host listener. */
+interface HostExtension {
+    val listener: ProtocolListener
+
+    fun install(application: Application, context: HostExtensionContext)
+}
+
+class HostExtensionContext(
+    val hostName: String,
+    val endpoints: List<Endpoint>,
+    val boundListeners: () -> List<BoundProtocolListener>,
 )
 
 interface IHost {

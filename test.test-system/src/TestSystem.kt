@@ -4,10 +4,9 @@ import engine.pricing.contract.IPricingEngine
 import engine.pricing.service.PricingEngine
 import ifx.actuator.registerActuator
 import ifx.host.Host
-import ifx.host.HostTooling
 import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
-import ifx.host.ProtocolListener
+import ifx.host.tooling.ServiceExplorer
 import ifx.logging.Log
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.interceptors.LoggingInterceptor
@@ -25,22 +24,11 @@ import manager.sales.service.SalesManager
 suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
 ): IHost {
-    val host = Host(
-        name = "Test System",
-        listeners = listOf(
-            ProtocolListener(
-                protocol = RSocketServerProtocol(),
-                port = 0,
-                tooling = HostTooling(
-                    developmentDirectory = "typescript/ifx-test-ui/dist",
-                ),
-            ),
-            ProtocolListener(
-                protocol = JsonRpcServerProtocol(),
-                port = 0,
-            ),
-        ),
-    )
+    val host = Host(name = "Test System") {
+        val rsocket = listen(RSocketServerProtocol())
+        install(ServiceExplorer(rsocket, "typescript/ifx-test-ui/dist"))
+        listen(JsonRpcServerProtocol())
+    }
         .addInterceptors(interceptors)
     val proxyFactory = RSocketProxyFactory.forHost(host)
 

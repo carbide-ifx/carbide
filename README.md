@@ -32,18 +32,11 @@ host.
 ```kotlin
 val host = Host(
     name = "Example System",
-    listeners = listOf(
-        ProtocolListener(
-            protocol = RSocketServerProtocol(),
-            port = 7000,
-            tooling = HostTooling(),
-        ),
-        ProtocolListener(
-            protocol = JsonRpcServerProtocol(),
-            port = 7001,
-        ),
-    ),
-)
+) {
+    val rsocket = listen(RSocketServerProtocol(), port = 7000)
+    listen(JsonRpcServerProtocol(), port = 7001)
+    install(ServiceExplorer(rsocket))
+}
 
 host.registerService<AwesomeService> { AwesomeServiceImpl() }
 host.open()
@@ -64,6 +57,22 @@ interactions. Regular JSON-RPC over HTTP supports fire-and-forget notifications
 and request/response. Calling a service operation that returns `Flow` through the
 JSON-RPC client fails explicitly because JSON-RPC has no standard streaming
 interaction.
+
+The RSocket module provides a default host that exposes RSocket on the requested
+port. Passing `0` selects an available port:
+
+```kotlin
+val host = Host.default(8080)
+val testHost = Host.default()
+```
+
+The service explorer remains opt-in and can be installed through the host
+builder as shown above. To construct a host directly from one protocol, pass it
+to `Host`:
+
+```kotlin
+val host = Host(RSocketServerProtocol())
+```
 
 ## Interceptors
 
@@ -235,13 +244,14 @@ be inferred from KSP symbols.
 
 ## Interactive service explorer
 
-Host tooling can be mounted on one listener by giving that listener a
-`HostTooling` configuration. The standard setup mounts it on the RSocket
-listener because the explorer invokes services through RSocket. Tooling is off
-by default because the explorer can invoke mutating operations. The landing page
-shows the service components registered by that host. Selecting a component
-opens its operations, generates request controls from the serialized wire
-types, and displays request/response, fire-and-forget, and streaming results.
+The optional `ifx.host.tooling` module provides a `ServiceExplorer` host
+extension. It targets an RSocket listener because the explorer invokes services
+through RSocket, but remains separate from both the listener configuration and
+the RSocket protocol implementation. The explorer is off by default because it
+can invoke mutating operations. The landing page shows the service components
+registered by that host. Selecting a component opens its operations, generates
+request controls from the serialized wire types, and displays request/response,
+fire-and-forget, and streaming results.
 
 For example, a host resolved to port `8080` exposes the UI at
 `http://localhost:8080/` and its machine-readable service catalog at
@@ -250,14 +260,10 @@ For example, a host resolved to port `8080` exposes the UI at
 ```kotlin
 val host = Host(
     name = "Test System",
-    listeners = listOf(
-        ProtocolListener(
-            protocol = RSocketServerProtocol(),
-            port = 8080,
-            tooling = HostTooling(),
-        ),
-    ),
-)
+) {
+    val rsocket = listen(RSocketServerProtocol(), port = 8080)
+    install(ServiceExplorer(rsocket))
+}
 ```
 
 Generated TypeScript contracts export a `{Service}Description` value in

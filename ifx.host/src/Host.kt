@@ -17,6 +17,7 @@ class Host(
     private val listeners: List<ProtocolListener>,
     val name: String = "Service Host",
     override val interceptors: MutableList<IInterceptor> = mutableListOf(),
+    private val extensions: List<HostExtension> = emptyList(),
 ) : IHost {
     private val endpoints = mutableListOf<Endpoint>()
     private val runningServers = mutableListOf<RunningServer>()
@@ -39,10 +40,33 @@ class Host(
         require(duplicatePorts.isEmpty()) {
             "Each protocol listener must use a separate port: ${duplicatePorts.joinToString()}"
         }
-        require(listeners.count { it.tooling != null } <= 1) {
-            "Host tooling may only be installed on one protocol listener"
+        val missingExtensionListeners = extensions
+            .map(HostExtension::listener)
+            .filterNot { target -> listeners.any { listener -> listener === target } }
+        require(missingExtensionListeners.isEmpty()) {
+            "Every host extension must target a listener configured on the host"
         }
     }
+
+    constructor(
+        protocol: IServerProtocol,
+        vararg additionalProtocols: IServerProtocol,
+        name: String = "Service Host",
+    ) : this(
+        listeners = listOf(protocol, *additionalProtocols).map(::ProtocolListener),
+        name = name,
+    )
+
+    constructor(
+        name: String = "Service Host",
+        configure: HostBuilder.() -> Unit,
+    ) : this(HostBuilder().apply(configure).build(), name)
+
+    private constructor(configuration: HostConfiguration, name: String) : this(
+        listeners = configuration.listeners,
+        name = name,
+        extensions = configuration.extensions,
+    )
 
     override suspend fun <T : IService> registerService(contract: KClass<T>, instance: T): IHost = apply {
         check(runningServers.isEmpty()) { "Services cannot be registered while the host is open" }
@@ -105,8 +129,9 @@ class Host(
             },
         ) {
             config.protocol.install(this, endpoints)
-            config.tooling?.let {
-                installHostTooling(name, endpoints, it) { boundListeners }
+            val context = HostExtensionContext(name, endpoints.toList()) { boundListeners }
+            extensions.filter { it.listener === config }.forEach { extension ->
+                extension.install(this, context)
             }
         }
         return RunningServer(
@@ -132,4 +157,28 @@ class Host(
         fun start(): Int = startServer()
         fun stop(): Unit = stopServer()
     }
+
+    companion object
 }
+
+class HostBuilder internal constructor() {
+    private val listeners = mutableListOf<ProtocolListener>()
+    private val extensions = mutableListOf<HostExtension>()
+
+    fun listen(
+        protocol: IServerProtocol,
+        port: Int = 0,
+        host: String = "0.0.0.0",
+    ): ProtocolListener = ProtocolListener(protocol, port, host).also(listeners::add)
+
+    fun install(extension: HostExtension) {
+        extensions += extension
+    }
+
+    internal fun build(): HostConfiguration = HostConfiguration(listeners.toList(), extensions.toList())
+}
+
+internal data class HostConfiguration(
+    val listeners: List<ProtocolListener>,
+    val extensions: List<HostExtension>,
+)
