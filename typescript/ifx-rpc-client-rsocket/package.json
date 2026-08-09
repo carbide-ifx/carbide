@@ -1,6 +1,6 @@
 {
   "name": "@ifx/rpc-client-rsocket",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "RSocket TypeScript client for iFX RPC services",
   "license": "UNLICENSED",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-client": "0.0.6",
+    "@ifx/rpc-client": "0.0.7",
     "buffer": "6.0.3",
     "rsocket-composite-metadata": "1.0.0-alpha.3",
     "rsocket-core": "1.0.0-alpha.3",

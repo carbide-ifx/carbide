@@ -6,8 +6,8 @@
     "dev": "tsc -p tsconfig.json --noEmit && node dev.mjs"
   },
   "dependencies": {
-    "@ifx/rpc-client": "0.0.6",
-    "@ifx/rpc-client-rsocket": "0.0.6"
+    "@ifx/rpc-client": "0.0.7",
+    "@ifx/rpc-client-rsocket": "0.0.7"
   },
   "devDependencies": {
     "esbuild": "0.25.8",

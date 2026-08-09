@@ -224,7 +224,7 @@ settings:
         - ../ifx.rpc.typescript.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.6
+        dependency: sonat:ifx-rpc-compiler-plugin:0.0.7
 ```
 
 The optional `ifx.rpc.typescript.ksp` processor generates a TypeScript service

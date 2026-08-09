@@ -1,6 +1,6 @@
 {
   "name": "@ifx/rpc-client",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Protocol-neutral TypeScript client runtime for iFX RPC services",
   "license": "UNLICENSED",
   "main": "dist/index.js",
