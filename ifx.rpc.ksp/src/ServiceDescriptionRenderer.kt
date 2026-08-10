@@ -133,14 +133,13 @@ internal class ServiceDescriptionRenderer {
         }
 
     private fun alias(declaration: KSClassDeclaration, name: String): String {
-        val property = declaration.getAllProperties().single { it.hasBackingField && !it.isTransient() }
+        val property = declaration.serializedProperties().single()
         return "TypeDescription.Alias(" +
             "name = ${literal(name)}, typeParameters = ${typeParameters(declaration)}, target = ${typeRef(property.type.resolve())})"
     }
 
     private fun objectType(declaration: KSClassDeclaration, name: String): String {
-        val properties = declaration.getAllProperties()
-            .filter { it.hasBackingField && !it.isTransient() }
+        val properties = declaration.serializedProperties()
             .distinctBy { it.serialName() }
             .map { property ->
                 "PropertyDescription(" +
@@ -153,6 +152,21 @@ internal class ServiceDescriptionRenderer {
             "name = ${literal(name)}, " +
             "typeParameters = ${typeParameters(declaration)}, " +
             "properties = listOf(${properties.joinToString()}))"
+    }
+
+    private fun KSClassDeclaration.serializedProperties(): Sequence<KSPropertyDeclaration> {
+        val constructorProperties = primaryConstructor
+            ?.parameters
+            ?.mapNotNull { it.name?.asString() }
+            ?.toSet()
+            .orEmpty()
+        return getAllProperties().filter { property ->
+            !property.isTransient() && if (containingFile == null) {
+                property.simpleName.asString() in constructorProperties
+            } else {
+                property.hasBackingField
+            }
+        }
     }
 
     private fun typeParameters(declaration: KSClassDeclaration): String =

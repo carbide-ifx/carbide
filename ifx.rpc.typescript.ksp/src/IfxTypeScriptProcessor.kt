@@ -1,5 +1,6 @@
 package ifx.rpc.typescript.ksp
 
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -19,14 +20,24 @@ internal class IfxTypeScriptProcessor(environment: SymbolProcessorEnvironment) :
     private val renderer = TypeScriptRenderer()
     private var generated = false
 
+    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (generated) return emptyList()
         val service = resolver.getClassDeclarationByName(resolver.getKSNameFromString("ifx.service.IService"))
             ?: return emptyList()
-        val contracts = resolver.getAllFiles()
+        val localContracts = resolver.getAllFiles()
             .flatMap { file -> file.declarations.flatMap(::classes) }
-            .filter { it.classKind == ClassKind.INTERFACE && it.qualifiedName?.asString() != service.qualifiedName?.asString() }
+        val indexedContracts = resolver.getDeclarationsFromPackage(INDEX_PACKAGE)
+            .filterIsInstance<KSClassDeclaration>()
+            .flatMap(::indexedServiceNames)
+            .mapNotNull { name ->
+                resolver.getClassDeclarationByName(resolver.getKSNameFromString(name))
+            }
+        val contracts = (localContracts + indexedContracts)
+            .filter { it.classKind == ClassKind.INTERFACE && it.qualifiedName?.asString() !in FRAMEWORK_MARKERS }
             .filter { service.asStarProjectedType().isAssignableFrom(it.asStarProjectedType()) }
+            .distinctBy { it.qualifiedName?.asString() }
+            .sortedBy { it.qualifiedName?.asString() }
             .toList()
         val invalid = contracts.filterNot { it.validate() }
         if (invalid.isNotEmpty()) return invalid
@@ -34,6 +45,17 @@ internal class IfxTypeScriptProcessor(environment: SymbolProcessorEnvironment) :
         generated = true
         return emptyList()
     }
+
+    private fun indexedServiceNames(index: KSClassDeclaration): Sequence<String> =
+        index.annotations
+            .filter { annotation ->
+                annotation.annotationType.resolve().declaration.qualifiedName?.asString() == INDEX_ANNOTATION
+            }
+            .flatMap { annotation ->
+                annotation.arguments.asSequence().flatMap { argument ->
+                    (argument.value as? List<*>)?.asSequence()?.filterIsInstance<String>() ?: emptySequence()
+                }
+            }
 
     private fun generate(contract: KSClassDeclaration) {
         val model = try {
@@ -43,7 +65,7 @@ internal class IfxTypeScriptProcessor(environment: SymbolProcessorEnvironment) :
             return
         }
         val output = codeGenerator.createNewFile(
-            Dependencies(false, contract.containingFile!!),
+            contract.containingFile?.let { Dependencies(false, it) } ?: Dependencies.ALL_FILES,
             contract.packageName.asString(),
             contract.simpleName.asString(),
             "ts",
@@ -56,5 +78,11 @@ internal class IfxTypeScriptProcessor(environment: SymbolProcessorEnvironment) :
             yield(declaration)
             declaration.declarations.forEach { nested -> yieldAll(classes(nested)) }
         }
+    }
+
+    private companion object {
+        const val INDEX_PACKAGE = "ifx.service.index"
+        const val INDEX_ANNOTATION = "ifx.service.IfxServiceIndex"
+        val FRAMEWORK_MARKERS = setOf("ifx.service.IService", "ifx.service.IUtility")
     }
 }

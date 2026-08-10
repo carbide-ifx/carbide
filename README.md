@@ -218,11 +218,12 @@ when export fails. Supply `onExportFailure` to the interceptor for diagnostics,
 or implement `SpanExporter` to add batching and retry policy. Call
 `OtlpHttpSpanExporter.close()` when the application shuts down.
 
-There is no descriptor registry and no service annotation. The KSP processor generates
-the descriptor, and the compiler plugin associates the service contract with it on
-Kotlin/Native. JVM resolves the same generated descriptor by convention.
+Service modules do not generate descriptors or proxies. The shared build convention
+generates only a small contract index for interfaces inheriting `IService`. A subsystem's
+KSP run reads every reachable dependency index and generates the Kotlin descriptors,
+proxies, TypeScript contracts, and one reflection-free descriptor registry.
 
-Modules declaring service contracts need both integrations:
+Only subsystem/application modules apply the RPC generators:
 
 ```yaml
 settings:
@@ -231,10 +232,32 @@ settings:
       processors:
         - ../ifx.rpc.ksp
         - ../ifx.rpc.typescript.ksp
-    compilerPlugins:
-      - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.7
 ```
+
+The subsystem dependency graph is the contract manifest. Contract modules only depend
+on `ifx.service`; they do not configure RPC code generation or depend on protocol code.
+Adding or removing a service-module dependency changes the generated registry without a
+second service list or annotation.
+
+Pass the generated registry to the host. Proxy factories created with `forHost` reuse the
+same registry automatically:
+
+```kotlin
+import ifx.generated.TestTestSystemServiceDescriptors
+
+val host = Host(
+    name = "Test System",
+    serviceDescriptors = TestTestSystemServiceDescriptors,
+) {
+    listen(RSocketServerProtocol())
+}
+
+host.registerService<IProductAccess> { ProductAccessEmulator() }
+```
+
+Generation does not expose a contract. Only `registerService` publishes an endpoint.
+The registry works on JVM and Kotlin/Native without runtime classpath scanning or
+associated-object mutation of dependency contracts.
 
 The optional `ifx.rpc.typescript.ksp` processor generates a TypeScript service
 interface, operation request/response aliases, and all reachable serializable
@@ -309,8 +332,9 @@ request/response; request streams fail explicitly because JSON-RPC over HTTP
 has no standard streaming interaction. The RSocket dependencies remain pinned
 to `1.0.0-alpha.3`; this upstream API is still an alpha.
 
-Amper consumes compiler plugins as Maven artifacts, so publish the compiler-plugin
-module locally before building modules that use it:
+The legacy associated-object compatibility path still ships as a compiler plugin.
+Amper consumes compiler plugins as Maven artifacts, so publish it locally before
+building a module that explicitly opts into that compatibility path:
 
 ```shell
 ./kotlin publish local -m ifx.rpc.compiler-plugin

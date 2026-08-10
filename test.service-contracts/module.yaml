@@ -5,8 +5,4 @@ product:
   platforms: [ jvm, macosArm64 ]
 
 dependencies:
-  - co.touchlab:kermit:2.1.0
-  - ../ifx.host.contract
-  - ../ifx.logging: exported
-  - ../ifx.protocol.contract: exported
   - ../ifx.service: exported

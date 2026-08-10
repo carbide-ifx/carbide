@@ -3,6 +3,7 @@ import access.product.service.ProductAccessEmulator
 import engine.pricing.contract.IPricingEngine
 import engine.pricing.service.PricingEngine
 import ifx.actuator.registerActuator
+import ifx.generated.TestTestSystemServiceDescriptors
 import ifx.host.Host
 import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
@@ -24,7 +25,10 @@ import manager.sales.service.SalesManager
 suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
 ): IHost {
-    val host = Host(name = "Test System") {
+    val host = Host(
+        name = "Test System",
+        serviceDescriptors = TestTestSystemServiceDescriptors,
+    ) {
         val rsocket = listen(RSocketServerProtocol())
         install(ServiceExplorer(rsocket, "typescript/ifx-test-ui/dist"))
         listen(JsonRpcServerProtocol())

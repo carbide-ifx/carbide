@@ -10,12 +10,12 @@ sealed interface Product {
     data class Car(
         override val id: String,
         val brand: String,
-        val color: String
-    ): Product
+        val color: String,
+    ) : Product
 
     @Serializable
     data class Bike(
         override val id: String,
-        val numGears: Int
-    ): Product
+        val numGears: Int,
+    ) : Product
 }

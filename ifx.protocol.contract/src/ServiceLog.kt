@@ -9,7 +9,7 @@ inline fun <reified T : IService> Log.Companion.forService(
     vararg path: String,
 ): Log = Log(
     LogTag(
-        serviceInterface = serviceDescriptorOf<T>().address,
+        serviceInterface = serviceAddressOf<T>(),
         serviceClassName = instance::class.qualifiedName,
         path = path.toList(),
     )

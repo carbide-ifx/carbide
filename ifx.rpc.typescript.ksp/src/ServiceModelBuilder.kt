@@ -180,7 +180,7 @@ internal class ServiceModelBuilder {
         }
 
     private fun valueDeclaration(declaration: KSClassDeclaration, qualifiedName: String): TypeDeclaration.Alias {
-        val property = declaration.getAllProperties().singleOrNull { it.hasBackingField && !it.isTransient() }
+        val property = declaration.serializedProperties().singleOrNull()
             ?: fail("Serializable value class $qualifiedName must have exactly one serialized property", declaration)
         return TypeDeclaration.Alias(
             qualifiedName = qualifiedName,
@@ -190,8 +190,7 @@ internal class ServiceModelBuilder {
     }
 
     private fun objectDeclaration(declaration: KSClassDeclaration, qualifiedName: String): TypeDeclaration.ObjectType {
-        val properties = declaration.getAllProperties()
-            .filter { it.hasBackingField && !it.isTransient() }
+        val properties = declaration.serializedProperties()
             .map { property ->
                 rejectUnsupportedSerializationAnnotations(property)
                 PropertyModel(
@@ -207,6 +206,21 @@ internal class ServiceModelBuilder {
             typeParameters = declaration.typeParameters.map { it.name.asString() },
             properties = properties,
         )
+    }
+
+    private fun KSClassDeclaration.serializedProperties(): Sequence<KSPropertyDeclaration> {
+        val constructorProperties = primaryConstructor
+            ?.parameters
+            ?.mapNotNull { it.name?.asString() }
+            ?.toSet()
+            .orEmpty()
+        return getAllProperties().filter { property ->
+            !property.isTransient() && if (containingFile == null) {
+                property.simpleName.asString() in constructorProperties
+            } else {
+                property.hasBackingField
+            }
+        }
     }
 
     private fun requireSerializable(declaration: KSClassDeclaration) {

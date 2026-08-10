@@ -1,6 +1,6 @@
 package ifx.actuator
 
-import ifx.protocol.contract.serviceDescriptorOf
+import ifx.protocol.contract.serviceAddressOf
 import ifx.service.IService
 import ifx.service.IUtility
 import kotlinx.coroutines.flow.Flow
@@ -10,4 +10,4 @@ interface IActuator : IUtility {
 }
 
 inline fun <reified T : IService> IActuator.logTail(): Flow<LogTailEntry> =
-    logTail(serviceDescriptorOf<T>().address)
+    logTail(serviceAddressOf<T>())

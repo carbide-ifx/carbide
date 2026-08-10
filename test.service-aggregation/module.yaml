@@ -1,0 +1,17 @@
+apply: [ ../common.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [ jvm, macosArm64 ]
+
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.rpc.ksp
+
+dependencies:
+  - ../test.service-contracts
+  - ../ifx.protocol.contract
+  - ../ifx.logging
+  - ../ifx.service

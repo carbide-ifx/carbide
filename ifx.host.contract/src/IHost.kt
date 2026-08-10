@@ -2,6 +2,7 @@ package ifx.host
 
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.ServiceDescriptorRegistry
 import ifx.service.IService
 import io.ktor.server.application.Application
 import kotlin.reflect.KClass
@@ -37,6 +38,8 @@ class HostExtensionContext(
 )
 
 interface IHost {
+
+    val serviceDescriptors: ServiceDescriptorRegistry
 
     suspend fun <T : IService> registerService(contract: KClass<T>, instance: T): IHost
     suspend fun <T : IService> registerService(contract: KClass<T>, factory: suspend () -> T): IHost

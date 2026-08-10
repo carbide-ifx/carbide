@@ -9,11 +9,9 @@ settings:
       processors:
         - ../ifx.rpc.ksp
         - ../ifx.rpc.typescript.ksp
-    compilerPlugins:
-      - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.7
 
 dependencies:
+  - ../test.service-contracts
   - ../ifx.actuator
   - ../ifx.host
   - ../ifx.host.tooling

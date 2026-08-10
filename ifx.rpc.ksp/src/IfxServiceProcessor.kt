@@ -1,5 +1,6 @@
 package ifx.rpc.ksp
 
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -21,21 +22,51 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
     private val logger: KSPLogger = environment.logger
     private var generated = false
 
+    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (generated) return emptyList()
         val service = resolver.getClassDeclarationByName(resolver.getKSNameFromString("ifx.service.IService"))
             ?: return emptyList()
-        val contracts = resolver.getAllFiles()
+        val sourceFiles = resolver.getAllFiles().toList()
+        val generatedDependencies = Dependencies(aggregating = true, *sourceFiles.toTypedArray())
+        val localContracts = sourceFiles.asSequence()
             .flatMap { it.declarations.asSequence() }
             .filterIsInstance<KSClassDeclaration>()
-            .filter { it.classKind == ClassKind.INTERFACE && it.qualifiedName?.asString() != service.qualifiedName?.asString() }
+        val indexedContracts = resolver.getDeclarationsFromPackage(INDEX_PACKAGE)
+            .filterIsInstance<KSClassDeclaration>()
+            .flatMap(::indexedServiceNames)
+            .mapNotNull { name ->
+                resolver.getClassDeclarationByName(resolver.getKSNameFromString(name))
+            }
+        val contracts = (localContracts + indexedContracts)
+            .filter { it.classKind == ClassKind.INTERFACE && it.qualifiedName?.asString() !in FRAMEWORK_MARKERS }
             .filter { service.asStarProjectedType().isAssignableFrom(it.asStarProjectedType()) }
+            .distinctBy { it.qualifiedName?.asString() }
+            .sortedBy { it.qualifiedName?.asString() }
             .toList()
         if (contracts.any { !it.validate(resolver) }) return contracts
-        contracts.forEach(::generate)
+        contracts
+            .filter { contract ->
+                resolver.getClassDeclarationByName(
+                    resolver.getKSNameFromString(descriptorQualifiedName(contract)),
+                ) == null
+            }
+            .forEach { contract -> generate(contract, generatedDependencies) }
+        generateRegistry(resolver.getModuleName().asString(), contracts, generatedDependencies)
         generated = true
         return emptyList()
     }
+
+    private fun indexedServiceNames(index: KSClassDeclaration): Sequence<String> =
+        index.annotations
+            .filter { annotation ->
+                annotation.annotationType.resolve().declaration.qualifiedName?.asString() == INDEX_ANNOTATION
+            }
+            .flatMap { annotation ->
+                annotation.arguments.asSequence().flatMap { argument ->
+                    (argument.value as? List<*>)?.asSequence()?.filterIsInstance<String>() ?: emptySequence()
+                }
+            }
 
     private fun KSClassDeclaration.validate(resolver: Resolver): Boolean =
         getAllFunctions().filterNot(::isAnyMethod).all { function ->
@@ -56,7 +87,7 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
             validShape && validFireAndForget
         }
 
-    private fun generate(contract: KSClassDeclaration) {
+    private fun generate(contract: KSClassDeclaration, dependencies: Dependencies) {
         val packageName = contract.packageName.asString()
         val contractName = contract.simpleName.asString()
         val descriptorName = "${contractName}Descriptor"
@@ -65,7 +96,9 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
         val packageDeclaration = packageName.takeIf { it.isNotBlank() }?.let { "package $it\n" }.orEmpty()
         val description = ServiceDescriptionRenderer().render(contract)
         val output = codeGenerator.createNewFile(
-            Dependencies(false, contract.containingFile!!), packageName, descriptorName
+            dependencies,
+            packageName,
+            descriptorName,
         )
         OutputStreamWriter(output).use { writer ->
             writer.write("""$packageDeclaration
@@ -107,6 +140,55 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
 }
 """)
         }
+    }
+
+    private fun generateRegistry(
+        moduleName: String,
+        contracts: List<KSClassDeclaration>,
+        dependencies: Dependencies,
+    ) {
+        val registryName = "${moduleName.toIdentifier()}ServiceDescriptors"
+        val output = codeGenerator.createNewFile(
+            dependencies,
+            GENERATED_PACKAGE,
+            registryName,
+        )
+        OutputStreamWriter(output).use { writer ->
+            val branches = contracts.joinToString("\n") { contract ->
+                val contractName = contract.qualifiedName!!.asString()
+                "            $contractName::class -> ${descriptorQualifiedName(contract)}"
+            }
+            writer.write(
+                """package $GENERATED_PACKAGE
+
+import ifx.protocol.contract.ServiceDescriptor
+import ifx.protocol.contract.ServiceDescriptorRegistry
+import ifx.service.IService
+import kotlin.reflect.KClass
+
+public object $registryName : ServiceDescriptorRegistry {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>? =
+        when (contract) {
+$branches
+            else -> null
+        } as ServiceDescriptor<T>?
+}
+""",
+            )
+        }
+    }
+
+    private fun descriptorQualifiedName(contract: KSClassDeclaration): String =
+        contract.packageName.asString().takeIf(String::isNotBlank)?.let { "$it." }.orEmpty() +
+            "${contract.simpleName.asString()}Descriptor"
+
+    private fun String.toIdentifier(): String {
+        val identifier = split(Regex("[^A-Za-z0-9]+"))
+            .filter(String::isNotEmpty)
+            .joinToString("") { part -> part.replaceFirstChar(Char::uppercaseChar) }
+            .ifEmpty { "Module" }
+        return if (identifier.first().isLetter()) identifier else "Module$identifier"
     }
 
     private fun clientMethod(function: KSFunctionDeclaration): String {
@@ -164,4 +246,11 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
         if (type.arguments.isEmpty()) raw + if (type.nullability.name == "NULLABLE") "?" else ""
         else raw + type.arguments.joinToString(prefix = "<", postfix = ">") { argument -> typeName(argument.type!!.resolve()) } + if (type.nullability.name == "NULLABLE") "?" else ""
     } ?: type.toString()
+
+    private companion object {
+        const val INDEX_PACKAGE = "ifx.service.index"
+        const val INDEX_ANNOTATION = "ifx.service.IfxServiceIndex"
+        const val GENERATED_PACKAGE = "ifx.generated"
+        val FRAMEWORK_MARKERS = setOf("ifx.service.IService", "ifx.service.IUtility")
+    }
 }
