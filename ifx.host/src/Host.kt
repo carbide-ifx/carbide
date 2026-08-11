@@ -3,7 +3,6 @@ package ifx.host
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
-import ifx.protocol.contract.PlatformServiceDescriptorRegistry
 import ifx.protocol.contract.ServerInterceptorPipeline
 import ifx.protocol.contract.ServiceDescriptorRegistry
 import ifx.protocol.contract.requireDescriptor
@@ -20,7 +19,7 @@ class Host(
     val name: String = "Service Host",
     override val interceptors: MutableList<IInterceptor> = mutableListOf(),
     private val extensions: List<HostExtension> = emptyList(),
-    override val serviceDescriptors: ServiceDescriptorRegistry = PlatformServiceDescriptorRegistry,
+    override val serviceDescriptors: ServiceDescriptorRegistry,
 ) : IHost {
     private val endpoints = mutableListOf<Endpoint>()
     private val runningServers = mutableListOf<RunningServer>()
@@ -55,7 +54,7 @@ class Host(
         protocol: IServerProtocol,
         vararg additionalProtocols: IServerProtocol,
         name: String = "Service Host",
-        serviceDescriptors: ServiceDescriptorRegistry = PlatformServiceDescriptorRegistry,
+        serviceDescriptors: ServiceDescriptorRegistry,
     ) : this(
         listeners = listOf(protocol, *additionalProtocols).map(::ProtocolListener),
         name = name,
@@ -64,7 +63,7 @@ class Host(
 
     constructor(
         name: String = "Service Host",
-        serviceDescriptors: ServiceDescriptorRegistry = PlatformServiceDescriptorRegistry,
+        serviceDescriptors: ServiceDescriptorRegistry,
         configure: HostBuilder.() -> Unit,
     ) : this(HostBuilder().apply(configure).build(), name, serviceDescriptors)
 

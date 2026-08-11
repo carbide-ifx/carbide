@@ -8,12 +8,6 @@ interface ServiceDescriptorRegistry {
     fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>?
 }
 
-/** Compatibility lookup for modules that still generate descriptors beside contracts. */
-object PlatformServiceDescriptorRegistry : ServiceDescriptorRegistry {
-    override fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>? =
-        runCatching { serviceDescriptorOf(contract) }.getOrNull()
-}
-
 class CompositeServiceDescriptorRegistry(
     private vararg val registries: ServiceDescriptorRegistry,
 ) : ServiceDescriptorRegistry {

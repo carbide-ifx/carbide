@@ -1,5 +1,6 @@
 import access.product.contract.IProductAccess
 import access.product.contract.ProductCriteria
+import ifx.generated.TestTestSystemServiceDescriptors
 import ifx.host.Host
 import ifx.host.ProtocolListener
 import ifx.host.tooling.ServiceExplorer
@@ -10,10 +11,10 @@ import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketServerProtocol
-import ifx.protocol.rsocket.default
 import ifx.proxy.contract.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
+import ifx.subsystem.default
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -35,7 +36,7 @@ class TestSystemTest {
     @Test
     fun `default host binds rsocket to the requested port`() {
         val port = ServerSocket(0).use { it.localPort }
-        val host = Host.default(port).open()
+        val host = Host.default(TestTestSystemServiceDescriptors, port).open()
         try {
             assertEquals(port, host.port(RSOCKET_PROTOCOL_ID))
         } finally {
@@ -45,7 +46,7 @@ class TestSystemTest {
 
     @Test
     fun `default host resolves port zero to an available port`() {
-        val host = Host.default().open()
+        val host = Host.default(TestTestSystemServiceDescriptors).open()
         try {
             assertNotEquals(0, host.port(RSOCKET_PROTOCOL_ID))
         } finally {
@@ -64,7 +65,10 @@ class TestSystemTest {
 
     @Test
     fun `host can be created directly from one protocol`() {
-        val host = Host(RSocketServerProtocol()).open()
+        val host = Host(
+            RSocketServerProtocol(),
+            serviceDescriptors = TestTestSystemServiceDescriptors,
+        ).open()
         try {
             assertNotEquals(0, host.port(RSOCKET_PROTOCOL_ID))
         } finally {

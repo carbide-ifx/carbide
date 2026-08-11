@@ -2,7 +2,6 @@ package ifx.proxy.factory
 
 import ifx.host.IHost
 import ifx.protocol.contract.IClientProtocol
-import ifx.protocol.contract.PlatformServiceDescriptorRegistry
 import ifx.protocol.contract.ServiceDescriptorRegistry
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
@@ -13,8 +12,8 @@ class RSocketProxyFactory private constructor(
 ) : IProxyFactory by delegate {
     constructor(
         port: Int,
+        serviceDescriptors: ServiceDescriptorRegistry,
         host: String = "localhost",
-        serviceDescriptors: ServiceDescriptorRegistry = PlatformServiceDescriptorRegistry,
     ) : this(RSocketClientProtocol(host, port), serviceDescriptors)
 
     private constructor(

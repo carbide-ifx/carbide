@@ -23,12 +23,12 @@ val client = proxyFactory.create<AwesomeService>()
 
 ## Subsystem dependency
 
-Applications that host a JVM subsystem can use the published `subsystem` module
+Applications that host a subsystem can use the published `ifx.subsystem` module
 as their single iFX runtime dependency:
 
 ```yaml
 dependencies:
-  - sonat:subsystem:0.0.7
+  - sonat:ifx.subsystem:0.0.7
 ```
 
 It exports the host, RSocket and JSON-RPC protocols and proxy factories,
@@ -41,9 +41,8 @@ Generated service bindings still require the subsystem/application KSP setup
 described below. Those processors are build-time tools rather than runtime
 dependencies.
 
-The bundle is currently JVM-only. The underlying host modules remain
-multiplatform, but the bundle deliberately publishes a regular JVM POM so an
-external project receives the correct JVM Ktor and RSocket artifacts.
+The bundle supports JVM and macOS ARM64 and publishes platform-correct
+multiplatform metadata.
 
 ## Multi-protocol hosting
 
@@ -56,6 +55,7 @@ host.
 ```kotlin
 val host = Host(
     name = "Example System",
+    serviceDescriptors = ExampleSystemServiceDescriptors,
 ) {
     val rsocket = listen(RSocketServerProtocol(), port = 7000)
     listen(JsonRpcServerProtocol(), port = 7001)
@@ -82,12 +82,14 @@ and request/response. Calling a service operation that returns `Flow` through th
 JSON-RPC client fails explicitly because JSON-RPC has no standard streaming
 interaction.
 
-The RSocket module provides a default host that exposes RSocket on the requested
-port. Passing `0` selects an available port:
+The `ifx.subsystem` bundle provides a default host that exposes RSocket on the
+requested port. Passing `0` selects an available port:
 
 ```kotlin
-val host = Host.default(8080)
-val testHost = Host.default()
+import ifx.subsystem.default
+
+val host = Host.default(ExampleSystemServiceDescriptors, port = 8080)
+val testHost = Host.default(ExampleSystemServiceDescriptors)
 ```
 
 The service explorer remains opt-in and can be installed through the host
@@ -95,7 +97,10 @@ builder as shown above. To construct a host directly from one protocol, pass it
 to `Host`:
 
 ```kotlin
-val host = Host(RSocketServerProtocol())
+val host = Host(
+    RSocketServerProtocol(),
+    serviceDescriptors = ExampleSystemServiceDescriptors,
+)
 ```
 
 ## Interceptors
@@ -292,6 +297,10 @@ val host = Host(
 host.registerService<IProductAccess> { ProductAccessEmulator() }
 ```
 
+In a multiplatform application, KSP emits the registry into each platform source set.
+Keep host assembly in the corresponding platform source sets, or expose the registry
+to common code through an `expect`/`actual` bridge.
+
 Generation does not expose a contract. Only `registerService` publishes an endpoint.
 The registry works on JVM and Kotlin/Native without runtime classpath scanning or
 associated-object mutation of dependency contracts.
@@ -320,6 +329,7 @@ For example, a host resolved to port `8080` exposes the UI at
 ```kotlin
 val host = Host(
     name = "Test System",
+    serviceDescriptors = TestTestSystemServiceDescriptors,
 ) {
     val rsocket = listen(RSocketServerProtocol(), port = 8080)
     install(ServiceExplorer(rsocket))
@@ -368,15 +378,6 @@ RSocket/WebSocket dependencies and supports all interaction types.
 request/response; request streams fail explicitly because JSON-RPC over HTTP
 has no standard streaming interaction. The RSocket dependencies remain pinned
 to `1.0.0-alpha.3`; this upstream API is still an alpha.
-
-The legacy associated-object compatibility path still ships as a compiler plugin.
-Amper consumes compiler plugins as Maven artifacts, so publish it locally before
-building a module that explicitly opts into that compatibility path:
-
-```shell
-./kotlin publish local -m ifx.rpc.compiler-plugin
-./kotlin build
-```
 
 - 
 - ifx.Kotlin

@@ -21,6 +21,7 @@ Configure the host to read the development bundle from disk:
 ```kotlin
 Host(
     name = "Test System",
+    serviceDescriptors = TestTestSystemServiceDescriptors,
 ) {
     val rsocket = listen(RSocketServerProtocol(), port = 7070)
     install(

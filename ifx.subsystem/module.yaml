@@ -1,6 +1,8 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
-product: jvm/lib
+product:
+  type: lib
+  platforms: [ jvm, macosArm64 ]
 
 # Public subsystem-hosting surface. Keep these exports explicit so consumers
 # need one runtime dependency while still choosing listeners, extensions,
@@ -18,15 +20,3 @@ dependencies:
   - ../ifx.proxy-factory.rsocket: exported
   - ../ifx.service: exported
   - ../ifx.telemetry.otel: exported
-
-  # The current KMP publications of the modules above carry macOS variants in
-  # their JVM POMs. Re-declare the JVM runtime here so an external subsystem
-  # does not need to reproduce that workaround itself.
-  - co.touchlab:kermit:2.1.0: exported
-  - io.ktor:ktor-client-cio:3.1.1: exported
-  - io.ktor:ktor-client-core:3.1.1: exported
-  - io.ktor:ktor-client-websockets:3.1.1: exported
-  - io.ktor:ktor-server-cio:3.1.1: exported
-  - io.ktor:ktor-server-core:3.1.1: exported
-  - io.rsocket.kotlin:ktor-client-rsocket:0.20.0: exported
-  - io.rsocket.kotlin:ktor-server-rsocket:0.20.0: exported
