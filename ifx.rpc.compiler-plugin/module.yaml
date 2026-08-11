@@ -1,0 +1,11 @@
+apply: [ ../publishing.module-template.yaml ]
+
+product: jvm/lib
+layout: maven-like
+
+settings:
+  publishing:
+    artifactId: ifx-rpc-compiler-plugin
+
+dependencies:
+  - org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10: compile-only

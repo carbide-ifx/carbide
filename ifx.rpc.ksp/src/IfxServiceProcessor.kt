@@ -45,7 +45,6 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
             .sortedBy { it.qualifiedName?.asString() }
             .toList()
         if (contracts.any { !it.validate(resolver) }) return contracts
-        val moduleName = resolver.getModuleName().asString()
         contracts
             .filter { contract ->
                 resolver.getClassDeclarationByName(
@@ -53,16 +52,21 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
                 ) == null
             }
             .forEach { contract -> generate(contract, generatedDependencies) }
-        generateRegistry(moduleName, contracts, generatedDependencies)
-        if (resolver.hasSubsystemHostSupport()) {
-            generateSubsystemHostConveniences(moduleName, generatedDependencies)
+        val existingRegistry = resolver.getClassDeclarationByName(resolver.getKSNameFromString(GENERATED_REGISTRY))
+        val isTestCompilation = resolver.getModuleName().asString().endsWith("_test")
+        when {
+            isTestCompilation -> Unit
+            existingRegistry == null -> generateRegistry(contracts, generatedDependencies)
+            existingRegistry.containingFile == null -> {
+                logger.error(
+                    "A dependency already provides $GENERATED_REGISTRY. " +
+                        "A subsystem module cannot depend on another module that applies ifx.rpc.ksp.",
+                )
+            }
         }
         generated = true
         return emptyList()
     }
-
-    private fun Resolver.hasSubsystemHostSupport(): Boolean =
-        getClassDeclarationByName(getKSNameFromString(SUBSYSTEM_HOST_SUPPORT)) != null
 
     private fun indexedServiceNames(index: KSClassDeclaration): Sequence<String> =
         index.annotations
@@ -150,15 +154,13 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
     }
 
     private fun generateRegistry(
-        moduleName: String,
         contracts: List<KSClassDeclaration>,
         dependencies: Dependencies,
     ) {
-        val registryName = "${moduleName.toIdentifier()}ServiceDescriptors"
         val output = codeGenerator.createNewFile(
             dependencies,
             GENERATED_PACKAGE,
-            registryName,
+            GENERATED_REGISTRY_NAME,
         )
         OutputStreamWriter(output).use { writer ->
             val branches = contracts.joinToString("\n") { contract ->
@@ -173,7 +175,7 @@ import ifx.protocol.contract.ServiceDescriptorRegistry
 import ifx.service.IService
 import kotlin.reflect.KClass
 
-public object $registryName : ServiceDescriptorRegistry {
+public object $GENERATED_REGISTRY_NAME : ServiceDescriptorRegistry {
     @Suppress("UNCHECKED_CAST")
     override fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>? =
         when (contract) {
@@ -186,62 +188,9 @@ $branches
         }
     }
 
-    private fun generateSubsystemHostConveniences(
-        moduleName: String,
-        dependencies: Dependencies,
-    ) {
-        val moduleId = moduleName.toIdentifier()
-        val registryName = "${moduleId}ServiceDescriptors"
-        val output = codeGenerator.createNewFile(
-            dependencies,
-            SUBSYSTEM_PACKAGE,
-            "${moduleId}SubsystemHost",
-        )
-        OutputStreamWriter(output).use { writer ->
-            writer.write(
-                """package $SUBSYSTEM_PACKAGE
-
-import ifx.generated.$registryName
-import ifx.host.Host
-import ifx.host.HostBuilder
-
-/** Creates a host using the services reachable from this subsystem module. */
-public fun Host.Companion.subsystem(
-    name: String = "Service Host",
-    configure: HostBuilder.() -> Unit,
-): Host = Host(
-    name = name,
-    serviceDescriptors = $registryName,
-    configure = configure,
-)
-
-/** Creates the default RSocket host using the services reachable from this subsystem module. */
-public fun Host.Companion.default(
-    port: Int = 0,
-    name: String = "Service Host",
-    configure: HostBuilder.() -> Unit = {},
-): Host = default(
-    serviceDescriptors = $registryName,
-    port = port,
-    name = name,
-    configure = configure,
-)
-""",
-            )
-        }
-    }
-
     private fun descriptorQualifiedName(contract: KSClassDeclaration): String =
         contract.packageName.asString().takeIf(String::isNotBlank)?.let { "$it." }.orEmpty() +
             "${contract.simpleName.asString()}Descriptor"
-
-    private fun String.toIdentifier(): String {
-        val identifier = split(Regex("[^A-Za-z0-9]+"))
-            .filter(String::isNotEmpty)
-            .joinToString("") { part -> part.replaceFirstChar(Char::uppercaseChar) }
-            .ifEmpty { "Module" }
-        return if (identifier.first().isLetter()) identifier else "Module$identifier"
-    }
 
     private fun clientMethod(function: KSFunctionDeclaration): String {
         val name = function.simpleName.asString()
@@ -303,8 +252,8 @@ public fun Host.Companion.default(
         const val INDEX_PACKAGE = "ifx.service.index"
         const val INDEX_ANNOTATION = "ifx.service.IfxServiceIndex"
         const val GENERATED_PACKAGE = "ifx.generated"
-        const val SUBSYSTEM_PACKAGE = "ifx.subsystem"
-        const val SUBSYSTEM_HOST_SUPPORT = "ifx.subsystem.SubsystemHostSupport"
+        const val GENERATED_REGISTRY_NAME = "ServiceDescriptors"
+        const val GENERATED_REGISTRY = "$GENERATED_PACKAGE.$GENERATED_REGISTRY_NAME"
         val FRAMEWORK_MARKERS = setOf("ifx.service.IService", "ifx.service.IUtility")
     }
 }
