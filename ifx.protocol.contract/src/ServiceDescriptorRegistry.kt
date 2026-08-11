@@ -8,13 +8,6 @@ interface ServiceDescriptorRegistry {
     fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>?
 }
 
-class CompositeServiceDescriptorRegistry(
-    private vararg val registries: ServiceDescriptorRegistry,
-) : ServiceDescriptorRegistry {
-    override fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>? =
-        registries.firstNotNullOfOrNull { it.find(contract) }
-}
-
 fun <T : IService> ServiceDescriptorRegistry.requireDescriptor(contract: KClass<T>): ServiceDescriptor<T> =
     find(contract) ?: error(
         "No generated IFX service descriptor found for ${serviceAddressOf(contract)}. " +
