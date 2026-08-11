@@ -12,5 +12,5 @@ settings:
 
 dependencies:
   - ../test.service-contracts
-  - ../subsystem
+  - ../ifx.subsystem
   - ../utility.stdlib

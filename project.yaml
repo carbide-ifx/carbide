@@ -17,9 +17,9 @@ modules:
   - ifx.rpc.ksp
   - ifx.rpc.typescript.ksp
   - ifx.service
+  - ifx.subsystem
   - ifx.telemetry.otel
   - ifx.testing
-  - subsystem
   - test.service-aggregation
   - test.service-contracts
   - test.test-system
