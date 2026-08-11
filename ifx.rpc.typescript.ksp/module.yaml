@@ -1,3 +1,5 @@
+apply: [ ../publishing.module-template.yaml ]
+
 product:
   type: jvm/lib
 

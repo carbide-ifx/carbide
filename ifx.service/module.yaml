@@ -1,4 +1,4 @@
-apply: [../common.module-template.yaml ]
+apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
 product:
   type: lib

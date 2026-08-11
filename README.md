@@ -218,10 +218,20 @@ when export fails. Supply `onExportFailure` to the interceptor for diagnostics,
 or implement `SpanExporter` to add batching and retry policy. Call
 `OtlpHttpSpanExporter.close()` when the application shuts down.
 
-Service modules do not generate descriptors or proxies. The shared build convention
-generates only a small contract index for interfaces inheriting `IService`. A subsystem's
-KSP run reads every reachable dependency index and generates the Kotlin descriptors,
-proxies, TypeScript contracts, and one reflection-free descriptor registry.
+Service modules do not generate descriptors or proxies. Modules that declare interfaces
+inheriting `IService` apply the index processor, which generates only a small contract
+index:
+
+```yaml
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - sonat:ifx.rpc.index.ksp:0.0.7
+```
+
+A subsystem's KSP run reads every reachable dependency index and generates the Kotlin
+descriptors, proxies, and one reflection-free descriptor registry.
 
 Only subsystem/application modules apply the RPC generators:
 
@@ -230,14 +240,17 @@ settings:
   kotlin:
     ksp:
       processors:
-        - ../ifx.rpc.ksp
-        - ../ifx.rpc.typescript.ksp
+        - sonat:ifx.rpc.index.ksp:0.0.7
+        - sonat:ifx.rpc.ksp:0.0.7
+        # Optional: generate TypeScript contracts and wire types.
+        - sonat:ifx.rpc.typescript.ksp:0.0.7
 ```
 
-The subsystem dependency graph is the contract manifest. Contract modules only depend
-on `ifx.service`; they do not configure RPC code generation or depend on protocol code.
+The subsystem dependency graph is the contract manifest. Contract modules depend only
+on `ifx.service` at runtime; they do not generate RPC bindings or depend on protocol code.
 Adding or removing a service-module dependency changes the generated registry without a
-second service list or annotation.
+second service list or annotation. A shared module template may apply the index processor
+to every module; it emits nothing for modules that do not declare service contracts.
 
 Pass the generated registry to the host. Proxy factories created with `forHost` reuse the
 same registry automatically:
