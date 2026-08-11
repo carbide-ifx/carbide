@@ -21,6 +21,30 @@ host.registerService<AwesomeService> {
 val client = proxyFactory.create<AwesomeService>()
 ```
 
+## Subsystem dependency
+
+Applications that host a JVM subsystem can use the published `subsystem` module
+as their single iFX runtime dependency:
+
+```yaml
+dependencies:
+  - sonat:subsystem:0.0.7
+```
+
+It exports the host, RSocket and JSON-RPC protocols and proxy factories,
+interceptor contracts, context and logging support, OpenTelemetry, the actuator,
+and host tooling such as `ServiceExplorer`. The dependency does not select a
+protocol, enable tooling, or expose services automatically; those choices stay
+explicit in the subsystem application root.
+
+Generated service bindings still require the subsystem/application KSP setup
+described below. Those processors are build-time tools rather than runtime
+dependencies.
+
+The bundle is currently JVM-only. The underlying host modules remain
+multiplatform, but the bundle deliberately publishes a regular JVM POM so an
+external project receives the correct JVM Ktor and RSocket artifacts.
+
 ## Multi-protocol hosting
 
 `Host` owns service registration and the lifecycle of its Ktor servers. Each

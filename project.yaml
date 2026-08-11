@@ -19,6 +19,7 @@ modules:
   - ifx.service
   - ifx.telemetry.otel
   - ifx.testing
+  - subsystem
   - test.service-aggregation
   - test.service-contracts
   - test.test-system

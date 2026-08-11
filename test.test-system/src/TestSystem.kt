@@ -27,7 +27,6 @@ suspend fun startTestSystem(
 ): IHost {
     val host = Host(
         name = "Test System",
-        serviceDescriptors = TestTestSystemServiceDescriptors,
     ) {
         val rsocket = listen(RSocketServerProtocol())
         install(ServiceExplorer(rsocket, "typescript/ifx-test-ui/dist"))
