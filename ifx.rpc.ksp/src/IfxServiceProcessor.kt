@@ -45,6 +45,7 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
             .sortedBy { it.qualifiedName?.asString() }
             .toList()
         if (contracts.any { !it.validate(resolver) }) return contracts
+        val moduleName = resolver.getModuleName().asString()
         contracts
             .filter { contract ->
                 resolver.getClassDeclarationByName(
@@ -52,10 +53,16 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
                 ) == null
             }
             .forEach { contract -> generate(contract, generatedDependencies) }
-        generateRegistry(resolver.getModuleName().asString(), contracts, generatedDependencies)
+        generateRegistry(moduleName, contracts, generatedDependencies)
+        if (resolver.hasSubsystemHostSupport()) {
+            generateSubsystemHostConveniences(moduleName, generatedDependencies)
+        }
         generated = true
         return emptyList()
     }
+
+    private fun Resolver.hasSubsystemHostSupport(): Boolean =
+        getClassDeclarationByName(getKSNameFromString(SUBSYSTEM_HOST_SUPPORT)) != null
 
     private fun indexedServiceNames(index: KSClassDeclaration): Sequence<String> =
         index.annotations
@@ -179,6 +186,51 @@ $branches
         }
     }
 
+    private fun generateSubsystemHostConveniences(
+        moduleName: String,
+        dependencies: Dependencies,
+    ) {
+        val moduleId = moduleName.toIdentifier()
+        val registryName = "${moduleId}ServiceDescriptors"
+        val output = codeGenerator.createNewFile(
+            dependencies,
+            SUBSYSTEM_PACKAGE,
+            "${moduleId}SubsystemHost",
+        )
+        OutputStreamWriter(output).use { writer ->
+            writer.write(
+                """package $SUBSYSTEM_PACKAGE
+
+import ifx.generated.$registryName
+import ifx.host.Host
+import ifx.host.HostBuilder
+
+/** Creates a host using the services reachable from this subsystem module. */
+public fun Host.Companion.subsystem(
+    name: String = "Service Host",
+    configure: HostBuilder.() -> Unit,
+): Host = Host(
+    name = name,
+    serviceDescriptors = $registryName,
+    configure = configure,
+)
+
+/** Creates the default RSocket host using the services reachable from this subsystem module. */
+public fun Host.Companion.default(
+    port: Int = 0,
+    name: String = "Service Host",
+    configure: HostBuilder.() -> Unit = {},
+): Host = default(
+    serviceDescriptors = $registryName,
+    port = port,
+    name = name,
+    configure = configure,
+)
+""",
+            )
+        }
+    }
+
     private fun descriptorQualifiedName(contract: KSClassDeclaration): String =
         contract.packageName.asString().takeIf(String::isNotBlank)?.let { "$it." }.orEmpty() +
             "${contract.simpleName.asString()}Descriptor"
@@ -251,6 +303,8 @@ $branches
         const val INDEX_PACKAGE = "ifx.service.index"
         const val INDEX_ANNOTATION = "ifx.service.IfxServiceIndex"
         const val GENERATED_PACKAGE = "ifx.generated"
+        const val SUBSYSTEM_PACKAGE = "ifx.subsystem"
+        const val SUBSYSTEM_HOST_SUPPORT = "ifx.subsystem.SubsystemHostSupport"
         val FRAMEWORK_MARKERS = setOf("ifx.service.IService", "ifx.service.IUtility")
     }
 }

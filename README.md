@@ -53,10 +53,9 @@ only install their routes and wire handling into the listener provided by the
 host.
 
 ```kotlin
-val host = Host(
-    name = "Example System",
-    serviceDescriptors = ExampleSystemServiceDescriptors,
-) {
+import ifx.subsystem.subsystem
+
+val host = Host.subsystem(name = "Example System") {
     val rsocket = listen(RSocketServerProtocol(), port = 7000)
     listen(JsonRpcServerProtocol(), port = 7001)
     install(ServiceExplorer(rsocket))
@@ -88,19 +87,20 @@ requested port. Passing `0` selects an available port:
 ```kotlin
 import ifx.subsystem.default
 
-val host = Host.default(ExampleSystemServiceDescriptors, port = 8080)
-val testHost = Host.default(ExampleSystemServiceDescriptors)
+val host = Host.default(port = 8080)
+val testHost = Host.default()
 ```
 
 The service explorer remains opt-in and can be installed through the host
-builder as shown above. To construct a host directly from one protocol, pass it
-to `Host`:
+builder as shown above. For a custom listener configuration, use the generated
+subsystem host convenience:
 
 ```kotlin
-val host = Host(
-    RSocketServerProtocol(),
-    serviceDescriptors = ExampleSystemServiceDescriptors,
-)
+import ifx.subsystem.subsystem
+
+val host = Host.subsystem {
+    listen(RSocketServerProtocol())
+}
 ```
 
 ## Interceptors
@@ -260,7 +260,8 @@ settings:
 ```
 
 A subsystem's KSP run reads every reachable dependency index and generates the Kotlin
-descriptors, proxies, and one reflection-free descriptor registry.
+descriptors, proxies, one reflection-free descriptor registry, and host conveniences
+that supply that registry internally. Each module represents at most one subsystem.
 
 Only subsystem/application modules apply the RPC generators:
 
@@ -281,25 +282,26 @@ Adding or removing a service-module dependency changes the generated registry wi
 second service list or annotation. A shared module template may apply the index processor
 to every module; it emits nothing for modules that do not declare service contracts.
 
-Pass the generated registry to the host. Proxy factories created with `forHost` reuse the
-same registry automatically:
+The generated `Host.subsystem` convenience supports custom listener configurations, and
+the generated overload of `Host.default` delegates to the RSocket default owned by
+`ifx.subsystem`. Application code does not handle the generated registry. Proxy factories
+created with `forHost` reuse the host registry automatically:
 
 ```kotlin
-import ifx.generated.TestTestSystemServiceDescriptors
+import ifx.subsystem.subsystem
 
-val host = Host(
-    name = "Test System",
-    serviceDescriptors = TestTestSystemServiceDescriptors,
-) {
+val host = Host.subsystem(name = "Test System") {
     listen(RSocketServerProtocol())
 }
 
 host.registerService<IProductAccess> { ProductAccessEmulator() }
 ```
 
-In a multiplatform application, KSP emits the registry into each platform source set.
-Keep host assembly in the corresponding platform source sets, or expose the registry
-to common code through an `expect`/`actual` bridge.
+In a multiplatform application, KSP emits the registry and conveniences into each
+platform source set. Keep host assembly in the corresponding platform source sets.
+
+The registry-taking `Host` constructors and `Host.default` overload remain available for
+advanced composition, but normal subsystem code should use the generated conveniences.
 
 Generation does not expose a contract. Only `registerService` publishes an endpoint.
 The registry works on JVM and Kotlin/Native without runtime classpath scanning or
@@ -327,10 +329,7 @@ For example, a host resolved to port `8080` exposes the UI at
 `http://localhost:8080/ifx/services`.
 
 ```kotlin
-val host = Host(
-    name = "Test System",
-    serviceDescriptors = TestTestSystemServiceDescriptors,
-) {
+val host = Host.subsystem(name = "Test System") {
     val rsocket = listen(RSocketServerProtocol(), port = 8080)
     install(ServiceExplorer(rsocket))
 }
