@@ -5,6 +5,7 @@ settings:
     group: sonat
     version: 0.0.8
     enabled: true
+    publishSources: true
 
 repositories:
 #  - id: github
