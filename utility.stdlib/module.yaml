@@ -5,4 +5,4 @@ product:
   platforms: [jvm, macosArm64]
 
 dependencies:
-  - "org.jetbrains.kotlinx:kotlinx-datetime:0.7.1": exported
+  - org.jetbrains.kotlinx:kotlinx-datetime:0.8.0: exported
