@@ -63,19 +63,19 @@ open class Log internal constructor(
         else -> LogTagCodec.encode(structuredTag.copy(path = listOf(tag)))
     }
 
-    fun trace(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any) =
+    fun trace(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any?) =
         delegate.v(throwable, encodeTag(tag)) { message().toString() }
 
-    fun debug(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any) =
+    fun debug(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any?) =
         delegate.d(throwable, encodeTag(tag)) { message().toString() }
 
-    fun info(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any) =
+    fun info(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any?) =
         delegate.i(throwable, encodeTag(tag)) { message().toString() }
 
-    fun warn(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any) =
+    fun warn(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any?) =
         delegate.w(throwable, encodeTag(tag)) { message().toString() }
 
-    fun error(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any) =
+    fun error(throwable: Throwable? = null, tag: String = this.tag, message: () -> Any?) =
         delegate.e(throwable, encodeTag(tag)) { message().toString() }
 
     companion object : Log("") {
