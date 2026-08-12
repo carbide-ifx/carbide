@@ -1,14 +1,20 @@
 package ifx.proxy.contract
 
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.ServiceDescriptor
 import ifx.service.IService
-import kotlin.reflect.KClass
 
 interface IProxyFactory {
-    fun <T : IService> create(contract: KClass<T>): T
+    fun <T : IService> create(descriptor: ServiceDescriptor<T>): T
     fun addInterceptors(vararg i: IInterceptor): IProxyFactory
     fun addInterceptors(i: List<IInterceptor>): IProxyFactory
 
 }
 
-inline fun <reified T : IService> IProxyFactory.create(): T = create(T::class)
+inline fun <reified T : IService> IProxyFactory.create(): T = missingIfxCompilerPlugin()
+
+@PublishedApi
+internal fun missingIfxCompilerPlugin(): Nothing = error(
+    "Typed IFX proxy creation requires the ifx.rpc.compiler plugin; " +
+        "without it, pass the generated service descriptor explicitly",
+)

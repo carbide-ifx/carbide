@@ -4,22 +4,19 @@ import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.ServerInterceptorPipeline
-import ifx.protocol.contract.ServiceDescriptorRegistry
-import ifx.protocol.contract.requireDescriptor
+import ifx.protocol.contract.ServiceDescriptor
 import ifx.service.IService
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.runBlocking
-import kotlin.reflect.KClass
 
 class Host(
     private val listeners: List<ProtocolListener>,
     val name: String = "Service Host",
     override val interceptors: MutableList<IInterceptor> = mutableListOf(),
     private val extensions: List<HostExtension> = emptyList(),
-    override val serviceDescriptors: ServiceDescriptorRegistry,
 ) : IHost {
     private val endpoints = mutableListOf<Endpoint>()
     private val runningServers = mutableListOf<RunningServer>()
@@ -54,41 +51,40 @@ class Host(
         protocol: IServerProtocol,
         vararg additionalProtocols: IServerProtocol,
         name: String = "Service Host",
-        serviceDescriptors: ServiceDescriptorRegistry,
     ) : this(
         listeners = listOf(protocol, *additionalProtocols).map(::ProtocolListener),
         name = name,
-        serviceDescriptors = serviceDescriptors,
     )
 
     constructor(
         name: String = "Service Host",
-        serviceDescriptors: ServiceDescriptorRegistry,
         configure: HostBuilder.() -> Unit,
-    ) : this(HostBuilder().apply(configure).build(), name, serviceDescriptors)
+    ) : this(HostBuilder().apply(configure).build(), name)
 
     private constructor(
         configuration: HostConfiguration,
         name: String,
-        serviceDescriptors: ServiceDescriptorRegistry,
     ) : this(
         listeners = configuration.listeners,
         name = name,
         extensions = configuration.extensions,
-        serviceDescriptors = serviceDescriptors,
     )
 
-    override suspend fun <T : IService> registerService(contract: KClass<T>, instance: T): IHost = apply {
+    override suspend fun <T : IService> registerService(
+        descriptor: ServiceDescriptor<T>,
+        instance: T,
+    ): IHost = apply {
         check(runningServers.isEmpty()) { "Services cannot be registered while the host is open" }
-        val descriptor = serviceDescriptors.requireDescriptor(contract)
         val serviceBinding = descriptor.bind(instance)
         val interceptorBinding: IBinding =
             ServerInterceptorPipeline(descriptor.address, interceptors, serviceBinding)
         endpoints += Endpoint(descriptor.address, interceptorBinding, descriptor.description)
     }
 
-    override suspend fun <T : IService> registerService(contract: KClass<T>, factory: suspend () -> T): IHost =
-        registerService(contract, factory())
+    override suspend fun <T : IService> registerService(
+        descriptor: ServiceDescriptor<T>,
+        factory: suspend () -> T,
+    ): IHost = registerService(descriptor, factory())
 
     override fun addInterceptors(vararg i: IInterceptor): IHost = apply {
         check(endpoints.isEmpty()) { "Interceptors must be added before services are registered" }

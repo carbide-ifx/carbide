@@ -1,7 +1,7 @@
 package ifx.actuator
 
 import ifx.host.IHost
-import ifx.host.IHost.Companion.registerService
+import ifx.protocol.contract.ServiceDescriptor
 import kotlinx.coroutines.flow.Flow
 
 class Actuator : IActuator {
@@ -13,7 +13,13 @@ class Actuator : IActuator {
         LogTail.latest(serviceInterface)
 }
 
-suspend fun IHost.registerActuator(): IHost {
+suspend fun IHost.registerActuator(
+    descriptor: ServiceDescriptor<IActuator> = missingActuatorDescriptor(),
+): IHost {
     LogTail.install()
-    return registerService<IActuator> { Actuator() }
+    return registerService(descriptor) { Actuator() }
 }
+
+private fun missingActuatorDescriptor(): Nothing = error(
+    "registerActuator() requires the ifx.rpc.compiler plugin or an explicit IActuator descriptor",
+)

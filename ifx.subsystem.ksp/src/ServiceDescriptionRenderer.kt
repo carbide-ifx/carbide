@@ -1,4 +1,4 @@
-package ifx.rpc.ksp
+package ifx.subsystem.ksp
 
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated

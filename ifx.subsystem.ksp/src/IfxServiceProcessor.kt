@@ -1,4 +1,4 @@
-package ifx.rpc.ksp
+package ifx.subsystem.ksp
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -20,6 +20,7 @@ import java.io.OutputStreamWriter
 class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor {
     private val codeGenerator: CodeGenerator = environment.codeGenerator
     private val logger: KSPLogger = environment.logger
+    private var indexPackageAnchored = false
     private var generated = false
 
     @OptIn(KspExperimental::class)
@@ -29,6 +30,11 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
             ?: return emptyList()
         val sourceFiles = resolver.getAllFiles().toList()
         val generatedDependencies = Dependencies(aggregating = true, *sourceFiles.toTypedArray())
+        if (!indexPackageAnchored) {
+            generateIndexPackageAnchor(resolver, generatedDependencies)
+            indexPackageAnchored = true
+            return emptyList()
+        }
         val localContracts = sourceFiles.asSequence()
             .flatMap { it.declarations.asSequence() }
             .filterIsInstance<KSClassDeclaration>()
@@ -52,20 +58,22 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
                 ) == null
             }
             .forEach { contract -> generate(contract, generatedDependencies) }
-        val existingRegistry = resolver.getClassDeclarationByName(resolver.getKSNameFromString(GENERATED_REGISTRY))
-        val isTestCompilation = resolver.getModuleName().asString().endsWith("_test")
-        when {
-            isTestCompilation -> Unit
-            existingRegistry == null -> generateRegistry(contracts, generatedDependencies)
-            existingRegistry.containingFile == null -> {
-                logger.error(
-                    "A dependency already provides $GENERATED_REGISTRY. " +
-                        "A subsystem module cannot depend on another module that applies ifx.rpc.ksp.",
-                )
-            }
-        }
         generated = true
         return emptyList()
+    }
+
+    @OptIn(KspExperimental::class)
+    private fun generateIndexPackageAnchor(resolver: Resolver, dependencies: Dependencies) {
+        val anchorName = "IfxServiceIndexAnchor${resolver.getModuleName().asString().toIdentifier()}"
+        val output = codeGenerator.createNewFile(dependencies, INDEX_PACKAGE, anchorName)
+        OutputStreamWriter(output).use { writer ->
+            writer.write(
+                """package $INDEX_PACKAGE
+
+internal object $anchorName
+""",
+            )
+        }
     }
 
     private fun indexedServiceNames(index: KSClassDeclaration): Sequence<String> =
@@ -153,41 +161,6 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
         }
     }
 
-    private fun generateRegistry(
-        contracts: List<KSClassDeclaration>,
-        dependencies: Dependencies,
-    ) {
-        val output = codeGenerator.createNewFile(
-            dependencies,
-            GENERATED_PACKAGE,
-            GENERATED_REGISTRY_NAME,
-        )
-        OutputStreamWriter(output).use { writer ->
-            val branches = contracts.joinToString("\n") { contract ->
-                val contractName = contract.qualifiedName!!.asString()
-                "            $contractName::class -> ${descriptorQualifiedName(contract)}"
-            }
-            writer.write(
-                """package $GENERATED_PACKAGE
-
-import ifx.protocol.contract.ServiceDescriptor
-import ifx.protocol.contract.ServiceDescriptorRegistry
-import ifx.service.IService
-import kotlin.reflect.KClass
-
-public object $GENERATED_REGISTRY_NAME : ServiceDescriptorRegistry {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : IService> find(contract: KClass<T>): ServiceDescriptor<T>? =
-        when (contract) {
-$branches
-            else -> null
-        } as ServiceDescriptor<T>?
-}
-""",
-            )
-        }
-    }
-
     private fun descriptorQualifiedName(contract: KSClassDeclaration): String =
         contract.packageName.asString().takeIf(String::isNotBlank)?.let { "$it." }.orEmpty() +
             "${contract.simpleName.asString()}Descriptor"
@@ -248,12 +221,17 @@ $branches
         else raw + type.arguments.joinToString(prefix = "<", postfix = ">") { argument -> typeName(argument.type!!.resolve()) } + if (type.nullability.name == "NULLABLE") "?" else ""
     } ?: type.toString()
 
+    private fun String.toIdentifier(): String {
+        val identifier = split(Regex("[^A-Za-z0-9]+"))
+            .filter(String::isNotEmpty)
+            .joinToString("") { part -> part.replaceFirstChar(Char::uppercaseChar) }
+            .ifEmpty { "Module" }
+        return if (identifier.first().isLetter()) identifier else "Module$identifier"
+    }
+
     private companion object {
         const val INDEX_PACKAGE = "ifx.service.index"
         const val INDEX_ANNOTATION = "ifx.service.IfxServiceIndex"
-        const val GENERATED_PACKAGE = "ifx.generated"
-        const val GENERATED_REGISTRY_NAME = "ServiceDescriptors"
-        const val GENERATED_REGISTRY = "$GENERATED_PACKAGE.$GENERATED_REGISTRY_NAME"
         val FRAMEWORK_MARKERS = setOf("ifx.service.IService", "ifx.service.IUtility")
     }
 }

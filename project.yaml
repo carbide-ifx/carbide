@@ -1,6 +1,7 @@
 modules:
   - ifx.actuator
   - ifx.context
+  - ifx.contract.ksp
   - ifx.host
   - ifx.host.contract
   - ifx.host.tooling
@@ -13,11 +14,10 @@ modules:
   - ifx.proxy-factory.jsonrpc
   - ifx.proxy-factory.rsocket
   - ifx.rpc.compiler-plugin
-  - ifx.rpc.index.ksp
-  - ifx.rpc.ksp
   - ifx.rpc.typescript.ksp
   - ifx.service
   - ifx.subsystem
+  - ifx.subsystem.ksp
   - ifx.telemetry.otel
   - ifx.testing
   - test.service-aggregation

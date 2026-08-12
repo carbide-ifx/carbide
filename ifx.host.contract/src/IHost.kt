@@ -2,10 +2,9 @@ package ifx.host
 
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IInterceptor
-import ifx.protocol.contract.ServiceDescriptorRegistry
+import ifx.protocol.contract.ServiceDescriptor
 import ifx.service.IService
 import io.ktor.server.application.Application
-import kotlin.reflect.KClass
 
 interface IServerProtocol {
     val id: String
@@ -38,21 +37,21 @@ class HostExtensionContext(
 )
 
 interface IHost {
-
-    val serviceDescriptors: ServiceDescriptorRegistry
-
-    suspend fun <T : IService> registerService(contract: KClass<T>, instance: T): IHost
-    suspend fun <T : IService> registerService(contract: KClass<T>, factory: suspend () -> T): IHost
+    suspend fun <T : IService> registerService(descriptor: ServiceDescriptor<T>, instance: T): IHost
+    suspend fun <T : IService> registerService(
+        descriptor: ServiceDescriptor<T>,
+        factory: suspend () -> T,
+    ): IHost
 
     fun open(): IHost
     fun close(): IHost
 
     companion object {
         suspend inline fun <reified T : IService> IHost.registerService(instance: T): IHost =
-            registerService(T::class, instance)
+            missingIfxCompilerPlugin()
 
         suspend inline fun <reified T : IService> IHost.registerService(noinline factory: suspend () -> T): IHost =
-            registerService(T::class, factory)
+            missingIfxCompilerPlugin()
     }
     fun addInterceptors(vararg i: IInterceptor): IHost
     fun addInterceptors(interceptors: List<IInterceptor>): IHost
@@ -61,3 +60,9 @@ interface IHost {
 
     fun port(protocolId: String): Int = boundListeners.single { it.protocolId == protocolId }.port
 }
+
+@PublishedApi
+internal fun missingIfxCompilerPlugin(): Nothing = error(
+    "Typed IFX service registration requires the ifx.rpc.compiler plugin; " +
+        "without it, pass the generated service descriptor explicitly",
+)

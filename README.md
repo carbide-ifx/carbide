@@ -28,7 +28,7 @@ as their single iFX runtime dependency:
 
 ```yaml
 dependencies:
-  - sonat:ifx.subsystem:0.0.7
+  - sonat:ifx.subsystem:0.0.8
 ```
 
 It exports the host, RSocket and JSON-RPC protocols and proxy factories,
@@ -255,12 +255,12 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.rpc.index.ksp:0.0.7
+        - sonat:ifx.contract.ksp:0.0.8
 ```
 
-A subsystem's KSP run generates the Kotlin descriptors, proxies, and one reflection-free
-registry at the fixed location `ifx.generated.ServiceDescriptors`. On JVM it also reads
-every reachable dependency index. Each module represents at most one subsystem.
+A subsystem's KSP run reads the reachable contract indexes and generates one Kotlin
+descriptor and proxy beside each contract name. No descriptor or proxy is generated in
+the service module, and no aggregate runtime registry is generated.
 
 Only subsystem/application modules apply the RPC generator and compiler plugin:
 
@@ -269,29 +269,25 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.rpc.index.ksp:0.0.7
-        - sonat:ifx.rpc.ksp:0.0.7
+        - sonat:ifx.subsystem.ksp:0.0.8
         # Optional: generate TypeScript contracts and wire types.
-        - sonat:ifx.rpc.typescript.ksp:0.0.7
+        - sonat:ifx.rpc.typescript.ksp:0.0.8
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.7
+        dependency: sonat:ifx-rpc-compiler-plugin:0.0.8
 ```
 
 The subsystem dependency graph is the contract manifest. Contract modules depend only
 on `ifx.service` at runtime; they do not generate RPC bindings or depend on protocol code.
-Adding or removing a service-module dependency changes the generated registry without a
-second service list or annotation. A shared module template may apply the index processor
-to every module; it emits nothing for modules that do not declare service contracts.
-Because the registry has one fixed identity, a subsystem module may not depend on another
-module that also applies `ifx.rpc.ksp`; depend on its contract modules instead. The
-processor reports that composition error during compilation.
+Adding or removing a service-module dependency changes the generated descriptors without a
+second service list or annotation. Apply the index processor only to modules that declare
+service contracts; subsystem and unrelated infrastructure modules do not need it.
 
-`Host.subsystem` and the registry-free overload of `Host.default` are stable APIs from
-`ifx.subsystem`, so the IDE resolves them before KSP has run. The small compiler plugin
-rewrites calls to those overloads with a direct reference to the fixed generated registry.
-Application code does not handle that registry. Proxy factories created with `forHost`
-reuse the host registry automatically:
+`Host.subsystem` and `Host.default` are stable APIs from `ifx.subsystem`; neither needs
+generated state. The compiler plugin rewrites typed `registerService<T>` and
+`IProxyFactory.create<T>` calls to pass the matching generated `ServiceDescriptor<T>`
+directly. Proxy factories created with `forHost` obtain only the host address and
+interceptors; descriptor selection remains compile-time:
 
 ```kotlin
 import ifx.subsystem.subsystem
@@ -303,18 +299,27 @@ val host = Host.subsystem(name = "Test System") {
 host.registerService<IProductAccess> { ProductAccessEmulator() }
 ```
 
-In a multiplatform application, KSP emits the fixed registry into each platform source
-set and the compiler plugin links it directly on JVM and Native. Keep host assembly in
-the corresponding platform source sets. KSP 2.3.9 does not expose declarations from
-dependency KLIB indexes to Native processors, so Native dependency aggregation remains
-limited to contracts declared in the subsystem source set until that KSP gap is resolved.
+Reusable helpers can accept a defaulted `ServiceDescriptor<T>` parameter. The compiler
+plugin fills that argument in the consuming subsystem, which is how `registerActuator()`
+remains usable while actuator itself continues to generate only a contract index.
 
-The registry-taking `Host.subsystem` and `Host.default` overloads remain available for
-advanced composition, but normal subsystem code should use the registry-free APIs.
+Code compiled without the plugin can use the low-level APIs by passing a generated
+descriptor explicitly:
+
+```kotlin
+host.registerService(IProductAccessDescriptor) { ProductAccessEmulator() }
+val client = proxyFactory.create(IProductAccessDescriptor)
+```
+
+In a multiplatform application, KSP emits individual descriptors into each platform source
+set and the compiler plugin links them directly on JVM and Native. Keep host assembly in
+the corresponding platform source sets. On Native, the processor first generates an empty
+package anchor, then discovers dependency KLIB indexes in the following KSP round. This
+keeps dependency aggregation automatic without an explicit contract list.
 
 Generation does not expose a contract. Only `registerService` publishes an endpoint.
-Registry lookup itself uses no runtime classpath scanning or associated-object mutation
-of dependency contracts.
+Descriptor linking uses no runtime lookup, classpath scanning, reflection, or
+associated-object mutation of dependency contracts.
 
 The optional `ifx.rpc.typescript.ksp` processor generates a TypeScript service
 interface, operation request/response aliases, and all reachable serializable

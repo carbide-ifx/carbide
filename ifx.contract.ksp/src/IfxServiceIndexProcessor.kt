@@ -1,4 +1,4 @@
-package ifx.rpc.index.ksp
+package ifx.contract.ksp
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator

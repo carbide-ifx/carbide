@@ -7,11 +7,11 @@ settings:
   kotlin:
     ksp:
       processors:
-        - ../ifx.rpc.ksp
+        - ../ifx.subsystem.ksp
         - ../ifx.rpc.typescript.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.7
+        dependency: sonat:ifx-rpc-compiler-plugin:0.0.8
 
 dependencies:
   - ../test.service-contracts

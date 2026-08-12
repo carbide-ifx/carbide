@@ -11,6 +11,6 @@ class IfxRpcCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-        IrGenerationExtension.registerExtension(IfxSubsystemRegistryIrGenerationExtension())
+        IrGenerationExtension.registerExtension(IfxDirectDescriptorIrGenerationExtension())
     }
 }

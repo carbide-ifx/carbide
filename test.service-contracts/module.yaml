@@ -4,5 +4,11 @@ product:
   type: lib
   platforms: [ jvm, macosArm64 ]
 
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.contract.ksp
+
 dependencies:
   - ../ifx.service: exported

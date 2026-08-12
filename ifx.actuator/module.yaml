@@ -4,6 +4,12 @@ product:
   type: lib
   platforms: [ jvm, macosArm64 ]
 
+settings:
+  kotlin:
+    ksp:
+      processors:
+        - ../ifx.contract.ksp
+
 dependencies:
   - co.touchlab:kermit:2.1.0
   - ../ifx.host.contract

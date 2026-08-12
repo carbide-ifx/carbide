@@ -2,7 +2,6 @@ package ifx.proxy.factory.jsonrpc
 
 import ifx.host.IHost
 import ifx.protocol.contract.IClientProtocol
-import ifx.protocol.contract.ServiceDescriptorRegistry
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcClientProtocol
 import ifx.proxy.contract.IProxyFactory
@@ -13,20 +12,17 @@ class JsonRpcProxyFactory private constructor(
 ) : IProxyFactory by delegate {
     constructor(
         port: Int,
-        serviceDescriptors: ServiceDescriptorRegistry,
         host: String = "localhost",
-    ) : this(JsonRpcClientProtocol(host, port), serviceDescriptors)
+    ) : this(JsonRpcClientProtocol(host, port))
 
     private constructor(
         protocol: IClientProtocol,
-        serviceDescriptors: ServiceDescriptorRegistry,
-    ) : this(ProxyFactoryBase(protocol, serviceDescriptors))
+    ) : this(ProxyFactoryBase(protocol))
 
     companion object {
         fun forHost(host: IHost): JsonRpcProxyFactory =
             JsonRpcProxyFactory(
                 JsonRpcClientProtocol(baseUrl = { "http://localhost:${host.port(JSON_RPC_PROTOCOL_ID)}" }),
-                host.serviceDescriptors,
             )
                 .apply { addInterceptors(host.interceptors) }
     }
