@@ -3,8 +3,9 @@ import access.product.contract.ProductCriteria
 import ifx.host.Host
 import ifx.host.ProtocolListener
 import ifx.host.tooling.ServiceExplorer
-import ifx.protocol.contract.ContextInterceptor
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.interceptors.ContextInterceptor
+import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
@@ -29,6 +30,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
 import kotlin.time.Duration.Companion.seconds
 
 class TestSystemTest {
@@ -59,6 +61,18 @@ class TestSystemTest {
         } finally {
             host.close()
         }
+    }
+
+    @Test
+    fun `host keeps context mandatory when additional interceptors are supplied`() {
+        val additional = LoggingInterceptor()
+        val host = Host {
+            listen(RSocketServerProtocol())
+        }.addInterceptors(additional)
+
+        assertEquals(2, host.interceptors.size)
+        assertIs<ContextInterceptor>(host.interceptors.first())
+        assertSame(additional, host.interceptors.last())
     }
 
     @Test

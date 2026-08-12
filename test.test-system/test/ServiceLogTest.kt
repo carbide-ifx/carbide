@@ -9,6 +9,7 @@ import ifx.host.Host
 import ifx.logging.Log
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.forService
+import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.proxy.contract.create
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
@@ -42,7 +43,7 @@ class ServiceLogTest {
     fun `host logs an unhandled service exception and preserves its json rpc message`() = runBlocking {
         val failureMessage = "inventory database unavailable"
         val service = FailingProductAccess(failureMessage)
-        val host = Host(JsonRpcServerProtocol())
+        val host = Host(JsonRpcServerProtocol()).addInterceptors(LoggingInterceptor())
 
         LogTail.install()
         host.registerService(IProductAccessDescriptor, service).open()

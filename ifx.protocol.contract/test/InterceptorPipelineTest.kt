@@ -3,6 +3,7 @@ package ifx.protocol.contract
 import ifx.context.Context
 import ifx.context.getOrNull
 import ifx.context.set
+import ifx.protocol.contract.interceptors.ContextInterceptor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow

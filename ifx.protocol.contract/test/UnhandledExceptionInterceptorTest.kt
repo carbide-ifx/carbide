@@ -1,5 +1,6 @@
 package ifx.protocol.contract
 
+import ifx.protocol.contract.interceptors.UnhandledExceptionInterceptor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

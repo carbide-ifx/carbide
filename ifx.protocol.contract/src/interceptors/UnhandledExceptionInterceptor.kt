@@ -1,5 +1,9 @@
-package ifx.protocol.contract
+package ifx.protocol.contract.interceptors
 
+import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.InterceptorCall
+import ifx.protocol.contract.InterceptorChain
+import ifx.protocol.contract.Message
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll

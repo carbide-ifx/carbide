@@ -6,7 +6,6 @@ import ifx.host.Host
 import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
-import ifx.protocol.contract.ContextInterceptor
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.proxy.contract.create
@@ -19,7 +18,7 @@ import manager.sales.contract.ISalesManager
 import manager.sales.service.SalesManager
 
 suspend fun startTestSystem(
-    interceptors: List<IInterceptor> = listOf(ContextInterceptor(), LoggingInterceptor()),
+    interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
 ): IHost {
     val host = Host.default(
         name = "Test System",
@@ -45,7 +44,7 @@ fun main(): Unit = runBlocking {
             Log("OpenTelemetry").warn { "Failed to export trace: ${error.message}" }
         },
     )
-    val system = startTestSystem(listOf(ContextInterceptor(), LoggingInterceptor(), telemetry))
+    val system = startTestSystem(listOf(LoggingInterceptor(), telemetry))
     val proxyFactory = RSocketProxyFactory.forHost(system)
 
     try {

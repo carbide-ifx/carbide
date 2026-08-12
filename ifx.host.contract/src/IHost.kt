@@ -58,6 +58,8 @@ interface IHost {
     }
     fun addInterceptors(vararg i: IInterceptor): IHost
     fun addInterceptors(interceptors: List<IInterceptor>): IHost
+
+    /** Mandatory client-safe interceptors followed by caller-supplied interceptors. */
     val interceptors: List<IInterceptor>
     val boundListeners: List<BoundProtocolListener>
 

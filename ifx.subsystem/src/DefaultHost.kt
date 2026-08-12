@@ -4,21 +4,20 @@ import ifx.actuator.IActuator
 import ifx.actuator.registerActuator
 import ifx.host.Host
 import ifx.host.tooling.ServiceExplorer
-import ifx.protocol.contract.ContextInterceptor
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.ServiceDescriptor
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.protocol.rsocket.RSocketServerProtocol
 
 /**
- * Creates the standard subsystem host with RSocket, JSON-RPC, context propagation,
+ * Creates the standard subsystem host with RSocket, JSON-RPC,
  * the actuator service, and the browser-based service explorer. The returned host is not opened.
  */
 suspend fun Host.Companion.default(
     name: String = "Service Host",
     rsocketPort: Int = 0,
     jsonRpcPort: Int = 0,
-    interceptors: List<IInterceptor> = listOf(ContextInterceptor()),
+    interceptors: List<IInterceptor> = emptyList(),
     developmentDirectory: String? = null,
     actuatorDescriptor: ServiceDescriptor<IActuator> = missingActuatorDescriptor(),
 ): Host {

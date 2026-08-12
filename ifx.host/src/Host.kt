@@ -9,7 +9,8 @@ import ifx.protocol.contract.ProtocolListenerDescription
 import ifx.protocol.contract.ServerInterceptorPipeline
 import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
-import ifx.protocol.contract.UnhandledExceptionInterceptor
+import ifx.protocol.contract.interceptors.ContextInterceptor
+import ifx.protocol.contract.interceptors.UnhandledExceptionInterceptor
 import ifx.service.IService
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EngineConnectorBuilder
@@ -20,11 +21,17 @@ import kotlinx.coroutines.runBlocking
 class Host(
     private val listeners: List<ProtocolListener>,
     override val name: String = "Service Host",
-    override val interceptors: MutableList<IInterceptor> = mutableListOf(),
+    interceptors: MutableList<IInterceptor> = mutableListOf(),
     private val extensions: List<HostExtension> = emptyList(),
 ) : IHost {
     private val endpoints = mutableListOf<Endpoint>()
     private val runningServers = mutableListOf<RunningServer>()
+    private val additionalInterceptors = interceptors
+    private val contextInterceptor = ContextInterceptor()
+
+    /** Interceptors safe to mirror onto clients, in client registration order. */
+    override val interceptors: List<IInterceptor>
+        get() = listOf(contextInterceptor) + additionalInterceptors
 
     override var boundListeners: List<BoundProtocolListener> = requestedListeners()
         private set
@@ -87,16 +94,19 @@ class Host(
                 serviceClassName = instance::class.qualifiedName,
             ),
         )
-        val unhandledExceptionInterceptor = UnhandledExceptionInterceptor { call, exception ->
-            exceptionLog.error(exception, tag = call.operation) {
-                val interaction = call.interactionType.name.lowercase().replace('_', '-')
-                "Unhandled exception in $interaction ${call.operation}"
-            }
-        }
+        val mandatoryInterceptors = MandatoryInterceptors(
+            context = contextInterceptor,
+            exception = UnhandledExceptionInterceptor { call, exception ->
+                exceptionLog.error(exception, tag = call.operation) {
+                    val interaction = call.interactionType.name.lowercase().replace('_', '-')
+                    "Unhandled exception in $interaction ${call.operation}"
+                }
+            },
+        )
         val interceptorBinding: IBinding =
             ServerInterceptorPipeline(
                 descriptor.address,
-                interceptors + unhandledExceptionInterceptor,
+                mandatoryInterceptors.withAdditional(additionalInterceptors),
                 serviceBinding,
             )
         endpoints += Endpoint(descriptor.address, interceptorBinding, descriptor.description)
@@ -109,12 +119,12 @@ class Host(
 
     override fun addInterceptors(vararg i: IInterceptor): IHost = apply {
         check(endpoints.isEmpty()) { "Interceptors must be added before services are registered" }
-        interceptors.addAll(i)
+        additionalInterceptors.addAll(i)
     }
 
     override fun addInterceptors(interceptors: List<IInterceptor>): IHost = apply {
         check(endpoints.isEmpty()) { "Interceptors must be added before services are registered" }
-        this.interceptors.addAll(interceptors)
+        additionalInterceptors.addAll(interceptors)
     }
 
     override fun open(): IHost = apply {
@@ -221,3 +231,15 @@ internal data class HostConfiguration(
     val listeners: List<ProtocolListener>,
     val extensions: List<HostExtension>,
 )
+
+/**
+ * Mandatory server interceptors straddle caller-supplied interceptors so that context is decoded
+ * closest to the service and exception reporting is outermost after server-order reversal.
+ */
+private data class MandatoryInterceptors(
+    val context: IInterceptor,
+    val exception: IInterceptor,
+) {
+    fun withAdditional(additional: List<IInterceptor>): List<IInterceptor> =
+        listOf(context) + additional + exception
+}

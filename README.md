@@ -92,13 +92,14 @@ val host = Host.default(rsocketPort = 8080, jsonRpcPort = 8081)
 val testHost = Host.default()
 ```
 
-`ContextInterceptor` is installed by default. Passing `interceptors` replaces
-that default list, so include it when adding more interceptors. They are installed
-before the actuator and subsequent business services:
+Every `Host` installs context propagation and unhandled-exception reporting as
+mandatory interceptors. Passing `interceptors` only adds caller-defined layers;
+it cannot replace the mandatory interceptors. Additional interceptors are
+installed before the actuator and subsequent business services:
 
 ```kotlin
 val host = Host.default(
-    interceptors = listOf(ContextInterceptor(), LoggingInterceptor(), telemetry),
+    interceptors = listOf(LoggingInterceptor(), telemetry),
 )
 ```
 
@@ -137,8 +138,8 @@ client logging -> client encryption -> transport -> server encryption -> server 
 ```
 
 `Context` is an immutable ambient container with no predefined application
-fields. Every value placed in it is serialized immediately and propagated by a
-zero-configuration `ContextInterceptor`:
+fields. Every value placed in it is serialized immediately and propagated by
+the host's mandatory `ContextInterceptor`:
 
 ```kotlin
 @Serializable
@@ -149,16 +150,13 @@ data class Caller(val subject: String)
 @SerialName("ifx.request")
 data class RequestMetadata(val requestId: String)
 
-val contextInterceptor = ContextInterceptor()
-
 val interceptors = listOf(
     LoggingInterceptor(),
-    contextInterceptor,
     Encryption,
 )
 
 host.addInterceptors(interceptors)
-proxyFactory.addInterceptors(interceptors)
+proxyFactory.addInterceptors(host.interceptors)
 
 withContext(Context().set(Caller("user-42"))) {
     client.awesome(request)
@@ -169,10 +167,10 @@ On the server, propagated values are installed in the coroutine context
 for the complete invocation, including stream collection, and can be read with
 `Context.current().getOrNull<Caller>()`. Context values must be serializable;
 use a stable `@SerialName` as their cross-system identity. Unknown values remain
-as opaque JSON and can pass through systems that do not understand them. Place
-the context interceptor before interceptors that encode or encrypt headers;
-reversed server ordering will decrypt the headers before context extraction.
-Generic JSON headers can be inspected or changed with `Message.headers()` and
+as opaque JSON and can pass through systems that do not understand them. The
+host places context before caller interceptors in client order, so reversed
+server ordering decrypts or decodes headers before context extraction. Generic
+JSON headers can be inspected or changed with `Message.headers()` and
 `Message.withHeader(...)`.
 
 ## Log tail actuator

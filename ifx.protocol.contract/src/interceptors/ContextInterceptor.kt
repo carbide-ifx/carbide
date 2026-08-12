@@ -1,6 +1,14 @@
-package ifx.protocol.contract
+package ifx.protocol.contract.interceptors
 
 import ifx.context.Context
+import ifx.protocol.contract.ClientCall
+import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.InterceptorCall
+import ifx.protocol.contract.InterceptorChain
+import ifx.protocol.contract.Message
+import ifx.protocol.contract.ServerCall
+import ifx.protocol.contract.context
+import ifx.protocol.contract.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
