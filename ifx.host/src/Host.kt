@@ -1,5 +1,7 @@
 package ifx.host
 
+import ifx.logging.Log
+import ifx.logging.LogTag
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
@@ -7,6 +9,7 @@ import ifx.protocol.contract.ProtocolListenerDescription
 import ifx.protocol.contract.ServerInterceptorPipeline
 import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
+import ifx.protocol.contract.UnhandledExceptionInterceptor
 import ifx.service.IService
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EngineConnectorBuilder
@@ -78,8 +81,24 @@ class Host(
     ): IHost = apply {
         check(runningServers.isEmpty()) { "Services cannot be registered while the host is open" }
         val serviceBinding = descriptor.bind(instance)
+        val exceptionLog = Log(
+            LogTag(
+                serviceInterface = descriptor.address,
+                serviceClassName = instance::class.qualifiedName,
+            ),
+        )
+        val unhandledExceptionInterceptor = UnhandledExceptionInterceptor { call, exception ->
+            exceptionLog.error(exception, tag = call.operation) {
+                val interaction = call.interactionType.name.lowercase().replace('_', '-')
+                "Unhandled exception in $interaction ${call.operation}"
+            }
+        }
         val interceptorBinding: IBinding =
-            ServerInterceptorPipeline(descriptor.address, interceptors, serviceBinding)
+            ServerInterceptorPipeline(
+                descriptor.address,
+                interceptors + unhandledExceptionInterceptor,
+                serviceBinding,
+            )
         endpoints += Endpoint(descriptor.address, interceptorBinding, descriptor.description)
     }
 

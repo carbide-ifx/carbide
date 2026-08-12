@@ -202,6 +202,12 @@ exposes the retained tail and future entries as a non-blocking
 `ifx.actuator` module; `ifx.logging` only provides structured tags and the generic
 writer installation point.
 
+Every hosted service also reports non-cancellation exceptions that escape its
+server invocation. The error log carries the service interface, implementation
+class, and operation as its structured path before the original exception is
+re-thrown to the active transport. Exception reporting never replaces the
+original RPC failure or changes the transport's error response.
+
 Register the separate actuator service to expose that flow through the normal
 service transport. Callers use the generated actuator client or an iFX proxy;
 there is no separate HTTP streaming endpoint:
