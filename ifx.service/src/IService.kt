@@ -4,7 +4,7 @@ import ifx.logging.Log
 import kotlinx.serialization.Serializable
 
 interface IService {
-    val logger: Log
+    val log: Log
         get() = Log(this::class.qualifiedName ?: this::class.simpleName ?: "IService")
 
     suspend fun status() = Status(isReady(), isLive())

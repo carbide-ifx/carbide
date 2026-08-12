@@ -131,7 +131,7 @@ import kotlinx.coroutines.flow.map
 private class ${contractName}Proxy(
     private val binding: IBinding,
 ) : $contractName {
-    override val logger = ifx.logging.Log("${address}Proxy")
+    override val log = ifx.logging.Log("${address}Proxy")
 ${functions.joinToString("\n") { clientMethod(it) }}
 }
 

@@ -13,7 +13,7 @@ class ServiceLoggerTest {
     fun `service implementation logger uses its qualified class name as tag`() {
         assertEquals(
             "access.product.service.ProductAccessEmulator",
-            ProductAccessEmulator().logger.tag,
+            ProductAccessEmulator().log.tag,
         )
     }
 
@@ -27,7 +27,7 @@ class ServiceLoggerTest {
         )
         assertEquals(
             "access.product.contract.IProductAccessProxy",
-            client.logger.tag,
+            client.log.tag,
         )
     }
 }
