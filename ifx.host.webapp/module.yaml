@@ -4,9 +4,5 @@ product:
   platforms: [jvm, macosArm64]
 
 dependencies:
-  - ../ifx.host
   - ../ifx.host.contract
-  - ../ifx.host.webapp
-  - ../ifx.protocol.contract
-  - ../ifx.protocol.rsocket
   - io.ktor:ktor-server-core:3.1.1

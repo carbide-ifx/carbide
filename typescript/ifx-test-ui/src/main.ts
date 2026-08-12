@@ -184,26 +184,54 @@ interface LogTailEntry {
   readonly throwable: string | null;
 }
 
+const I_ACTUATOR_ADDRESS = "ifx.actuator.IActuator";
+
+class ActuatorClient {
+  private constructor(private readonly binding: RSocketBinding) {}
+
+  static async connect(): Promise<ActuatorClient> {
+    const scheme = location.protocol === "https:" ? "wss:" : "ws:";
+    const binding = await RSocketBinding.connect({
+      url: RSocketBinding.serviceUrl(`${scheme}//${location.host}`, I_ACTUATOR_ADDRESS),
+    });
+    return new ActuatorClient(binding);
+  }
+
+  catalog(): Promise<IfxServiceCatalog> {
+    return this.binding.requestResponse<IfxServiceCatalog>("catalog()");
+  }
+
+  logTail(serviceInterface: string): AsyncIterable<LogTailEntry> {
+    return this.binding.requestStream<LogTailEntry>("logTail(kotlin.String)", serviceInterface);
+  }
+
+  close(): void {
+    this.binding.close();
+  }
+}
+
 const appElement = document.querySelector<HTMLElement>("#app");
 if (!appElement) throw new Error("Missing #app element");
 const app: HTMLElement = appElement;
-let activeLogBinding: RSocketBinding | undefined;
+let activeLogClient: ActuatorClient | undefined;
 let logConnectionGeneration = 0;
 document.head.append(Object.assign(document.createElement("style"), { textContent: styles }));
 
 void start();
 
 async function start(): Promise<void> {
+  let actuator: ActuatorClient | undefined;
   try {
-    const response = await fetch("/ifx/services");
-    if (!response.ok) throw new Error(`Service catalog returned HTTP ${response.status}`);
-    const catalog = await response.json() as IfxServiceCatalog;
+    actuator = await ActuatorClient.connect();
+    const catalog = await actuator.catalog();
     const render = () => renderRoute(catalog);
     window.addEventListener("hashchange", render);
     app.addEventListener("click", (event) => navigateFromServiceCard(event, render));
     render();
   } catch (error) {
     app.innerHTML = `<div class="shell"><header class="topbar"><div class="brand"><span class="mark">iFX</span> Service Explorer</div></header><main><div class="empty">${escapeHtml(messageOf(error))}</div></main></div>`;
+  } finally {
+    actuator?.close();
   }
 }
 
@@ -224,8 +252,8 @@ function navigateFromServiceCard(event: MouseEvent, render: () => void): void {
 
 function renderRoute(catalog: IfxServiceCatalog): void {
   logConnectionGeneration += 1;
-  activeLogBinding?.close();
-  activeLogBinding = undefined;
+  activeLogClient?.close();
+  activeLogClient = undefined;
   const match = /^#\/services\/(.+)$/.exec(location.hash);
   const service = match && catalog.services.find((item) => item.address === decodeURIComponent(match[1]));
   if (service) renderService(catalog, service);
@@ -301,7 +329,7 @@ function renderServiceCard({ service, index, kind }: CatalogService): string {
 }
 
 function serviceKind(service: IfxServiceDescription): ServiceKind {
-  if (service.name === "IActuator") return "utility";
+  if (service.kind === "utility") return "utility";
   const name = service.name.replace(/^I(?=[A-Z])/, "");
   if (/Manager$/i.test(name)) return "manager";
   if (/Engine$/i.test(name)) return "engine";
@@ -314,7 +342,7 @@ function serviceTypeLabel(kind: ServiceKind): string {
     case "manager": return "Business Logic · Manager";
     case "engine": return "Business Logic · Engine";
     case "access": return "Resource Access";
-    case "utility": return "Utility · Actuator";
+    case "utility": return "Utility";
     case "unclassified": return "Unclassified Service";
   }
 }
@@ -346,7 +374,7 @@ function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescriptio
       </section>
     </div>`);
 
-  connectServiceLogs(catalog, service);
+  connectServiceLogs(service);
   const container = app.querySelector<HTMLElement>(".operations");
   if (!container) return;
   const definitions = new Map(service.types.map((definition) => [definition.name, definition]));
@@ -358,47 +386,35 @@ function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescriptio
   for (const operation of operations) container.append(renderOperation(service, operation, definitions));
 }
 
-function connectServiceLogs(catalog: IfxServiceCatalog, service: IfxServiceDescription): void {
+function connectServiceLogs(service: IfxServiceDescription): void {
   const stream = app.querySelector<HTMLElement>(".log-stream");
   const status = app.querySelector<HTMLElement>(".logs-status");
   const reconnect = app.querySelector<HTMLButtonElement>(".logs-refresh");
   if (!stream || !status || !reconnect) return;
 
   const entries = new Map<number, LogTailEntry>();
-  const actuator = catalog.services.find((candidate) => candidate.name === "IActuator");
-  const operation = actuator?.operations.find((candidate) => candidate.name === "logTail");
-  if (!actuator || !operation) {
-    reconnect.disabled = true;
-    setLogStatus(status, "Unavailable", "reconnecting");
-    stream.innerHTML = `<div class="log-empty">No actuator service is registered on this host.</div>`;
-    return;
-  }
-
   const connect = async () => {
     const current = ++logConnectionGeneration;
-    activeLogBinding?.close();
-    activeLogBinding = undefined;
+    activeLogClient?.close();
+    activeLogClient = undefined;
     entries.clear();
     stream.innerHTML = `<div class="log-empty">Connecting to retained service logs…</div>`;
     setLogStatus(status, "Connecting");
     reconnect.disabled = true;
 
-    let binding: RSocketBinding | undefined;
+    let actuator: ActuatorClient | undefined;
     try {
-      const scheme = location.protocol === "https:" ? "wss:" : "ws:";
-      binding = await RSocketBinding.connect({
-        url: RSocketBinding.serviceUrl(`${scheme}//${location.host}`, actuator.address),
-      });
+      actuator = await ActuatorClient.connect();
       if (current !== logConnectionGeneration) {
-        binding.close();
+        actuator.close();
         return;
       }
-      activeLogBinding = binding;
+      activeLogClient = actuator;
       reconnect.disabled = false;
       setLogStatus(status, "Live", "live");
       stream.innerHTML = `<div class="log-empty">Waiting for application logs from ${escapeHtml(service.name)}…</div>`;
 
-      for await (const entry of binding.requestStream<LogTailEntry>(operation.route, service.address)) {
+      for await (const entry of actuator.logTail(service.address)) {
         if (current !== logConnectionGeneration) break;
         entries.set(entry.sequence, entry);
         while (entries.size > 500) entries.delete(Math.min(...entries.keys()));
@@ -412,8 +428,8 @@ function connectServiceLogs(catalog: IfxServiceCatalog, service: IfxServiceDescr
         stream.innerHTML = `<div class="log-empty">${escapeHtml(messageOf(error))}</div>`;
       }
     } finally {
-      binding?.close();
-      if (activeLogBinding === binding) activeLogBinding = undefined;
+      actuator?.close();
+      if (activeLogClient === actuator) activeLogClient = undefined;
     }
   };
 

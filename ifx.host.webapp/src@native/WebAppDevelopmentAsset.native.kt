@@ -1,6 +1,6 @@
 @file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 
-package ifx.host.tooling
+package ifx.host.webapp
 
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
@@ -13,7 +13,7 @@ import platform.posix.fseek
 import platform.posix.ftell
 import platform.posix.rewind
 
-internal actual fun readTestUiDevelopmentAsset(path: String): String? {
+internal actual fun readDevelopmentWebAsset(path: String): ByteArray? {
     val file = fopen(path, "rb") ?: return null
     return try {
         if (fseek(file, 0, SEEK_END) != 0) return null
@@ -27,7 +27,7 @@ internal actual fun readTestUiDevelopmentAsset(path: String): String? {
             }
             if (read.toLong() != length) return null
         }
-        bytes.decodeToString()
+        bytes
     } finally {
         fclose(file)
     }

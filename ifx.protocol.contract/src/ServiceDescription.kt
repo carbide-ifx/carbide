@@ -8,9 +8,19 @@ import kotlinx.serialization.Serializable
 data class ServiceDescription(
     val name: String,
     val address: String,
+    val kind: ServiceKind,
     val operations: List<OperationDescription>,
     val types: List<TypeDescription>,
 )
+
+@Serializable
+enum class ServiceKind {
+    @SerialName("service")
+    SERVICE,
+
+    @SerialName("utility")
+    UTILITY,
+}
 
 @Serializable
 data class ServiceCatalog(

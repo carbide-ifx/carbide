@@ -3,9 +3,15 @@ package ifx.rpc.typescript.ksp
 internal data class ServiceModel(
     val name: String,
     val address: String,
+    val kind: ServiceKind,
     val operations: List<OperationModel>,
     val declarations: List<TypeDeclaration>,
 )
+
+internal enum class ServiceKind {
+    SERVICE,
+    UTILITY,
+}
 
 internal data class OperationModel(
     val name: String,

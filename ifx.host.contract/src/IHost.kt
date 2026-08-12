@@ -2,6 +2,7 @@ package ifx.host
 
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
 import ifx.service.IService
 import io.ktor.server.application.Application
@@ -37,6 +38,8 @@ class HostExtensionContext(
 )
 
 interface IHost {
+    val name: String
+
     suspend fun <T : IService> registerService(descriptor: ServiceDescriptor<T>, instance: T): IHost
     suspend fun <T : IService> registerService(
         descriptor: ServiceDescriptor<T>,
@@ -57,6 +60,9 @@ interface IHost {
     fun addInterceptors(interceptors: List<IInterceptor>): IHost
     val interceptors: List<IInterceptor>
     val boundListeners: List<BoundProtocolListener>
+
+    /** A live, read-only description of the services and resolved listeners exposed by this host. */
+    fun serviceCatalog(): ServiceCatalog
 
     fun port(protocolId: String): Int = boundListeners.single { it.protocolId == protocolId }.port
 }

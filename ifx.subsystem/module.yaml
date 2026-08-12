@@ -12,6 +12,7 @@ dependencies:
   - ../ifx.context: exported
   - ../ifx.host: exported
   - ../ifx.host.tooling: exported
+  - ../ifx.host.webapp: exported
   - ../ifx.logging: exported
   - ../ifx.protocol.contract: exported
   - ../ifx.protocol.jsonrpc: exported

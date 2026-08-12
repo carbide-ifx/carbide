@@ -64,6 +64,7 @@ internal class TypeScriptRenderer {
         appendLine("export const ${identifier(service.name)}Description = {")
         appendLine("  name: ${stringLiteral(service.name)},")
         appendLine("  address: ${identifier(service.name)}Address,")
+        appendLine("  kind: ${stringLiteral(if (service.kind == ServiceKind.UTILITY) "utility" else "service")},")
         appendLine("  operations: [")
         service.operations.forEach { operation ->
             val interaction = when (operation.interaction) {

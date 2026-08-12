@@ -208,6 +208,7 @@ there is no separate HTTP streaming endpoint:
 host.registerActuator()
 
 val actuator = proxyFactory.create<IActuator>()
+val catalog = actuator.catalog()
 actuator.logTail<AwesomeService>().collect { entry ->
     println(entry.message)
 }
@@ -327,20 +328,40 @@ types. User-defined request and response types must use `@Serializable` and
 custom or contextual serializers are rejected because their wire shape cannot
 be inferred from KSP symbols.
 
-## Interactive service explorer
+## Webapp hosting and interactive service explorer
 
-The optional `ifx.host.tooling` module provides a `ServiceExplorer` host
-extension. It targets an RSocket listener because the explorer invokes services
-through RSocket, but remains separate from both the listener configuration and
-the RSocket protocol implementation. The explorer is off by default because it
-can invoke mutating operations. The landing page shows the service components
-registered by that host. Selecting a component opens its operations, generates
-request controls from the serialized wire types, and displays request/response,
-fire-and-forget, and streaming results.
+The `ifx.host.webapp` module provides a general `WebApp` host extension for
+mounting embedded web assets on any listener, with an optional filesystem source
+and automatic reload during development. It does not know about RPC services or
+tooling.
+
+```kotlin
+val host = Host.subsystem(name = "Example") {
+    val listener = listen(RSocketServerProtocol(), port = 8080)
+    install(
+        WebApp(
+            listener,
+            assets = mapOf(
+                "index.html" to WebAppAsset.text(html, ContentType.Text.Html),
+                "app.js" to WebAppAsset.text(javascript, ContentType.Application.JavaScript),
+            ),
+        ),
+    )
+}
+```
+
+The optional `ifx.host.tooling` module composes that general host with the
+Service Explorer assets. The explorer targets an RSocket listener because its
+browser client invokes services and streams logs through RSocket. It is off by
+default because it can invoke mutating operations. The landing page obtains the
+host catalog from the registered `IActuator` utility service; no separate HTTP
+catalog endpoint is exposed. Selecting a component opens its operations,
+generates request controls from the serialized wire types, and displays
+request/response, fire-and-forget, and streaming results.
 
 For example, a host resolved to port `8080` exposes the UI at
-`http://localhost:8080/` and its machine-readable service catalog at
-`http://localhost:8080/ifx/services`.
+`http://localhost:8080/`. The webapp calls `IActuator.catalog()` through the
+ordinary generated service client.
 
 ```kotlin
 val host = Host.subsystem(name = "Test System") {

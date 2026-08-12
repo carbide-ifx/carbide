@@ -15,6 +15,7 @@ export interface IfxProtocolListenerDescription {
 export interface IfxServiceDescription {
   readonly name: string;
   readonly address: string;
+  readonly kind: "service" | "utility";
   readonly operations: readonly IfxOperationDescription[];
   readonly types: readonly IfxTypeDescription[];
 }

@@ -1,5 +1,6 @@
 package ifx.rpc.typescript.ksp
 
+import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
@@ -35,10 +36,14 @@ internal class ServiceModelBuilder {
         return ServiceModel(
             name = contract.simpleName.asString(),
             address = contract.qualifiedName!!.asString(),
+            kind = if (contract.isUtility()) ServiceKind.UTILITY else ServiceKind.SERVICE,
             operations = operations,
             declarations = declarations.values.sortedBy(TypeDeclaration::qualifiedName),
         )
     }
+
+    private fun KSClassDeclaration.isUtility(): Boolean =
+        getAllSuperTypes().any { it.declaration.qualifiedName?.asString() == UTILITY }
 
     private fun operation(function: KSFunctionDeclaration, typeName: String): OperationModel {
         if (function.typeParameters.isNotEmpty() || function.parameters.size > 1) {
@@ -308,6 +313,7 @@ internal class ServiceModelBuilder {
     }
 
     private companion object {
+        const val UTILITY = "ifx.service.IUtility"
         const val FIRE_AND_FORGET = "ifx.service.FireAndForget"
         const val FLOW = "kotlinx.coroutines.flow.Flow"
         const val SERIALIZABLE = "kotlinx.serialization.Serializable"

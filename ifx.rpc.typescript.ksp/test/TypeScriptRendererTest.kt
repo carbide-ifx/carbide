@@ -10,6 +10,7 @@ class TypeScriptRendererTest {
         val model = ServiceModel(
             name = "CatalogService",
             address = "example.CatalogService",
+            kind = ServiceKind.SERVICE,
             operations = listOf(
                 OperationModel(
                     name = "find",
@@ -60,6 +61,7 @@ class TypeScriptRendererTest {
             export const CatalogServiceDescription = {
               name: "CatalogService",
               address: CatalogServiceAddress,
+              kind: "service",
               operations: [
                 {
                   name: "find",
@@ -120,6 +122,7 @@ class TypeScriptRendererTest {
         val model = ServiceModel(
             name = "CommandService",
             address = "example.CommandService",
+            kind = ServiceKind.SERVICE,
             operations = listOf(
                 OperationModel(
                     name = "store",

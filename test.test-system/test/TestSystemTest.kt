@@ -4,8 +4,6 @@ import ifx.host.Host
 import ifx.host.ProtocolListener
 import ifx.host.tooling.ServiceExplorer
 import ifx.protocol.contract.ProtocolException
-import ifx.protocol.contract.RpcFormat
-import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
@@ -121,35 +119,19 @@ class TestSystemTest {
     }
 
     @Test
-    fun `host publishes its generated test UI catalog`() = runBlocking {
+    fun `host serves the explorer webapp without a separate catalog endpoint`() = runBlocking {
         val system = startTestSystem(emptyList())
         val client = HttpClient()
         try {
             val port = system.port(RSOCKET_PROTOCOL_ID)
-            val catalogJson: String = client.get("http://localhost:$port/ifx/services").body()
-            val catalog = RpcFormat.decodeFromString<ServiceCatalog>(catalogJson)
+            val html: String = client.get("http://localhost:$port/").body()
 
+            assertEquals(true, "iFX Service Explorer" in html)
+            assertEquals(HttpStatusCode.OK, client.get("http://localhost:$port/ifx/test-ui.js").status)
+            assertEquals(HttpStatusCode.NotFound, client.get("http://localhost:$port/ifx/services").status)
             assertEquals(
                 HttpStatusCode.NotFound,
                 client.get("http://localhost:${system.port(JSON_RPC_PROTOCOL_ID)}/").status,
-            )
-
-            assertEquals("Test System", catalog.name)
-            assertEquals(
-                listOf(RSOCKET_PROTOCOL_ID, JSON_RPC_PROTOCOL_ID),
-                catalog.listeners.map { it.protocolId },
-            )
-            assertEquals(
-                listOf(system.port(RSOCKET_PROTOCOL_ID), system.port(JSON_RPC_PROTOCOL_ID)),
-                catalog.listeners.map { it.port },
-            )
-            assertEquals(
-                listOf("IProductAccess", "IPricingEngine", "ISalesManager", "IActuator"),
-                catalog.services.map { it.name },
-            )
-            assertEquals(
-                listOf("filter", "generateRandowProduct", "store", "notifyProductViewed", "status", "init", "isReady", "isLive"),
-                catalog.services.first().operations.map { it.name },
             )
         } finally {
             client.close()

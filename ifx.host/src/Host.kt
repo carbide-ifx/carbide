@@ -3,7 +3,9 @@ package ifx.host
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.ProtocolListenerDescription
 import ifx.protocol.contract.ServerInterceptorPipeline
+import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
 import ifx.service.IService
 import io.ktor.server.cio.CIO
@@ -14,7 +16,7 @@ import kotlinx.coroutines.runBlocking
 
 class Host(
     private val listeners: List<ProtocolListener>,
-    val name: String = "Service Host",
+    override val name: String = "Service Host",
     override val interceptors: MutableList<IInterceptor> = mutableListOf(),
     private val extensions: List<HostExtension> = emptyList(),
 ) : IHost {
@@ -120,6 +122,18 @@ class Host(
         runningServers.clear()
         boundListeners = requestedListeners()
     }
+
+    override fun serviceCatalog(): ServiceCatalog = ServiceCatalog(
+        name = name,
+        services = endpoints.map(Endpoint::description),
+        listeners = boundListeners.map { listener ->
+            ProtocolListenerDescription(
+                protocolId = listener.protocolId,
+                host = listener.host,
+                port = listener.port,
+            )
+        },
+    )
 
     private fun createServer(config: ProtocolListener): RunningServer {
         val server = embeddedServer(

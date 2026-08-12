@@ -1,5 +1,6 @@
 package ifx.subsystem.ksp
 
+import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
@@ -25,10 +26,14 @@ internal class ServiceDescriptionRenderer {
         return "ServiceDescription(\n" +
             "        name = ${literal(contract.simpleName.asString())},\n" +
             "        address = ${literal(contract.qualifiedName!!.asString())},\n" +
+            "        kind = ServiceKind.${if (contract.isUtility()) "UTILITY" else "SERVICE"},\n" +
             "        operations = listOf(${operations.joinToString(",") { "\n            $it" }}\n        ),\n" +
             "        types = listOf(${declarations.values.joinToString(",") { "\n            $it" }}\n        ),\n" +
             "    )"
     }
+
+    private fun KSClassDeclaration.isUtility(): Boolean =
+        getAllSuperTypes().any { it.declaration.qualifiedName?.asString() == UTILITY }
 
     private fun operation(function: KSFunctionDeclaration): String {
         val returnType = function.returnType!!.resolve()
@@ -233,6 +238,7 @@ internal class ServiceDescriptionRenderer {
     }
 
     private companion object {
+        const val UTILITY = "ifx.service.IUtility"
         const val FIRE_AND_FORGET = "ifx.service.FireAndForget"
         const val FLOW = "kotlinx.coroutines.flow.Flow"
         const val SERIAL_NAME = "kotlinx.serialization.SerialName"

@@ -5,6 +5,7 @@ modules:
   - ifx.host
   - ifx.host.contract
   - ifx.host.tooling
+  - ifx.host.webapp
   - ifx.logging
   - ifx.protocol.contract
   - ifx.protocol.jsonrpc

@@ -1,9 +1,9 @@
 # iFX test UI
 
 Browser UI provided by the optional `ifx.host.tooling` module. Its
-`ServiceExplorer` extension targets a listener, reads the registered service
-catalog from `/ifx/services`, and invokes services with
-`@ifx/rpc-client-rsocket`.
+`ServiceExplorer` composes the general `ifx.host.webapp` host, reads the
+registered service catalog from `IActuator.catalog()`, and invokes services with
+`@ifx/rpc-client-rsocket`. There is no separate HTTP catalog endpoint.
 
 The Kotlin host asset is checked in so normal Kotlin builds do not require
 Node.js. After changing the UI, rebuild the embedded asset with:
