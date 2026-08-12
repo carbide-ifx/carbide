@@ -19,17 +19,13 @@ npm run build
 Configure the host to read the development bundle from disk:
 
 ```kotlin
-import ifx.subsystem.subsystem
+import ifx.subsystem.default
 
-Host.subsystem(name = "Test System") {
-    val rsocket = listen(RSocketServerProtocol(), port = 7070)
-    install(
-        ServiceExplorer(
-            listener = rsocket,
-            developmentDirectory = "typescript/ifx-test-ui/dist",
-        ),
-    )
-}
+Host.default(
+    name = "Test System",
+    rsocketPort = 7070,
+    developmentDirectory = "typescript/ifx-test-ui/dist",
+)
 ```
 
 Then keep this watcher running:

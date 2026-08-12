@@ -33,9 +33,9 @@ dependencies:
 
 It exports the host, RSocket and JSON-RPC protocols and proxy factories,
 interceptor contracts, context and logging support, OpenTelemetry, the actuator,
-and host tooling such as `ServiceExplorer`. The dependency does not select a
-protocol, enable tooling, or expose services automatically; those choices stay
-explicit in the subsystem application root.
+and host tooling such as `ServiceExplorer`. `Host.default()` provides the
+standard dual-protocol host with actuator inspection enabled. Applications can
+construct `Host` directly when they need a different composition.
 
 Generated service bindings still require the subsystem/application KSP and compiler-plugin
 setup described below. Those are build-time tools rather than runtime dependencies.
@@ -52,13 +52,13 @@ only install their routes and wire handling into the listener provided by the
 host.
 
 ```kotlin
-import ifx.subsystem.subsystem
+import ifx.subsystem.default
 
-val host = Host.subsystem(name = "Example System") {
-    val rsocket = listen(RSocketServerProtocol(), port = 7000)
-    listen(JsonRpcServerProtocol(), port = 7001)
-    install(ServiceExplorer(rsocket))
-}
+val host = Host.default(
+    name = "Example System",
+    rsocketPort = 7000,
+    jsonRpcPort = 7001,
+)
 
 host.registerService<AwesomeService> { AwesomeServiceImpl() }
 host.open()
@@ -80,27 +80,29 @@ and request/response. Calling a service operation that returns `Flow` through th
 JSON-RPC client fails explicitly because JSON-RPC has no standard streaming
 interaction.
 
-The `ifx.subsystem` bundle provides a default host that exposes RSocket on the
-requested port. Passing `0` selects an available port:
+The `ifx.subsystem` bundle provides an opinionated default host with RSocket,
+JSON-RPC, `IActuator`, and the browser Service Explorer. Passing `0` for either
+port selects an available port. Because registering the actuator is suspending,
+`Host.default()` must be called from a coroutine:
 
 ```kotlin
 import ifx.subsystem.default
 
-val host = Host.default(port = 8080)
+val host = Host.default(rsocketPort = 8080, jsonRpcPort = 8081)
 val testHost = Host.default()
 ```
 
-The service explorer remains opt-in and can be installed through the host
-builder as shown above. For a custom listener configuration, use the stable subsystem
-host convenience:
+`ContextInterceptor` is installed by default. Passing `interceptors` replaces
+that default list, so include it when adding more interceptors. They are installed
+before the actuator and subsequent business services:
 
 ```kotlin
-import ifx.subsystem.subsystem
-
-val host = Host.subsystem {
-    listen(RSocketServerProtocol())
-}
+val host = Host.default(
+    interceptors = listOf(ContextInterceptor(), LoggingInterceptor(), telemetry),
+)
 ```
+
+For a custom protocol or tooling composition, construct `Host` directly.
 
 ## Interceptors
 
@@ -284,25 +286,24 @@ Adding or removing a service-module dependency changes the generated descriptors
 second service list or annotation. Apply the index processor only to modules that declare
 service contracts; subsystem and unrelated infrastructure modules do not need it.
 
-`Host.subsystem` and `Host.default` are stable APIs from `ifx.subsystem`; neither needs
-generated state. The compiler plugin rewrites typed `registerService<T>` and
+`Host.default` is the standard application factory from `ifx.subsystem`. The compiler
+plugin supplies its generated `IActuator` descriptor and rewrites typed `registerService<T>` and
 `IProxyFactory.create<T>` calls to pass the matching generated `ServiceDescriptor<T>`
 directly. Proxy factories created with `forHost` obtain only the host address and
 interceptors; descriptor selection remains compile-time:
 
 ```kotlin
-import ifx.subsystem.subsystem
+import ifx.subsystem.default
 
-val host = Host.subsystem(name = "Test System") {
-    listen(RSocketServerProtocol())
-}
+val host = Host.default(name = "Test System")
 
 host.registerService<IProductAccess> { ProductAccessEmulator() }
 ```
 
 Reusable helpers can accept a defaulted `ServiceDescriptor<T>` parameter. The compiler
-plugin fills that argument in the consuming subsystem, which is how `registerActuator()`
-remains usable while actuator itself continues to generate only a contract index.
+plugin fills that argument in the consuming subsystem, which is how `Host.default()` and
+`registerActuator()` remain usable while actuator itself continues to generate only a
+contract index.
 
 Code compiled without the plugin can use the low-level APIs by passing a generated
 descriptor explicitly:
@@ -336,7 +337,7 @@ and automatic reload during development. It does not know about RPC services or
 tooling.
 
 ```kotlin
-val host = Host.subsystem(name = "Example") {
+val host = Host(name = "Example") {
     val listener = listen(RSocketServerProtocol(), port = 8080)
     install(
         WebApp(
@@ -350,10 +351,10 @@ val host = Host.subsystem(name = "Example") {
 }
 ```
 
-The optional `ifx.host.tooling` module composes that general host with the
+The `ifx.host.tooling` module composes that general host with the
 Service Explorer assets. The explorer targets an RSocket listener because its
-browser client invokes services and streams logs through RSocket. It is off by
-default because it can invoke mutating operations. The landing page obtains the
+browser client invokes services and streams logs through RSocket. `Host.default()`
+installs it; custom hosts can choose whether to do so. The landing page obtains the
 host catalog from the registered `IActuator` utility service; no separate HTTP
 catalog endpoint is exposed. Selecting a component opens its operations,
 generates request controls from the serialized wire types, and displays
@@ -364,10 +365,7 @@ For example, a host resolved to port `8080` exposes the UI at
 ordinary generated service client.
 
 ```kotlin
-val host = Host.subsystem(name = "Test System") {
-    val rsocket = listen(RSocketServerProtocol(), port = 8080)
-    install(ServiceExplorer(rsocket))
-}
+val host = Host.default(name = "Test System", rsocketPort = 8080)
 ```
 
 Generated TypeScript contracts export a `{Service}Description` value in

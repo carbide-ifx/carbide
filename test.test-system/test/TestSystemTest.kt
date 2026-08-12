@@ -3,6 +3,7 @@ import access.product.contract.ProductCriteria
 import ifx.host.Host
 import ifx.host.ProtocolListener
 import ifx.host.tooling.ServiceExplorer
+import ifx.protocol.contract.ContextInterceptor
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
@@ -12,7 +13,6 @@ import ifx.proxy.contract.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
 import ifx.subsystem.default
-import ifx.subsystem.subsystem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -27,26 +27,35 @@ import java.net.ServerSocket
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.time.Duration.Companion.seconds
 
 class TestSystemTest {
     @Test
-    fun `default host binds rsocket to the requested port`() {
+    fun `default host binds both standard protocols and tooling`() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
-        val host = Host.default(port).open()
+        val host = Host.default(rsocketPort = port).open()
+        val client = HttpClient()
         try {
             assertEquals(port, host.port(RSOCKET_PROTOCOL_ID))
+            assertNotEquals(0, host.port(JSON_RPC_PROTOCOL_ID))
+            assertIs<ContextInterceptor>(host.interceptors.single())
+            assertEquals(listOf("IActuator"), host.serviceCatalog().services.map { it.name })
+            assertEquals(HttpStatusCode.OK, client.get("http://localhost:$port/").status)
         } finally {
+            client.close()
             host.close()
         }
     }
 
     @Test
-    fun `default host resolves port zero to an available port`() {
+    fun `default host resolves port zero to an available port`() = runBlocking {
         val host = Host.default().open()
         try {
             assertNotEquals(0, host.port(RSOCKET_PROTOCOL_ID))
+            assertNotEquals(0, host.port(JSON_RPC_PROTOCOL_ID))
+            assertNotEquals(host.port(RSOCKET_PROTOCOL_ID), host.port(JSON_RPC_PROTOCOL_ID))
         } finally {
             host.close()
         }
@@ -63,7 +72,7 @@ class TestSystemTest {
 
     @Test
     fun `host can be created directly from one protocol`() {
-        val host = Host.subsystem {
+        val host = Host {
             listen(RSocketServerProtocol())
         }.open()
         try {

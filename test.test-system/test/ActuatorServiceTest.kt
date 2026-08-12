@@ -28,10 +28,13 @@ class ActuatorServiceTest {
 
             assertEquals("Test System", catalog.name)
             assertEquals(
-                listOf("IProductAccess", "IPricingEngine", "ISalesManager", "IActuator"),
+                listOf("IActuator", "IProductAccess", "IPricingEngine", "ISalesManager"),
                 catalog.services.map { it.name },
             )
-            assertEquals(ServiceKind.SERVICE, catalog.services.first().kind)
+            assertEquals(
+                ServiceKind.SERVICE,
+                catalog.services.single { it.name == "IProductAccess" }.kind,
+            )
             assertEquals(ServiceKind.UTILITY, catalog.services.single { it.name == "IActuator" }.kind)
             assertEquals(
                 listOf(RSOCKET_PROTOCOL_ID, JSON_RPC_PROTOCOL_ID),
