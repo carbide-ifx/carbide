@@ -26,6 +26,7 @@ class Host(
 ) : IHost {
     private val endpoints = mutableListOf<Endpoint>()
     private val runningServers = mutableListOf<RunningServer>()
+    private val closeActions = mutableListOf<() -> Unit>()
     private val additionalInterceptors = interceptors
     private val contextInterceptor = ContextInterceptor()
 
@@ -146,10 +147,21 @@ class Host(
         }
     }
 
+    override fun onClose(action: () -> Unit): IHost = apply { closeActions += action }
+
     override fun close(): IHost = apply {
         runningServers.asReversed().forEach { it.stop() }
         runningServers.clear()
         boundListeners = requestedListeners()
+
+        val failures = closeActions.asReversed().mapNotNull { action ->
+            runCatching(action).exceptionOrNull()
+        }
+        closeActions.clear()
+        failures.firstOrNull()?.let { first ->
+            failures.drop(1).forEach(first::addSuppressed)
+            throw first
+        }
     }
 
     override fun serviceCatalog(): ServiceCatalog = ServiceCatalog(

@@ -5,6 +5,7 @@ import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.contract.ProtocolException
+import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.routing.routing
@@ -12,9 +13,11 @@ import io.ktor.server.websocket.WebSockets
 import io.rsocket.kotlin.ConnectionAcceptor
 import io.rsocket.kotlin.RSocketLoggingApi
 import io.rsocket.kotlin.RSocketRequestHandler
+import io.rsocket.kotlin.keepalive.KeepAlive
 import io.rsocket.kotlin.ktor.server.RSocketSupport
 import io.rsocket.kotlin.ktor.server.rSocket
 import kotlinx.coroutines.flow.map
+import kotlin.time.Duration
 
 const val RSOCKET_PROTOCOL_ID: String = "rsocket"
 
@@ -54,16 +57,26 @@ class RSocketServerProtocol : IServerProtocol {
     }
 }
 
+/**
+ * Creates RSocket bindings that share one ktor client, and therefore one connection pool and one
+ * RSocket connector configuration. [close] releases it; the bindings hold no resources of their own.
+ */
 class RSocketClientProtocol(
     private val baseUrl: () -> String,
+    keepAlive: KeepAlive = DEFAULT_KEEP_ALIVE,
 ) : IClientProtocol {
     constructor(host: String, port: Int) : this({ "ws://$host:$port" })
 
+    private val httpClient: HttpClient = rsocketHttpClient(keepAlive)
+    private val connectTimeout: Duration = keepAlive.connectTimeout()
+
     override fun createClientBinding(address: String): IBinding = try {
-        RSocketClient("${baseUrl().trimEnd('/')}/$address")
+        RSocketClient(httpClient, "${baseUrl().trimEnd('/')}/$address", connectTimeout)
     } catch (exception: Throwable) {
         throw ProtocolException(exception) {
             "Failed to create RSocket client for $address: ${exception.message}"
         }
     }
+
+    override fun close(): Unit = httpClient.close()
 }

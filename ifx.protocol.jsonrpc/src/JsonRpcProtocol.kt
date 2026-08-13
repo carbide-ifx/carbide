@@ -120,14 +120,28 @@ class JsonRpcServerProtocol : IServerProtocol {
     }
 }
 
-class JsonRpcClientProtocol(
+/**
+ * Creates JSON-RPC bindings that share one ktor client. [close] releases that client only when this
+ * protocol created it; a caller-supplied client stays under the caller's ownership.
+ */
+class JsonRpcClientProtocol private constructor(
     private val baseUrl: () -> String,
-    private val httpClient: HttpClient = HttpClient(),
+    private val httpClient: HttpClient,
+    private val ownsHttpClient: Boolean,
 ) : IClientProtocol {
+    constructor(baseUrl: () -> String) : this(baseUrl, HttpClient(), ownsHttpClient = true)
+
+    constructor(baseUrl: () -> String, httpClient: HttpClient) :
+        this(baseUrl, httpClient, ownsHttpClient = false)
+
     constructor(host: String, port: Int) : this({ "http://$host:$port" })
 
     override fun createClientBinding(address: String): IBinding =
         JsonRpcClient(httpClient, "${baseUrl().trimEnd('/')}/$address")
+
+    override fun close() {
+        if (ownsHttpClient) httpClient.close()
+    }
 }
 
 private class JsonRpcClient(

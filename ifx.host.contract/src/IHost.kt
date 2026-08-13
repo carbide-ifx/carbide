@@ -49,6 +49,13 @@ interface IHost {
     fun open(): IHost
     fun close(): IHost
 
+    /**
+     * Registers cleanup to run when the host closes, in reverse registration order. Use it to tie
+     * resources a service depends on — a proxy factory, a connection pool — to the host lifetime.
+     * Every action runs even if an earlier one fails.
+     */
+    fun onClose(action: () -> Unit): IHost
+
     companion object {
         suspend inline fun <reified T : IService> IHost.registerService(instance: T): IHost =
             missingIfxCompilerPlugin()

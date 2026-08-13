@@ -105,6 +105,59 @@ val host = Host.default(
 
 For a custom protocol or tooling composition, construct `Host` directly.
 
+### Proxy factory lifetime
+
+A proxy factory owns the client transport, so it is a long-lived object: hold one
+per subsystem rather than creating one per call. Each factory keeps a single
+binding — and therefore a single connection — per service address, so
+`create<T>()` is cheap and repeatable. This is what makes the common manager
+shape safe:
+
+```kotlin
+class SalesManager(val proxyFactory: IProxyFactory) : ISalesManager {
+    val productAccess get() = proxyFactory.create<IProductAccess>()
+}
+```
+
+Close the factory during shutdown to release its connections:
+
+```kotlin
+try {
+    // serve requests
+} finally {
+    proxyFactory.close()
+    host.close()
+}
+```
+
+Proxies remain valid objects after `close()` but cannot make calls. A connection
+that drops is replaced on the next call, so a factory survives a restart of the
+service it points at. A failed call is never replayed.
+
+Only acquiring a connection is bounded by a client-side timeout. Calls themselves
+are not: an application deadline belongs to the caller, so wrap calls in
+`withTimeout` when one is required. Errors raised by a remote service travel as
+per-stream error frames and leave the shared connection intact.
+
+Because calls carry no timeout of their own, the RSocket keep-alive is what
+detects a peer that stops responding, and it therefore sets the worst-case delay
+before a lost connection is noticed. The protocol default of a 20 s interval and
+90 s lifetime means a call can wait roughly 110 s. Tighten it per factory when
+that is too slow:
+
+```kotlin
+val proxyFactory = RSocketProxyFactory.forHost(
+    host,
+    keepAlive = KeepAlive(interval = 2.seconds, maxLifetime = 6.seconds),
+)
+```
+
+Every failure — a dropped transport, a remote service exception, an exhausted
+connect budget — reaches the caller as `ProtocolException` with the underlying
+cause attached, matching the JSON-RPC client. Cancelling the caller is passed
+through as cancellation, so `withTimeout` and structured concurrency behave
+normally.
+
 ## Interceptors
 
 An interceptor is one onion layer around a complete RPC invocation. The invocation

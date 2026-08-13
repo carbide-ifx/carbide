@@ -47,8 +47,9 @@ class ServiceLogTest {
 
         LogTail.install()
         host.registerService(IProductAccessDescriptor, service).open()
+        val proxyFactory = JsonRpcProxyFactory.forHost(host)
         try {
-            val productAccess = JsonRpcProxyFactory.forHost(host).create<IProductAccess>()
+            val productAccess = proxyFactory.create<IProductAccess>()
 
             val exception = assertFailsWith<ProtocolException> {
                 productAccess.filter(ProductCriteria())
@@ -63,6 +64,7 @@ class ServiceLogTest {
             assertEquals(listOf("filter(access.product.contract.ProductCriteria)"), entry.path)
             assertEquals(LogTailSeverity.Error, entry.severity)
         } finally {
+            proxyFactory.close()
             host.close()
         }
     }

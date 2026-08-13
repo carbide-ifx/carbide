@@ -25,7 +25,9 @@ suspend fun startTestSystem(
         interceptors = interceptors,
         developmentDirectory = "typescript/ifx-test-ui/dist",
     )
+    // The services below hold this factory, so its connections live exactly as long as the host.
     val proxyFactory = RSocketProxyFactory.forHost(host)
+    host.onClose { proxyFactory.close() }
 
     host.registerService<IProductAccess> { ProductAccessEmulator().apply { seedTestData() } }
         .registerService<IPricingEngine> { PricingEngine(proxyFactory) }
@@ -55,6 +57,7 @@ fun main(): Unit = runBlocking {
         Log.info { "press any key to close" }
         readln()
     } finally {
+        proxyFactory.close()
         system.close()
         telemetryExporter.close()
     }

@@ -21,8 +21,9 @@ class ActuatorServiceTest {
     @Test
     fun `actuator exposes the live host catalog through IFX`() = runBlocking {
         val system = startTestSystem(emptyList())
+        val proxyFactory = RSocketProxyFactory.forHost(system)
         try {
-            val catalog = RSocketProxyFactory.forHost(system)
+            val catalog = proxyFactory
                 .create<IActuator>()
                 .catalog()
 
@@ -42,6 +43,7 @@ class ActuatorServiceTest {
             )
             catalog.listeners.forEach { listener -> assertNotEquals(0, listener.port) }
         } finally {
+            proxyFactory.close()
             system.close()
         }
     }
@@ -49,6 +51,7 @@ class ActuatorServiceTest {
     @Test
     fun `actuator streams retained and future log-tail entries through IFX`() = runBlocking {
         val system = startTestSystem(emptyList())
+        val proxyFactory = RSocketProxyFactory.forHost(system)
         val message = "streamed log-tail entry"
         try {
             Log.forService<IProductAccess>(ProductAccessEmulator())
@@ -56,7 +59,7 @@ class ActuatorServiceTest {
                 .info { message }
 
             val entry = withTimeout(10.seconds) {
-                RSocketProxyFactory.forHost(system)
+                proxyFactory
                     .create<IActuator>()
                     .logTail<IProductAccess>()
                     .first { it.message == message }
@@ -67,6 +70,7 @@ class ActuatorServiceTest {
             assertEquals(listOf("Repository"), entry.path)
             assertEquals(message, entry.message)
         } finally {
+            proxyFactory.close()
             system.close()
         }
     }

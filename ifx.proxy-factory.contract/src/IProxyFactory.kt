@@ -9,6 +9,11 @@ interface IProxyFactory {
     fun addInterceptors(vararg i: IInterceptor): IProxyFactory
     fun addInterceptors(i: List<IInterceptor>): IProxyFactory
 
+    /**
+     * Releases the connections shared by the proxies this factory created. Proxies outlive the
+     * factory as objects but cannot make calls once it is closed.
+     */
+    fun close()
 }
 
 inline fun <reified T : IService> IProxyFactory.create(): T = missingIfxCompilerPlugin()
