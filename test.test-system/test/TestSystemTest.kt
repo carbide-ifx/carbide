@@ -287,6 +287,63 @@ class TestSystemTest {
     }
 
     @Test
+    fun `clients on one listener keep independent keep-alive windows`() = runBlocking {
+        val hostPort = ServerSocket(0).use { it.localPort }
+        val host = Host {
+            listen(RSocketServerProtocol(), hostPort)
+        }.registerService(IProductAccessDescriptor, ProductAccessEmulator())
+
+        host.open()
+        try {
+            // A separate proxy per client so their connection counts can be told apart.
+            TcpProxy(hostPort).use { backendRoute ->
+                TcpProxy(hostPort).use { externalRoute ->
+                    val backend = RSocketProxyFactory(
+                        port = backendRoute.port,
+                        keepAlive = KeepAlive(interval = 100.milliseconds, maxLifetime = 300.milliseconds),
+                    )
+                    val external = RSocketProxyFactory(
+                        port = externalRoute.port,
+                        keepAlive = EXTERNAL_KEEP_ALIVE,
+                    )
+                    try {
+                        val backendAccess = backend.create<IProductAccess>()
+                        assertEquals(emptyList(), backendAccess.filter(ProductCriteria()))
+                        assertEquals(emptyList(), external.create<IProductAccess>().filter(ProductCriteria()))
+                        assertEquals(1, backendRoute.acceptedConnectionCount)
+                        assertEquals(1, externalRoute.acceptedConnectionCount)
+
+                        backendRoute.blackholeConnections()
+                        externalRoute.blackholeConnections()
+
+                        withTimeout(20.seconds) {
+                            while (true) {
+                                try {
+                                    backendAccess.filter(ProductCriteria())
+                                    break
+                                } catch (_: Throwable) {
+                                    currentCoroutineContext().ensureActive()
+                                    delay(50.milliseconds)
+                                }
+                            }
+                        }
+
+                        // The server honours whatever each client proposed, so the tight window
+                        // reconnects while the generous one is still treating its peer as alive.
+                        assertEquals(2, backendRoute.acceptedConnectionCount)
+                        assertEquals(1, externalRoute.acceptedConnectionCount)
+                    } finally {
+                        backend.close()
+                        external.close()
+                    }
+                }
+            }
+        } finally {
+            host.close()
+        }
+    }
+
+    @Test
     fun `repeatedly created proxies for one service share a single connection`() = runBlocking {
         val hostPort = ServerSocket(0).use { it.localPort }
         val host = Host {

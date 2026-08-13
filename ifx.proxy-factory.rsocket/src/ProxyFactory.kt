@@ -2,16 +2,18 @@ package ifx.proxy.factory
 
 import ifx.host.IHost
 import ifx.protocol.contract.IClientProtocol
-import ifx.protocol.rsocket.DEFAULT_KEEP_ALIVE
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
+import ifx.protocol.rsocket.SUBSYSTEM_KEEP_ALIVE
 import ifx.proxy.contract.IProxyFactory
 import io.rsocket.kotlin.keepalive.KeepAlive
 
 /**
  * [keepAlive] governs how quickly a lost connection is noticed: calls are not bounded by a
- * client-side timeout, so a peer that stops responding is only detected once the keep-alive
- * lifetime expires. Tighten it for latency-sensitive callers.
+ * client-side timeout, so a peer that stops responding is only detected once the keep-alive lifetime
+ * expires. It defaults to [SUBSYSTEM_KEEP_ALIVE], because this factory wires one backend service to
+ * another. Each connection carries its own window — the server adopts whatever a client proposes —
+ * so a browser or mobile client reaching the same listener keeps its own, more generous one.
  */
 class RSocketProxyFactory private constructor(
     private val delegate: ProxyFactoryBase,
@@ -19,7 +21,7 @@ class RSocketProxyFactory private constructor(
     constructor(
         port: Int,
         host: String = "localhost",
-        keepAlive: KeepAlive = DEFAULT_KEEP_ALIVE,
+        keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE,
     ) : this(RSocketClientProtocol(baseUrl = { "ws://$host:$port" }, keepAlive = keepAlive))
 
     private constructor(
@@ -29,7 +31,7 @@ class RSocketProxyFactory private constructor(
     companion object {
         fun forHost(
             host: IHost,
-            keepAlive: KeepAlive = DEFAULT_KEEP_ALIVE,
+            keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE,
         ): RSocketProxyFactory =
             RSocketProxyFactory(
                 RSocketClientProtocol(

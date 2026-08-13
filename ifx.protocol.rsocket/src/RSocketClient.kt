@@ -28,13 +28,29 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 private const val INITIAL_RECONNECT_DELAY_MILLIS = 100L
 private const val MAX_RECONNECT_DELAY_MILLIS = 5_000L
 
-/** The default RSocket keep-alive, matching the protocol defaults. */
-val DEFAULT_KEEP_ALIVE: KeepAlive = KeepAlive(intervalMillis = 20_000, maxLifetimeMillis = 90_000)
+/**
+ * Keep-alive for calls between subsystems. It is proposed by the connecting side in the setup frame
+ * and adopted by the server per connection, so it bounds how quickly *this* client notices a dead
+ * peer without affecting anyone else on the same listener.
+ *
+ * Three missed keep-alives declare a peer dead: long enough to ride out a lost frame or a
+ * stop-the-world pause, short enough that a lost connection is noticed in seconds rather than the
+ * minute and a half the protocol default allows.
+ */
+val SUBSYSTEM_KEEP_ALIVE: KeepAlive = KeepAlive(interval = 5.seconds, maxLifetime = 15.seconds)
+
+/**
+ * The RSocket protocol defaults, for callers reaching a subsystem from outside the backend — a
+ * browser tab, a mobile app, anything that is routinely suspended or on a slow network, where the
+ * subsystem window would drop healthy connections during ordinary interruptions.
+ */
+val EXTERNAL_KEEP_ALIVE: KeepAlive = KeepAlive(interval = 20.seconds, maxLifetime = 90.seconds)
 
 /**
  * How long a call may spend acquiring a connection. Derived from the keep-alive so that waiting for
@@ -49,7 +65,7 @@ fun KeepAlive.connectTimeout(): Duration = (intervalMillis.toLong() + maxLifetim
  * opened through the returned client.
  */
 @OptIn(RSocketLoggingApi::class)
-fun rsocketHttpClient(keepAlive: KeepAlive = DEFAULT_KEEP_ALIVE): HttpClient = HttpClient {
+fun rsocketHttpClient(keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE): HttpClient = HttpClient {
     this.install(WebSockets) // rsocket requires websockets plugin installed
     this.install(RSocketSupport) {
         // configure rSocket connector (all values have defaults)
@@ -85,7 +101,7 @@ fun rsocketHttpClient(keepAlive: KeepAlive = DEFAULT_KEEP_ALIVE): HttpClient = H
 class RSocketClient(
     private val httpClient: HttpClient,
     private val url: String,
-    private val connectTimeout: Duration = DEFAULT_KEEP_ALIVE.connectTimeout(),
+    private val connectTimeout: Duration = SUBSYSTEM_KEEP_ALIVE.connectTimeout(),
 ) : IBinding {
     private val connectionMutex = Mutex()
     private var activeConnection: RSocket? = null

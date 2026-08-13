@@ -60,15 +60,20 @@ class RSocketServerProtocol : IServerProtocol {
 /**
  * Creates RSocket bindings that share one ktor client, and therefore one connection pool and one
  * RSocket connector configuration. [close] releases it; the bindings hold no resources of their own.
+ *
+ * [keepAlive] defaults to the subsystem window, since server-to-server calls are what this protocol
+ * usually carries; pass [EXTERNAL_KEEP_ALIVE] for a client outside the backend. Tightening it also
+ * tightens the derived [connectTimeout], which can be set independently when reconnecting through a
+ * slow peer restart should be more patient than detecting a dead one.
  */
 class RSocketClientProtocol(
     private val baseUrl: () -> String,
-    keepAlive: KeepAlive = DEFAULT_KEEP_ALIVE,
+    keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE,
+    private val connectTimeout: Duration = keepAlive.connectTimeout(),
 ) : IClientProtocol {
     constructor(host: String, port: Int) : this({ "ws://$host:$port" })
 
     private val httpClient: HttpClient = rsocketHttpClient(keepAlive)
-    private val connectTimeout: Duration = keepAlive.connectTimeout()
 
     override fun createClientBinding(address: String): IBinding = try {
         RSocketClient(httpClient, "${baseUrl().trimEnd('/')}/$address", connectTimeout)
