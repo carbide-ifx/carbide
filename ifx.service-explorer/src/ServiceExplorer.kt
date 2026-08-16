@@ -1,4 +1,4 @@
-package ifx.host.tooling
+package ifx.service.explorer
 
 import ifx.host.HostExtension
 import ifx.host.HostExtensionContext

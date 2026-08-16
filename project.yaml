@@ -4,7 +4,6 @@ modules:
   - ifx.contract.ksp
   - ifx.host
   - ifx.host.contract
-  - ifx.host.tooling
   - ifx.host.webapp
   - ifx.logging
   - ifx.protocol.contract
@@ -17,6 +16,7 @@ modules:
   - ifx.rpc.compiler-plugin
   - ifx.rpc.typescript.ksp
   - ifx.service
+  - ifx.service-explorer
   - ifx.subsystem
   - ifx.subsystem.ksp
   - ifx.telemetry.otel

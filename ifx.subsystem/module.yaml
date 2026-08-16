@@ -11,7 +11,7 @@ dependencies:
   - ../ifx.actuator: exported
   - ../ifx.context: exported
   - ../ifx.host: exported
-  - ../ifx.host.tooling: exported
+  - ../ifx.service-explorer: exported
   - ../ifx.host.webapp: exported
   - ../ifx.logging: exported
   - ../ifx.protocol.contract: exported

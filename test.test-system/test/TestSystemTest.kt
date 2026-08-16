@@ -10,7 +10,7 @@ import ifx.actuator.LogTailSeverity
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.host.ProtocolListener
-import ifx.host.tooling.ServiceExplorer
+import ifx.service.explorer.ServiceExplorer
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.interceptors.ContextInterceptor
 import ifx.protocol.contract.interceptors.LoggingInterceptor

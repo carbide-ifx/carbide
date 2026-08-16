@@ -408,7 +408,7 @@ val host = Host(name = "Example") {
 }
 ```
 
-The `ifx.host.tooling` module composes that general host with the
+The `ifx.service-explorer` module composes that general host with the
 Service Explorer assets. The explorer targets an RSocket listener because its
 browser client invokes services and streams logs through RSocket. `Host.default()`
 installs it; custom hosts can choose whether to do so. The landing page obtains the

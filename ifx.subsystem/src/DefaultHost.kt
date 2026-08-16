@@ -3,7 +3,7 @@ package ifx.subsystem
 import ifx.actuator.IActuator
 import ifx.actuator.registerActuator
 import ifx.host.Host
-import ifx.host.tooling.ServiceExplorer
+import ifx.service.explorer.ServiceExplorer
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.ServiceDescriptor
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
