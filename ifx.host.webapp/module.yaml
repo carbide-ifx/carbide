@@ -6,3 +6,7 @@ product:
 dependencies:
   - ../ifx.host.contract
   - io.ktor:ktor-server-core:3.1.1
+
+test-dependencies@jvm:
+  - ../ifx.protocol.contract
+  - io.ktor:ktor-server-test-host:3.1.1

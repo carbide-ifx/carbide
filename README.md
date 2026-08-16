@@ -389,41 +389,47 @@ be inferred from KSP symbols.
 ## Webapp hosting and interactive service explorer
 
 The `ifx.host.webapp` module provides a general `WebApp` host extension for
-mounting embedded web assets on any listener, with an optional filesystem source
-and automatic reload during development. It does not know about RPC services or
-tooling.
+mounting a built web application directory on any listener. The web build remains
+an ordinary npm, Vite, esbuild, or other frontend build; this extension only serves
+its output and does not know about RPC services or tooling.
 
 ```kotlin
 val host = Host(name = "Example") {
     val listener = listen(RSocketServerProtocol(), port = 8080)
     install(
         WebApp(
-            listener,
-            assets = mapOf(
-                "index.html" to WebAppAsset.text(html, ContentType.Text.Html),
-                "app.js" to WebAppAsset.text(javascript, ContentType.Application.JavaScript),
-            ),
+            listener = listener,
+            directory = "webapp/dist",
         ),
     )
 }
 ```
 
-The `ifx.service-explorer` module composes that general host with the
-Service Explorer assets. The explorer targets an RSocket listener because its
-browser client invokes services and streams logs through RSocket. `Host.default()`
-installs it; custom hosts can choose whether to do so. The landing page obtains the
-host catalog from the registered `IActuator` utility service; no separate HTTP
-catalog endpoint is exposed. Selecting a component opens its operations,
-generates request controls from the serialized wire types, and displays
-request/response, fire-and-forget, and streaming results.
+The `ifx.service-explorer` module composes that general host with the Service
+Explorer's npm build directory. The explorer targets an RSocket listener because
+its browser client invokes services and streams logs through RSocket.
+`Host.default()` installs it when `serviceExplorerDirectory` is supplied; custom
+hosts can install it directly. The landing page obtains the host catalog from the
+registered `IActuator` utility service; no separate HTTP catalog endpoint is
+exposed. Selecting a component opens its operations, generates request controls
+from the serialized wire types, and displays request/response, fire-and-forget,
+and streaming results.
 
 For example, a host resolved to port `8080` exposes the UI at
 `http://localhost:8080/`. The webapp calls `IActuator.catalog()` through the
 ordinary generated service client.
 
 ```kotlin
-val host = Host.default(name = "Test System", rsocketPort = 8080)
+val host = Host.default(
+    name = "Test System",
+    rsocketPort = 8080,
+    serviceExplorerDirectory = "typescript/ifx-test-ui/dist",
+)
 ```
+
+The directory and its `index.html` must exist when the host opens. Include the
+built directory in the application or container distribution. Leave
+`serviceExplorerDirectory` unset when the explorer is deployed separately.
 
 Generated TypeScript contracts export a `{Service}Description` value in
 addition to their typed client. It contains the same operations and runtime

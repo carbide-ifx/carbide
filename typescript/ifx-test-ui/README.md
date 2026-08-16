@@ -5,8 +5,9 @@ Browser UI provided by the optional `ifx.service-explorer` module. Its
 registered service catalog from `IActuator.catalog()`, and invokes services with
 `@ifx/rpc-client-rsocket`. There is no separate HTTP catalog endpoint.
 
-The Kotlin host asset is checked in so normal Kotlin builds do not require
-Node.js. After changing the UI, rebuild the embedded asset with:
+The Service Explorer is a normal npm web application. Its build writes
+`index.html` and the bundled JavaScript to `dist/`; no web assets are generated
+into Kotlin source. Build it before starting or packaging a host that serves it:
 
 ```shell
 cd typescript
@@ -14,7 +15,7 @@ npm install
 npm run build
 ```
 
-## Development without restarting the host
+## Development
 
 Configure the host to read the development bundle from disk:
 
@@ -24,7 +25,7 @@ import ifx.subsystem.default
 Host.default(
     name = "Test System",
     rsocketPort = 7070,
-    developmentDirectory = "typescript/ifx-test-ui/dist",
+    serviceExplorerDirectory = "typescript/ifx-test-ui/dist",
 )
 ```
 
@@ -34,6 +35,6 @@ Then keep this watcher running:
 npm run dev
 ```
 
-Edit `src/main.ts`. The host page reloads automatically after the watcher
-finishes rebuilding the bundle, so Kotlin does not need to be rebuilt or
-restarted.
+Edit `src/main.ts` or `index.html`. The watcher updates `dist/`, and Ktor serves
+the next request from that directory without rebuilding or restarting Kotlin.
+Refresh the browser after a rebuild.

@@ -17,13 +17,16 @@ import kotlinx.coroutines.runBlocking
 import manager.sales.contract.ISalesManager
 import manager.sales.service.SalesManager
 
+internal const val SERVICE_EXPLORER_DIRECTORY: String = "../typescript/ifx-test-ui/dist"
+
 suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
+    serviceExplorerDirectory: String? = null,
 ): IHost {
     val host = Host.default(
         name = "Test System",
         interceptors = interceptors,
-        developmentDirectory = "typescript/ifx-test-ui/dist",
+        serviceExplorerDirectory = serviceExplorerDirectory,
     )
     // The services below hold this factory, so its connections live exactly as long as the host.
     val proxyFactory = RSocketProxyFactory.forHost(host)
@@ -46,7 +49,10 @@ fun main(): Unit = runBlocking {
             Log("OpenTelemetry").warn { "Failed to export trace: ${error.message}" }
         },
     )
-    val system = startTestSystem(listOf(LoggingInterceptor(), telemetry))
+    val system = startTestSystem(
+        interceptors = listOf(LoggingInterceptor(), telemetry),
+        serviceExplorerDirectory = SERVICE_EXPLORER_DIRECTORY,
+    )
     val proxyFactory = RSocketProxyFactory.forHost(system)
 
     try {
