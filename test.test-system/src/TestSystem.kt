@@ -18,6 +18,12 @@ import manager.sales.contract.ISalesManager
 import manager.sales.service.SalesManager
 
 internal const val SERVICE_EXPLORER_DIRECTORY: String = "../typescript/ifx-test-ui/dist"
+internal const val SERVICE_EXPLORER_DIRECTORY_ENV: String = "IFX_SERVICE_EXPLORER_DIRECTORY"
+
+internal fun serviceExplorerDirectory(environment: Map<String, String>): String =
+    environment[SERVICE_EXPLORER_DIRECTORY_ENV]
+        ?.takeIf(String::isNotBlank)
+        ?: SERVICE_EXPLORER_DIRECTORY
 
 suspend fun startTestSystem(
     interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
@@ -51,7 +57,7 @@ fun main(): Unit = runBlocking {
     )
     val system = startTestSystem(
         interceptors = listOf(LoggingInterceptor(), telemetry),
-        serviceExplorerDirectory = SERVICE_EXPLORER_DIRECTORY,
+        serviceExplorerDirectory = serviceExplorerDirectory(System.getenv()),
     )
     val proxyFactory = RSocketProxyFactory.forHost(system)
 

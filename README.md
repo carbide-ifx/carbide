@@ -43,6 +43,60 @@ setup described below. Those are build-time tools rather than runtime dependenci
 The bundle supports JVM and macOS ARM64 and publishes platform-correct
 multiplatform metadata.
 
+## Container images
+
+Runnable JVM subsystem modules can enable the local `ifx.jib` Amper plugin:
+
+```yaml
+product:
+  type: jvm/app
+
+settings:
+  jvm:
+    mainClass: com.example.CustomerSubsystemKt
+
+plugins:
+  ifx.jib:
+    enabled: true
+    image: example/customer-subsystem:dev
+    ports: [ 8080, 8081 ]
+```
+
+The plugin adds three module tasks:
+
+```shell
+./kotlin do jibTar -m customer.subsystem     # cacheable image tar, no Docker daemon
+./kotlin do jibDocker -m customer.subsystem  # load the image into the local Docker daemon
+./kotlin do jibPush -m customer.subsystem    # push directly to the configured registry
+```
+
+The default base is the non-root Java 21 distroless image. `baseImage`,
+`jvmArgs`, `tags`, `ports`, `environment`, and `labels` can be overridden per
+subsystem. Build outputs such as an npm web application remain ordinary files
+and can be copied into the image as their own layer:
+
+```yaml
+plugins:
+  ifx.jib:
+    enabled: true
+    image: example/customer-subsystem:dev
+    extraDirectories:
+      - source: //typescript/customer-ui/dist
+        destination: /app/webapps/customer
+```
+
+The source directory must already have been produced by its owning build. Jib
+tracks its contents as task inputs and copies them verbatim; it does not embed
+them in Kotlin sources or JAR resources. Registry push and private-base pulls
+use standard Docker credential discovery; set `targetCredentialHelper` or
+`baseCredentialHelper` when a named helper is required. Do not put registry
+passwords in module configuration. Pin `baseImage` by digest when builds must
+remain reproducible across base-image updates.
+
+Kotlin Toolchain currently supports only local custom plugin modules. Downstream
+repositories must therefore vendor this small `ifx.jib` module until external
+plugin publication is supported.
+
 ## Multi-protocol hosting
 
 `Host` owns service registration and the lifecycle of its Ktor servers. Each

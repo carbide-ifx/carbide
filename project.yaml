@@ -5,6 +5,7 @@ modules:
   - ifx.host
   - ifx.host.contract
   - ifx.host.webapp
+  - ifx.jib
   - ifx.logging
   - ifx.protocol.contract
   - ifx.protocol.jsonrpc
@@ -26,3 +27,6 @@ modules:
   - test.test-system
   - utility.db
   - utility.stdlib
+
+plugins:
+  - ifx.jib

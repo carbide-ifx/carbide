@@ -1,0 +1,7 @@
+product: jvm/amper-plugin
+
+pluginInfo:
+  settingsClass: ifx.build.jib.JibSettings
+
+dependencies:
+  - com.google.cloud.tools:jib-core:0.28.2

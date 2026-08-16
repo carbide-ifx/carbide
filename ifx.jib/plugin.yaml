@@ -1,0 +1,30 @@
+tasks:
+  jibTar:
+    action: !ifx.build.jib.buildTar
+      runtimeClasspath: ${module.runtimeClasspath}
+      applicationJar: ${module.jar}
+      mainClass: ${module.settings.jvm.mainClass}
+      settings: ${pluginSettings}
+      outputTar: ${taskOutputDir}/${module.name}-image.tar
+
+  jibDocker:
+    action: !ifx.build.jib.buildToDockerDaemon
+      runtimeClasspath: ${module.runtimeClasspath}
+      applicationJar: ${module.jar}
+      mainClass: ${module.settings.jvm.mainClass}
+      settings: ${pluginSettings}
+
+  jibPush:
+    action: !ifx.build.jib.pushToRegistry
+      runtimeClasspath: ${module.runtimeClasspath}
+      applicationJar: ${module.jar}
+      mainClass: ${module.settings.jvm.mainClass}
+      settings: ${pluginSettings}
+
+commands:
+  - name: jibTar
+    performedBy: jibTar
+  - name: jibDocker
+    performedBy: jibDocker
+  - name: jibPush
+    performedBy: jibPush

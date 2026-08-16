@@ -4,6 +4,8 @@ product:
   type: jvm/app
 
 settings:
+  jvm:
+    mainClass: TestSystemKt
   kotlin:
     ksp:
       processors:
@@ -17,3 +19,13 @@ dependencies:
   - ../test.service-contracts
   - ../ifx.subsystem
   - ../utility.stdlib
+
+plugins:
+  ifx.jib:
+    enabled: true
+    image: ifx/test-system:dev
+    environment:
+      IFX_SERVICE_EXPLORER_DIRECTORY: /app/webapps/service-explorer
+    extraDirectories:
+      - source: //typescript/ifx-test-ui/dist
+        destination: /app/webapps/service-explorer
