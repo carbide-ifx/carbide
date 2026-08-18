@@ -39,9 +39,9 @@ class Host(
 
     init {
         require(listeners.isNotEmpty()) { "A host must have at least one protocol listener" }
-        val duplicateIds = listeners.groupingBy { it.protocol.id }.eachCount().filterValues { it > 1 }.keys
+        val duplicateIds = listeners.groupingBy(ProtocolListener::id).eachCount().filterValues { it > 1 }.keys
         require(duplicateIds.isEmpty()) {
-            "A protocol may only be exposed once per host: ${duplicateIds.joinToString()}"
+            "A listener id may only be used once per host: ${duplicateIds.joinToString()}"
         }
         val duplicatePorts = listeners
             .filter { it.port != 0 }
@@ -139,7 +139,12 @@ class Host(
             }
             runningServers += started
             boundListeners = started.map { running ->
-                BoundProtocolListener(running.config.protocol.id, running.config.host, running.port)
+                BoundProtocolListener(
+                    protocolId = running.config.protocol.id,
+                    host = running.config.host,
+                    port = running.port,
+                    id = running.config.id,
+                )
             }
         } catch (exception: Throwable) {
             started.asReversed().forEach { it.stop() }
@@ -172,11 +177,13 @@ class Host(
                 protocolId = listener.protocolId,
                 host = listener.host,
                 port = listener.port,
+                listenerId = listener.id,
             )
         },
     )
 
     private fun createServer(config: ProtocolListener): RunningServer {
+        val listenerEndpoints = config.endpointSource.endpoints(endpoints.toList()).toList()
         val server = embeddedServer(
             factory = CIO,
             environment = applicationEnvironment {
@@ -189,8 +196,8 @@ class Host(
                 })
             },
         ) {
-            config.protocol.install(this, endpoints)
-            val context = HostExtensionContext(name, endpoints.toList()) { boundListeners }
+            config.protocol.install(this, listenerEndpoints)
+            val context = HostExtensionContext(name, listenerEndpoints) { boundListeners }
             extensions.filter { it.listener === config }.forEach { extension ->
                 extension.install(this, context)
             }
@@ -206,7 +213,7 @@ class Host(
     }
 
     private fun requestedListeners(): List<BoundProtocolListener> = listeners.map { config ->
-        BoundProtocolListener(config.protocol.id, config.host, config.port)
+        BoundProtocolListener(config.protocol.id, config.host, config.port, config.id)
     }
 
     private class RunningServer(
@@ -230,7 +237,9 @@ class HostBuilder internal constructor() {
         protocol: IServerProtocol,
         port: Int = 0,
         host: String = "0.0.0.0",
-    ): ProtocolListener = ProtocolListener(protocol, port, host).also(listeners::add)
+        id: String = protocol.id,
+        endpointSource: EndpointSource = EndpointSource.Registered,
+    ): ProtocolListener = ProtocolListener(protocol, port, host, id, endpointSource).also(listeners::add)
 
     fun install(extension: HostExtension) {
         extensions += extension

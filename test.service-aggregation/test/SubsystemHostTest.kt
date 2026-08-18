@@ -16,4 +16,11 @@ class SubsystemHostTest {
         assertEquals("Service Host", host.name)
         assertEquals(listOf("IActuator"), host.serviceCatalog().services.map { it.name })
     }
+
+    @Test
+    fun `generated descriptor exposes typed operation metadata`() {
+        assertEquals("filter(access.product.contract.ProductCriteria)", dependencyFilterOperation.description.route)
+        assertEquals("generateRandowProduct()", dependencyStreamOperation.description.route)
+        assertEquals("notifyProductViewed(kotlin.String)", dependencyFireAndForgetOperation.description.route)
+    }
 }

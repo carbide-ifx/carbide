@@ -12,16 +12,28 @@ interface IServerProtocol {
     fun install(application: Application, endpoints: List<Endpoint>)
 }
 
+/** Resolves the immutable endpoint set installed into one listener when its host opens. */
+fun interface EndpointSource {
+    fun endpoints(registeredEndpoints: List<Endpoint>): List<Endpoint>
+
+    companion object {
+        val Registered: EndpointSource = EndpointSource(List<Endpoint>::toList)
+    }
+}
+
 data class ProtocolListener(
     val protocol: IServerProtocol,
     val port: Int = 0,
     val host: String = "0.0.0.0",
+    val id: String = protocol.id,
+    val endpointSource: EndpointSource = EndpointSource.Registered,
 )
 
 data class BoundProtocolListener(
     val protocolId: String,
     val host: String,
     val port: Int,
+    val id: String = protocolId,
 )
 
 /** Additional routes or capabilities installed into one host listener. */
@@ -73,7 +85,7 @@ interface IHost {
     /** A live, read-only description of the services and resolved listeners exposed by this host. */
     fun serviceCatalog(): ServiceCatalog
 
-    fun port(protocolId: String): Int = boundListeners.single { it.protocolId == protocolId }.port
+    fun port(listenerId: String): Int = boundListeners.single { it.id == listenerId }.port
 }
 
 @PublishedApi

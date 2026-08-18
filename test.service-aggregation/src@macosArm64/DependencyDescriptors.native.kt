@@ -11,6 +11,11 @@ import ifx.subsystem.default
 /** Compile-time proof that descriptors are generated in the Native subsystem compilation. */
 val dependencyServiceDescriptor = IProductAccessDescriptor
 
+/** Compile-time proof that generated descriptors expose owner-typed operations. */
+val dependencyFilterOperation = IProductAccessDescriptor.filter
+val dependencyStreamOperation = IProductAccessDescriptor.generateRandowProduct
+val dependencyFireAndForgetOperation = IProductAccessDescriptor.notifyProductViewed
+
 /** Compile-time proof that the standard default host is available for Native. */
 suspend fun defaultSubsystemHost(): Host = Host.default()
 

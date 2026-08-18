@@ -6,6 +6,7 @@ const {
   encodeCompositeMetadata,
   WellKnownMimeType,
 } = require("rsocket-composite-metadata");
+const { GatewayError } = require("@ifx/rpc-client");
 const { RSocketBinding } = require("../dist");
 
 globalThis.Buffer ??= Buffer;
@@ -122,6 +123,21 @@ test("service URL appends the qualified service address", () => {
   assert.equal(
     RSocketBinding.serviceUrl("ws://localhost:8080/", "access.product.contract.IProductAccess"),
     "ws://localhost:8080/access.product.contract.IProductAccess",
+  );
+});
+
+test("canonical gateway error payloads are decoded across RSocket", async () => {
+  const socket = fakeSocket({
+    requestResponse(_payload, subscriber) {
+      subscriber.onError(new Error('Application error: {"code":"forbidden","message":"Not allowed","details":{}}'));
+      return cancellable();
+    },
+  });
+  const binding = new RSocketBinding(socket);
+
+  await assert.rejects(
+    binding.requestResponse("productAccess/filter", {}),
+    (error) => error instanceof GatewayError && error.failure.code === "forbidden",
   );
 });
 

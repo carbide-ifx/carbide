@@ -4,6 +4,7 @@
   "private": true,
   "workspaces": [
     "ifx-rpc-client",
+    "ifx-rpc-client-http",
     "ifx-rpc-client-rsocket",
     "ifx-rpc-client-jsonrpc",
     "ifx-test-ui"

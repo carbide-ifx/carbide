@@ -5,6 +5,7 @@ product:
 
 
 dependencies:
+  - ../ifx.context
   - ../ifx.protocol.contract: exported
   - ../ifx.host.contract
   - ../ifx.logging

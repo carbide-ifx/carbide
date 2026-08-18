@@ -12,3 +12,4 @@ dependencies:
 
 test-dependencies@jvm:
   - ../ifx.testing
+  - io.ktor:ktor-server-test-host:3.1.1

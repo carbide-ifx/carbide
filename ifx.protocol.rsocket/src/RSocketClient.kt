@@ -65,7 +65,10 @@ fun KeepAlive.connectTimeout(): Duration = (intervalMillis.toLong() + maxLifetim
  * opened through the returned client.
  */
 @OptIn(RSocketLoggingApi::class)
-fun rsocketHttpClient(keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE): HttpClient = HttpClient {
+fun rsocketHttpClient(
+    keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE,
+    setupData: () -> String = { """{ "data": "setup" }""" },
+): HttpClient = HttpClient {
     this.install(WebSockets) // rsocket requires websockets plugin installed
     this.install(RSocketSupport) {
         // configure rSocket connector (all values have defaults)
@@ -76,7 +79,7 @@ fun rsocketHttpClient(keepAlive: KeepAlive = SUBSYSTEM_KEEP_ALIVE): HttpClient =
                 // payload for setup frame
                 setupPayload {
                     buildPayload {
-                        data("""{ "data": "setup" }""")
+                        data(setupData())
                     }
                 }
                 // mime types

@@ -34,6 +34,7 @@ data class ProtocolListenerDescription(
     val protocolId: String,
     val host: String,
     val port: Int,
+    val listenerId: String = protocolId,
 )
 
 @Serializable

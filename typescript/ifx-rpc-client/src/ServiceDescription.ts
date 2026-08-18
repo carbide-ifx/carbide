@@ -8,6 +8,7 @@ export interface IfxServiceCatalog {
 
 export interface IfxProtocolListenerDescription {
   readonly protocolId: string;
+  readonly listenerId?: string;
   readonly host: string;
   readonly port: number;
 }

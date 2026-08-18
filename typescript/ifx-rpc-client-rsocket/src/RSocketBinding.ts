@@ -13,6 +13,7 @@ import {
 import { WebsocketClientTransport } from "rsocket-websocket-client";
 import {
   IfxClientBinding,
+  decodeGatewayError,
   type IfxClientBindingOptions,
   type IfxClientCall,
   type IfxClientConstructor,
@@ -28,17 +29,23 @@ export interface RSocketBindingOptions extends RSocketBindingRuntimeOptions {
   readonly keepAlive?: number;
   readonly lifetime?: number;
   readonly wsCreator?: (url: string) => WebSocket;
+  /** Opaque data sent once in the RSocket SETUP frame, typically a short-lived credential. */
+  readonly setupData?: string | (() => string | Promise<string>);
 }
 
 export class RSocketBinding extends IfxClientBinding {
   static async connect(options: RSocketBindingOptions): Promise<RSocketBinding> {
+    const configuredSetupData = options.setupData;
+    const setupData = typeof configuredSetupData === "function"
+      ? await configuredSetupData()
+      : configuredSetupData ?? '{ "data": "setup" }';
     const connector = new RSocketConnector({
       setup: {
         dataMimeType: WellKnownMimeType.APPLICATION_JSON.string,
         metadataMimeType: WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.string,
         keepAlive: options.keepAlive,
         lifetime: options.lifetime,
-        payload: { data: Buffer.from('{ "data": "setup" }', "utf8") },
+        payload: { data: Buffer.from(setupData, "utf8") },
       },
       transport: new WebsocketClientTransport({
         url: options.url,
@@ -80,7 +87,7 @@ export class RSocketBinding extends IfxClientBinding {
     await new Promise<void>((resolve, reject) => {
       this.socket.fireAndForget(toPayload(call), {
         onComplete: resolve,
-        onError: reject,
+        onError: (error) => reject(decodeGatewayError(error)),
       });
     });
   }
@@ -96,7 +103,7 @@ export class RSocketBinding extends IfxClientBinding {
         onComplete: () => {
           if (!received) reject(new Error(`RSocket operation ${call.operation} completed without a payload`));
         },
-        onError: reject,
+        onError: (error) => reject(decodeGatewayError(error)),
         onExtension: () => {},
       });
     });
@@ -120,7 +127,7 @@ export class RSocketBinding extends IfxClientBinding {
       },
       onError: (error) => {
         ended = true;
-        queue.fail(error);
+        queue.fail(decodeGatewayError(error));
       },
       onExtension: () => {},
     });
@@ -175,10 +182,10 @@ class AsyncQueue<Value> implements AsyncIterable<Value> {
   private readonly values: Value[] = [];
   private readonly waiters: Array<{
     resolve: (result: IteratorResult<Value>) => void;
-    reject: (error: Error) => void;
+    reject: (error: unknown) => void;
   }> = [];
   private ended = false;
-  private failure?: Error;
+  private failure?: unknown;
 
   push(value: Value): void {
     if (this.ended) return;
@@ -193,7 +200,7 @@ class AsyncQueue<Value> implements AsyncIterable<Value> {
     this.flush();
   }
 
-  fail(error: Error): void {
+  fail(error: unknown): void {
     if (this.ended) return;
     this.failure = error;
     this.ended = true;

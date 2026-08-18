@@ -1,0 +1,10 @@
+tasks:
+  gatewayArtifacts:
+    action: !ifx.build.gateway.generateGatewayArtifacts
+      runtimeClasspath: ${module.runtimeClasspath}
+      applicationJar: ${module.jar}
+      outputDirectory: ${taskOutputDir}/gateway
+
+commands:
+  - name: gatewayArtifacts
+    performedBy: gatewayArtifacts

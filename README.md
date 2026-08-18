@@ -100,10 +100,10 @@ plugin publication is supported.
 ## Multi-protocol hosting
 
 `Host` owns service registration and the lifecycle of its Ktor servers. Each
-configured listener exposes exactly one protocol on its own port, and every
-listener receives the same registered service endpoints. Protocol implementations
-only install their routes and wire handling into the listener provided by the
-host.
+configured listener exposes exactly one protocol on its own port. A listener uses
+the registered service endpoints by default, or an `EndpointSource` can replace
+them with an immutable projection. Protocol implementations only install their
+routes and wire handling into the listener provided by the host.
 
 ```kotlin
 import ifx.subsystem.default
@@ -133,6 +133,120 @@ interactions. Regular JSON-RPC over HTTP supports fire-and-forget notifications
 and request/response. Calling a service operation that returns `Flow` through the
 JSON-RPC client fails explicitly because JSON-RPC has no standard streaming
 interaction.
+
+## API gateway projections
+
+A gateway is a static, transport-neutral projection of existing service
+operations. Generated service descriptors expose owner-typed operation values,
+so the common case contains no routes, DTO mapping, annotations, or duplicate
+interfaces:
+
+```kotlin
+val ProductWebApi = gateway("product-web") {
+    expose(IProductAccessDescriptor) {
+        only(filter, generateRandowProduct)
+    }
+    expose(ISalesManagerDescriptor)
+}
+```
+
+`expose(descriptor)` includes all ordinary operations; inherited service
+lifecycle operations are excluded. `only(...)` narrows the set. Service names,
+operation names, and the surface address follow conventions and can be versioned
+or explicitly renamed in the projection.
+
+For an embedded gateway, give the same endpoint source to each public listener.
+Internal listeners can continue to use the complete registered endpoint set:
+
+```kotlin
+val publicEndpoints = ProductWebApi.endpointSource()
+val host = Host {
+    listen(RSocketServerProtocol(), id = "internal-rsocket")
+    listen(
+        RSocketServerProtocol(rSocketAuthenticator),
+        id = "public-rsocket",
+        endpointSource = publicEndpoints,
+    )
+    listen(
+        GatewayHttpServerProtocol(httpAuthenticator),
+        endpointSource = publicEndpoints,
+    )
+}
+```
+
+For a separate gateway process, keep the projection unchanged and supply typed
+remote targets:
+
+```kotlin
+val publicEndpoints = ProductWebApi.endpointSource {
+    remote(IProductAccessDescriptor, productRSocketClient)
+    remote(ISalesManagerDescriptor, salesRSocketClient)
+}
+```
+
+The public RSocket surface is one service address (`product-web` above), with
+routes such as `productAccess/filter`. Setup authentication establishes trusted
+context for the connection and overwrites any client-supplied context. The
+conventional HTTP adapter publishes
+`POST /api/{surface}/{manager}/{operation}`; request streams use newline-delimited JSON
+events named `next`, `complete`, and `error`. It is deliberately separate from
+JSON-RPC.
+
+OpenAPI 3.1 is served at `/api/{surface}/openapi.json` and can also be emitted as
+a build artifact without starting a host. Enable the artifact plugin on the
+module that declares the projections (the module must already run
+`ifx.subsystem.ksp`):
+
+```yaml
+plugins:
+  ifx.gateway.artifacts:
+    enabled: true
+```
+
+Then run:
+
+```shell
+./kotlin do gatewayArtifacts -m product.gateway
+```
+
+KSP finds every non-private top-level `val` whose inferred type is
+`GatewayProjection`; no annotation or projection-name string is needed. The
+task writes one deterministic directory per public address:
+
+```text
+gateway/
+├── product-web/
+│   ├── client.ts
+│   └── openapi.json
+└── product-web/v2/
+    ├── client.ts
+    └── openapi.json
+```
+
+Only indexes generated into the declaring module's own JAR are loaded, so a
+gateway does not accidentally publish projections from its dependencies. The
+resulting directory is the build/publishing boundary: npm and API-catalog jobs
+consume it without loading a host or duplicating the DSL in build
+configuration.
+
+The renderers remain directly available when deployment metadata must be
+supplied programmatically:
+
+```kotlin
+val openApiJson = ProductWebApi.renderOpenApi(
+    deployment = GatewayHttpDeployment(
+        title = "Product Web API",
+        apiVersion = "1.0.0",
+        serverUrls = listOf("https://api.example.com"),
+    ),
+)
+```
+
+`renderTypeScriptClient()` generates a protocol-neutral client with manager
+namespaces and only the projected operations while preserving the generated DTO
+shapes. Use it with either `@ifx/rpc-client-rsocket` or the separate
+`@ifx/rpc-client-http` binding. The latter accepts ordinary Fetch request headers
+for browser authentication and decodes NDJSON incrementally.
 
 The `ifx.subsystem` bundle provides an opinionated default host with RSocket,
 JSON-RPC, `IActuator`, and the browser Service Explorer. Passing `0` for either

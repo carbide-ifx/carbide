@@ -12,6 +12,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
@@ -58,8 +59,60 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
                 ) == null
             }
             .forEach { contract -> generate(contract, generatedDependencies) }
+        generateGatewayProjectionProvider(resolver, sourceFiles, generatedDependencies)
         generated = true
         return emptyList()
+    }
+
+    @OptIn(KspExperimental::class)
+    private fun generateGatewayProjectionProvider(
+        resolver: Resolver,
+        sourceFiles: List<com.google.devtools.ksp.symbol.KSFile>,
+        dependencies: Dependencies,
+    ) {
+        val projections = sourceFiles.asSequence()
+            .flatMap { file -> file.declarations.asSequence() }
+            .filterIsInstance<KSPropertyDeclaration>()
+            .filter { property ->
+                property.type.resolve().declaration.qualifiedName?.asString() == GATEWAY_PROJECTION
+            }
+            .sortedBy { property -> property.qualifiedName?.asString() }
+            .toList()
+        if (projections.isEmpty()) return
+
+        val invalid = projections.firstOrNull { property ->
+            Modifier.PRIVATE in property.modifiers || property.isMutable
+        }
+        if (invalid != null) {
+            logger.error(
+                "Gateway projection ${invalid.qualifiedName?.asString()} must be a non-private val because the generated build index must reference one static projection.",
+                invalid,
+            )
+            return
+        }
+
+        val providerName = "IfxGatewayProjectionProvider${resolver.getModuleName().asString().toIdentifier()}"
+        val providerQualifiedName = "$GATEWAY_INDEX_PACKAGE.$providerName"
+        val output = codeGenerator.createNewFile(dependencies, GATEWAY_INDEX_PACKAGE, providerName)
+        OutputStreamWriter(output).use { writer ->
+            writer.write(
+                """package $GATEWAY_INDEX_PACKAGE
+
+public class $providerName : ifx.gateway.contract.GatewayProjectionProvider {
+    override val projections: List<ifx.gateway.contract.GatewayProjection> = listOf(
+${projections.joinToString("\n") { property -> "        ${property.qualifiedName!!.asString()}," }}
+    )
+}
+""",
+            )
+        }
+
+        val serviceFile = codeGenerator.createNewFileByPath(
+            dependencies,
+            "META-INF/services/$GATEWAY_PROJECTION_PROVIDER",
+            extensionName = "",
+        )
+        OutputStreamWriter(serviceFile).use { writer -> writer.write("$providerQualifiedName\n") }
     }
 
     @OptIn(KspExperimental::class)
@@ -111,6 +164,7 @@ internal object $anchorName
         val contractName = contract.simpleName.asString()
         val descriptorName = "${contractName}Descriptor"
         val functions = contract.getAllFunctions().filterNot(::isAnyMethod).toList()
+        val operationProperties = operationProperties(functions)
         val address = contract.qualifiedName!!.asString()
         val packageDeclaration = packageName.takeIf { it.isNotBlank() }?.let { "package $it\n" }.orEmpty()
         val description = ServiceDescriptionRenderer().render(contract)
@@ -139,6 +193,7 @@ public object $descriptorName : ServiceDescriptor<$contractName> {
     override val contract = $contractName::class
     override val address = "$address"
     override val description = $description
+${operationProperties.joinToString("\n") { (function, propertyName) -> operationProperty(contractName, function, propertyName) }}
     override fun createClient(binding: IBinding): $contractName = ${contractName}Proxy(binding)
     override fun bind(instance: $contractName): IBinding = object : IBinding {
         override suspend fun fireAndForget(operation: String, message: Message) {
@@ -164,6 +219,38 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
     private fun descriptorQualifiedName(contract: KSClassDeclaration): String =
         contract.packageName.asString().takeIf(String::isNotBlank)?.let { "$it." }.orEmpty() +
             "${contract.simpleName.asString()}Descriptor"
+
+    private fun operationProperties(
+        functions: List<KSFunctionDeclaration>,
+    ): List<Pair<KSFunctionDeclaration, String>> {
+        val counts = functions.groupingBy { it.simpleName.asString() }.eachCount()
+        val indexes = mutableMapOf<String, Int>()
+        val allocated = DESCRIPTOR_MEMBERS.toMutableSet()
+        return functions.map { function ->
+            val name = function.simpleName.asString()
+            val index = indexes.merge(name, 1, Int::plus)!!
+            val uniqueName = if (counts.getValue(name) == 1) name else "$name$index"
+            var propertyName = uniqueName
+            while (!allocated.add(propertyName)) propertyName += "Operation"
+            function to propertyName
+        }
+    }
+
+    private fun operationProperty(
+        contractName: String,
+        function: KSFunctionDeclaration,
+        propertyName: String,
+    ): String {
+        val request = function.parameters.singleOrNull()?.type?.resolve()?.let(::typeName) ?: "kotlin.Unit"
+        val returnType = function.returnType!!.resolve()
+        val response = if (returnType.declaration.qualifiedName?.asString() == "kotlinx.coroutines.flow.Flow") {
+            typeName(returnType.arguments.single().type!!.resolve())
+        } else {
+            typeName(returnType)
+        }
+        return "    public val $propertyName: OperationDescriptor<$contractName, $request, $response> = " +
+            "OperationDescriptor(address, description.operations.first { it.route == \"${signature(function)}\" })"
+    }
 
     private fun clientMethod(function: KSFunctionDeclaration): String {
         val name = function.simpleName.asString()
@@ -232,6 +319,10 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
     private companion object {
         const val INDEX_PACKAGE = "ifx.service.index"
         const val INDEX_ANNOTATION = "ifx.service.IfxServiceIndex"
+        const val GATEWAY_INDEX_PACKAGE = "ifx.gateway.index"
+        const val GATEWAY_PROJECTION = "ifx.gateway.contract.GatewayProjection"
+        const val GATEWAY_PROJECTION_PROVIDER = "ifx.gateway.contract.GatewayProjectionProvider"
         val FRAMEWORK_MARKERS = setOf("ifx.service.IService", "ifx.service.IUtility")
+        val DESCRIPTOR_MEMBERS = setOf("contract", "address", "description", "createClient", "bind")
     }
 }

@@ -1,0 +1,11 @@
+apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
+
+product:
+  type: lib
+  platforms: [ jvm, macosArm64 ]
+
+dependencies:
+  - ../ifx.gateway.contract: exported
+  - ../ifx.host.contract
+  - ../ifx.protocol.contract
+  - ../ifx.service
