@@ -1,7 +1,7 @@
 {
-  "name": "@ifx/rpc-client-http",
+  "name": "@ifx/rpc-sdk-http",
   "version": "0.0.8",
-  "description": "Conventional HTTP client for iFX gateway projections",
+  "description": "Conventional HTTP transport for iFX gateway SDKs",
   "license": "UNLICENSED",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,7 +13,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-client": "0.0.8"
+    "@ifx/rpc-sdk": "0.0.8"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

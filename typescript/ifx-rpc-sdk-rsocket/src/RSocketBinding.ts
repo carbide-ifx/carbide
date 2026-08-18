@@ -12,17 +12,17 @@ import {
 } from "rsocket-composite-metadata";
 import { WebsocketClientTransport } from "rsocket-websocket-client";
 import {
-  IfxClientBinding,
+  IfxBindingBase,
   decodeGatewayError,
-  type IfxClientBindingOptions,
-  type IfxClientCall,
-  type IfxClientConstructor,
+  type IfxBindingOptions,
+  type IfxOutboundCall,
+  type IfxServiceConstructor,
   type IfxMessage,
-} from "@ifx/rpc-client";
+} from "@ifx/rpc-sdk";
 
 const IFX_HEADER_MIME_TYPE = "application/x-ifx-header";
 
-export type RSocketBindingRuntimeOptions = IfxClientBindingOptions;
+export type RSocketBindingRuntimeOptions = IfxBindingOptions;
 
 export interface RSocketBindingOptions extends RSocketBindingRuntimeOptions {
   readonly url: string;
@@ -33,7 +33,7 @@ export interface RSocketBindingOptions extends RSocketBindingRuntimeOptions {
   readonly setupData?: string | (() => string | Promise<string>);
 }
 
-export class RSocketBinding extends IfxClientBinding {
+export class RSocketBinding extends IfxBindingBase {
   static async connect(options: RSocketBindingOptions): Promise<RSocketBinding> {
     const configuredSetupData = options.setupData;
     const setupData = typeof configuredSetupData === "function"
@@ -72,7 +72,7 @@ export class RSocketBinding extends IfxClientBinding {
     this.socket.close();
   }
 
-  protected exchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  protected exchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     switch (call.interaction) {
       case "fireAndForget":
         return this.fireAndForgetExchange(call);
@@ -83,7 +83,7 @@ export class RSocketBinding extends IfxClientBinding {
     }
   }
 
-  private async *fireAndForgetExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *fireAndForgetExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     await new Promise<void>((resolve, reject) => {
       this.socket.fireAndForget(toPayload(call), {
         onComplete: resolve,
@@ -92,7 +92,7 @@ export class RSocketBinding extends IfxClientBinding {
     });
   }
 
-  private async *requestResponseExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *requestResponseExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const payload = await new Promise<Payload>((resolve, reject) => {
       let received = false;
       this.socket.requestResponse(toPayload(call), {
@@ -110,7 +110,7 @@ export class RSocketBinding extends IfxClientBinding {
     yield fromPayload(payload);
   }
 
-  private async *requestStreamExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *requestStreamExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const queue = new AsyncQueue<IfxMessage>();
     let ended = false;
     const stream = this.socket.requestStream(toPayload(call), 1, {
@@ -142,18 +142,18 @@ export class RSocketBinding extends IfxClientBinding {
   }
 }
 
-export class RSocketClient {
-  static async connect<Client>(
-    service: IfxClientConstructor<Client>,
+export class RSocketSdk {
+  static async connect<Sdk>(
+    sdkConstructor: IfxServiceConstructor<Sdk>,
     baseUrl: string,
     options: Omit<RSocketBindingOptions, "url"> = {},
-  ): Promise<Client> {
-    const url = RSocketBinding.serviceUrl(baseUrl, service.address);
-    return new service(await RSocketBinding.connect({ ...options, url }));
+  ): Promise<Sdk> {
+    const url = RSocketBinding.serviceUrl(baseUrl, sdkConstructor.address);
+    return new sdkConstructor(await RSocketBinding.connect({ ...options, url }));
   }
 }
 
-function toPayload(call: IfxClientCall): Payload {
+function toPayload(call: IfxOutboundCall): Payload {
   return {
     data: Buffer.from(call.message.body, "utf8"),
     metadata: encodeCompositeMetadata([

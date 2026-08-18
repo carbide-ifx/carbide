@@ -1,4 +1,4 @@
-import { RSocketBinding } from "@ifx/rpc-client-rsocket";
+import { RSocketBinding } from "@ifx/rpc-sdk-rsocket";
 import {
   type IfxOperationDescription,
   type IfxServiceCatalog,
@@ -6,7 +6,7 @@ import {
   type IfxTypeDescription,
   type IfxTypeReference,
   type IfxUnionVariantDescription,
-} from "@ifx/rpc-client";
+} from "@ifx/rpc-sdk";
 
 const styles = `
   :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #17211c; background: #f4f6f2; }

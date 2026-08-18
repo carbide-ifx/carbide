@@ -1,18 +1,18 @@
 import {
-  IfxClientBinding,
+  IfxBindingBase,
   GatewayError,
   type GatewayFailure,
-  type IfxClientBindingOptions,
-  type IfxClientCall,
-  type IfxClientConstructor,
+  type IfxBindingOptions,
+  type IfxOutboundCall,
+  type IfxServiceConstructor,
   type IfxMessage,
-} from "@ifx/rpc-client";
+} from "@ifx/rpc-sdk";
 
-export type { GatewayFailure } from "@ifx/rpc-client";
+export type { GatewayFailure } from "@ifx/rpc-sdk";
 
 export type HttpRequestHeaders = HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
 
-export interface HttpBindingOptions extends IfxClientBindingOptions {
+export interface HttpBindingOptions extends IfxBindingOptions {
   readonly url: string;
   readonly fetch?: typeof globalThis.fetch;
   readonly requestHeaders?: HttpRequestHeaders;
@@ -28,7 +28,7 @@ export class GatewayHttpError extends GatewayError {
   }
 }
 
-export class HttpBinding extends IfxClientBinding {
+export class HttpBinding extends IfxBindingBase {
   static serviceUrl(baseUrl: string, serviceAddress: string): string {
     if (baseUrl.length === 0) throw new Error("The iFX HTTP base URL cannot be empty");
     if (serviceAddress.length === 0) throw new Error("The iFX gateway address cannot be empty");
@@ -46,7 +46,7 @@ export class HttpBinding extends IfxClientBinding {
 
   close(): void {}
 
-  protected exchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  protected exchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     switch (call.interaction) {
       case "fireAndForget":
         return this.fireAndForgetExchange(call);
@@ -57,18 +57,18 @@ export class HttpBinding extends IfxClientBinding {
     }
   }
 
-  private async *fireAndForgetExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *fireAndForgetExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const response = await this.send(call);
     if (response.status !== 202) await throwFailure(response, call.operation);
   }
 
-  private async *requestResponseExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *requestResponseExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const response = await this.send(call);
     if (!response.ok) await throwFailure(response, call.operation);
     yield { header: "{}", body: await response.text() };
   }
 
-  private async *requestStreamExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *requestStreamExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const response = await this.send(call);
     if (!response.ok) await throwFailure(response, call.operation);
     if (!response.body) throw new Error(`Stream from ${call.operation} contains no response body`);
@@ -95,7 +95,7 @@ export class HttpBinding extends IfxClientBinding {
     if (!terminal) throw new Error(`Stream from ${call.operation} ended without a terminal event`);
   }
 
-  private async send(call: IfxClientCall): Promise<Response> {
+  private async send(call: IfxOutboundCall): Promise<Response> {
     const configured = this.options.requestHeaders;
     const requestHeaders = typeof configured === "function" ? await configured() : configured;
     const headers = new Headers(requestHeaders);
@@ -109,14 +109,14 @@ export class HttpBinding extends IfxClientBinding {
   }
 }
 
-export class HttpClient {
-  static async connect<Client>(
-    service: IfxClientConstructor<Client>,
+export class HttpSdk {
+  static async connect<Sdk>(
+    sdkConstructor: IfxServiceConstructor<Sdk>,
     baseUrl: string,
     options: Omit<HttpBindingOptions, "url"> = {},
-  ): Promise<Client> {
-    const url = HttpBinding.serviceUrl(baseUrl, service.address);
-    return new service(new HttpBinding({ ...options, url }));
+  ): Promise<Sdk> {
+    const url = HttpBinding.serviceUrl(baseUrl, sdkConstructor.address);
+    return new sdkConstructor(new HttpBinding({ ...options, url }));
   }
 }
 

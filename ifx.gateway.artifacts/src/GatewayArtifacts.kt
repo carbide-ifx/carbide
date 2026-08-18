@@ -4,7 +4,7 @@ import ifx.gateway.contract.GatewayProjection
 import ifx.gateway.contract.GatewayProjectionProvider
 import ifx.gateway.ktor.GatewayHttpDeployment
 import ifx.gateway.ktor.renderOpenApi
-import ifx.gateway.typescript.renderTypeScriptClient
+import ifx.gateway.typescript.renderTypeScriptSdk
 import org.jetbrains.amper.plugins.Classpath
 import org.jetbrains.amper.plugins.CompilationArtifact
 import org.jetbrains.amper.plugins.Input
@@ -67,8 +67,8 @@ internal fun renderGatewayArtifacts(projections: List<GatewayProjection>): List<
         val apiVersion = "${projection.version ?: 1}.0.0"
         listOf(
             GatewayArtifact(
-                relativePath = directory.resolve("client.ts"),
-                content = projection.renderTypeScriptClient(),
+                relativePath = directory.resolve("sdk.ts"),
+                content = projection.renderTypeScriptSdk(),
             ),
             GatewayArtifact(
                 relativePath = directory.resolve("openapi.json"),

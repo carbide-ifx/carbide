@@ -1,7 +1,7 @@
 {
-  "name": "@ifx/rpc-client-jsonrpc",
+  "name": "@ifx/rpc-sdk-rsocket",
   "version": "0.0.8",
-  "description": "JSON-RPC over HTTP TypeScript client for iFX RPC services",
+  "description": "RSocket transport for the iFX TypeScript SDK",
   "license": "UNLICENSED",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,7 +13,11 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-client": "0.0.8"
+    "@ifx/rpc-sdk": "0.0.8",
+    "buffer": "6.0.3",
+    "rsocket-composite-metadata": "1.0.0-alpha.3",
+    "rsocket-core": "1.0.0-alpha.3",
+    "rsocket-websocket-client": "1.0.0-alpha.3"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

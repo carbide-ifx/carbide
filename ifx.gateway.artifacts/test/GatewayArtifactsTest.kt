@@ -17,10 +17,10 @@ class GatewayArtifactsTest {
         val artifacts = renderGatewayArtifacts(listOf(projection("product-web", 2)))
 
         assertEquals(
-            listOf("product-web/v2/client.ts", "product-web/v2/openapi.json"),
+            listOf("product-web/v2/sdk.ts", "product-web/v2/openapi.json"),
             artifacts.map { artifact -> artifact.relativePath.toString() },
         )
-        assertTrue(artifacts.first().content.contains("ProductWebClient"))
+        assertTrue(artifacts.first().content.contains("ProductWebSdk"))
         assertTrue(artifacts.last().content.contains("\"version\":\"2.0.0\""))
     }
 

@@ -1,3 +1,3 @@
 export * from "./IfxBinding";
-export * from "./IfxClientBinding";
+export * from "./IfxBindingBase";
 export * from "./ServiceDescription";

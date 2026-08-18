@@ -1,0 +1,20 @@
+{
+  "name": "@ifx/rpc-sdk",
+  "version": "0.0.8",
+  "description": "Protocol-neutral TypeScript SDK runtime for iFX RPC services",
+  "license": "UNLICENSED",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build",
+    "test:generated": "tsc -p ../tsconfig.generated.json"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.2",
+    "typescript": "7.0.2"
+  }
+}

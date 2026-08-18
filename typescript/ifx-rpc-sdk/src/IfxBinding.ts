@@ -8,9 +8,9 @@ export interface IfxBinding {
   close(): void;
 }
 
-export interface IfxClientConstructor<Client> {
+export interface IfxServiceConstructor<Sdk> {
   readonly address: string;
-  new(binding: IfxBinding): Client;
+  new(binding: IfxBinding): Sdk;
 }
 
 export interface IfxMessage {
@@ -20,24 +20,24 @@ export interface IfxMessage {
 
 export type IfxInteraction = "fireAndForget" | "requestResponse" | "requestStream";
 
-export interface IfxClientCall {
+export interface IfxOutboundCall {
   readonly interaction: IfxInteraction;
   readonly operation: string;
   readonly message: IfxMessage;
 }
 
-export type IfxClientInterceptorNext = (call: IfxClientCall) => AsyncIterable<IfxMessage>;
+export type IfxOutboundInterceptorNext = (call: IfxOutboundCall) => AsyncIterable<IfxMessage>;
 
-export interface IfxClientInterceptor {
-  intercept(call: IfxClientCall, next: IfxClientInterceptorNext): AsyncIterable<IfxMessage>;
+export interface IfxOutboundInterceptor {
+  intercept(call: IfxOutboundCall, next: IfxOutboundInterceptorNext): AsyncIterable<IfxMessage>;
 }
 
 export type IfxHeaders = Readonly<Record<string, unknown>>;
 export type IfxHeaderProvider = () => IfxHeaders | Promise<IfxHeaders>;
 
-export interface IfxClientBindingOptions {
+export interface IfxBindingOptions {
   readonly headers?: IfxHeaders | IfxHeaderProvider;
-  readonly interceptors?: readonly IfxClientInterceptor[];
+  readonly interceptors?: readonly IfxOutboundInterceptor[];
 }
 
 export interface GatewayFailure {

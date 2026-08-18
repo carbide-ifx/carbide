@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { Buffer } = require("node:buffer");
-const { JsonRpcBinding, JsonRpcClient, JsonRpcError } = require("../dist");
+const { JsonRpcBinding, JsonRpcSdk, JsonRpcError } = require("../dist");
 
 const IFX_HEADERS = "Ifx-Message-Headers";
 
@@ -23,7 +23,7 @@ test("request-response uses JSON-RPC 2.0 and IFX headers", async () => {
       },
     );
   };
-  class StatusServiceClient {
+  class StatusServiceSdk {
     static address = "example.StatusService";
     constructor(binding) {
       this.binding = binding;
@@ -33,12 +33,12 @@ test("request-response uses JSON-RPC 2.0 and IFX headers", async () => {
     }
   }
 
-  const client = await JsonRpcClient.connect(StatusServiceClient, "http://localhost:8081/", {
+  const sdk = await JsonRpcSdk.connect(StatusServiceSdk, "http://localhost:8081/", {
     fetch,
     headers: { trace: "request-ø" },
   });
 
-  assert.deepEqual(await client.status(), { ready: true });
+  assert.deepEqual(await sdk.status(), { ready: true });
   assert.equal(requestedUrl, "http://localhost:8081/example.StatusService");
   assert.deepEqual(request, { jsonrpc: "2.0", method: "status()", id: 1 });
   assert.deepEqual(decodeHeaders(requestHeaders[IFX_HEADERS]), { trace: "request-ø" });

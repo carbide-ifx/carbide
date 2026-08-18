@@ -1,19 +1,19 @@
 import {
   type IfxBinding,
-  type IfxClientBindingOptions,
-  type IfxClientCall,
-  type IfxClientInterceptorNext,
+  type IfxBindingOptions,
   type IfxHeaderProvider,
   type IfxHeaders,
   type IfxInteraction,
   type IfxMessage,
+  type IfxOutboundCall,
+  type IfxOutboundInterceptorNext,
 } from "./IfxBinding";
 
-export abstract class IfxClientBinding implements IfxBinding {
+export abstract class IfxBindingBase implements IfxBinding {
   private readonly headers: IfxHeaders | IfxHeaderProvider;
-  private readonly interceptors: IfxClientBindingOptions["interceptors"];
+  private readonly interceptors: IfxBindingOptions["interceptors"];
 
-  protected constructor(options: IfxClientBindingOptions = {}) {
+  protected constructor(options: IfxBindingOptions = {}) {
     this.headers = options.headers ?? {};
     this.interceptors = options.interceptors ?? [];
   }
@@ -48,7 +48,7 @@ export abstract class IfxClientBinding implements IfxBinding {
 
   abstract close(): void;
 
-  protected abstract exchange(call: IfxClientCall): AsyncIterable<IfxMessage>;
+  protected abstract exchange(call: IfxOutboundCall): AsyncIterable<IfxMessage>;
 
   private invoke(
     interaction: IfxInteraction,
@@ -60,12 +60,12 @@ export abstract class IfxClientBinding implements IfxBinding {
     return (async function* invokeWithHeaders() {
       const headerValues = typeof self.headers === "function" ? await self.headers() : self.headers;
       const body = hasRequest ? encodeJson(request, operation) : "";
-      const call: IfxClientCall = {
+      const call: IfxOutboundCall = {
         interaction,
         operation,
         message: { header: JSON.stringify(headerValues), body },
       };
-      let next: IfxClientInterceptorNext = self.exchange.bind(self);
+      let next: IfxOutboundInterceptorNext = self.exchange.bind(self);
       for (const interceptor of [...(self.interceptors ?? [])].reverse()) {
         const following = next;
         next = (interceptedCall) => interceptor.intercept(interceptedCall, following);

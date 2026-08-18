@@ -1,14 +1,14 @@
 import {
-  IfxClientBinding,
-  type IfxClientBindingOptions,
-  type IfxClientCall,
-  type IfxClientConstructor,
+  IfxBindingBase,
+  type IfxBindingOptions,
+  type IfxOutboundCall,
+  type IfxServiceConstructor,
   type IfxMessage,
-} from "@ifx/rpc-client";
+} from "@ifx/rpc-sdk";
 
 const IFX_HEADERS = "Ifx-Message-Headers";
 
-export interface JsonRpcBindingOptions extends IfxClientBindingOptions {
+export interface JsonRpcBindingOptions extends IfxBindingOptions {
   readonly url: string;
   readonly fetch?: typeof globalThis.fetch;
 }
@@ -24,7 +24,7 @@ export class JsonRpcError extends Error {
   }
 }
 
-export class JsonRpcBinding extends IfxClientBinding {
+export class JsonRpcBinding extends IfxBindingBase {
   static serviceUrl(baseUrl: string, serviceAddress: string): string {
     if (baseUrl.length === 0) throw new Error("The iFX JSON-RPC base URL cannot be empty");
     if (serviceAddress.length === 0) throw new Error("The iFX service address cannot be empty");
@@ -42,7 +42,7 @@ export class JsonRpcBinding extends IfxClientBinding {
 
   close(): void {}
 
-  protected exchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  protected exchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     switch (call.interaction) {
       case "fireAndForget":
         return this.notificationExchange(call);
@@ -53,14 +53,14 @@ export class JsonRpcBinding extends IfxClientBinding {
     }
   }
 
-  private async *notificationExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *notificationExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const response = await this.send(call);
     if (!response.ok) {
       throw new Error(`JSON-RPC notification ${call.operation} failed with HTTP ${response.status}`);
     }
   }
 
-  private async *requestResponseExchange(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *requestResponseExchange(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     const id = this.nextId++;
     const response = await this.send(call, id);
     const payload = await parseResponse(response, call.operation);
@@ -83,11 +83,11 @@ export class JsonRpcBinding extends IfxClientBinding {
     };
   }
 
-  private async *unsupportedStream(call: IfxClientCall): AsyncIterable<IfxMessage> {
+  private async *unsupportedStream(call: IfxOutboundCall): AsyncIterable<IfxMessage> {
     throw new Error(`Streaming is not supported by JSON-RPC over HTTP: ${call.operation}`);
   }
 
-  private send(call: IfxClientCall, id?: number): Promise<Response> {
+  private send(call: IfxOutboundCall, id?: number): Promise<Response> {
     const request: Record<string, unknown> = {
       jsonrpc: "2.0",
       method: call.operation,
@@ -106,14 +106,14 @@ export class JsonRpcBinding extends IfxClientBinding {
   }
 }
 
-export class JsonRpcClient {
-  static async connect<Client>(
-    service: IfxClientConstructor<Client>,
+export class JsonRpcSdk {
+  static async connect<Sdk>(
+    sdkConstructor: IfxServiceConstructor<Sdk>,
     baseUrl: string,
     options: Omit<JsonRpcBindingOptions, "url"> = {},
-  ): Promise<Client> {
-    const url = JsonRpcBinding.serviceUrl(baseUrl, service.address);
-    return new service(new JsonRpcBinding({ ...options, url }));
+  ): Promise<Sdk> {
+    const url = JsonRpcBinding.serviceUrl(baseUrl, sdkConstructor.address);
+    return new sdkConstructor(new JsonRpcBinding({ ...options, url }));
   }
 }
 

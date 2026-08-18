@@ -3,7 +3,7 @@
 Browser UI provided by the optional `ifx.service-explorer` module. Its
 `ServiceExplorer` composes the general `ifx.host.webapp` host, reads the
 registered service catalog from `IActuator.catalog()`, and invokes services with
-`@ifx/rpc-client-rsocket`. There is no separate HTTP catalog endpoint.
+`@ifx/rpc-sdk-rsocket`. There is no separate HTTP catalog endpoint.
 
 The Service Explorer is a normal npm web application. Its build writes
 `index.html` and the bundled JavaScript to `dist/`; no web assets are generated

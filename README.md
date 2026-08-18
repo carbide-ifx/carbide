@@ -216,10 +216,10 @@ task writes one deterministic directory per public address:
 ```text
 gateway/
 ├── product-web/
-│   ├── client.ts
+│   ├── sdk.ts
 │   └── openapi.json
 └── product-web/v2/
-    ├── client.ts
+    ├── sdk.ts
     └── openapi.json
 ```
 
@@ -242,10 +242,10 @@ val openApiJson = ProductWebApi.renderOpenApi(
 )
 ```
 
-`renderTypeScriptClient()` generates a protocol-neutral client with manager
+`renderTypeScriptSdk()` generates a protocol-neutral SDK with manager
 namespaces and only the projected operations while preserving the generated DTO
-shapes. Use it with either `@ifx/rpc-client-rsocket` or the separate
-`@ifx/rpc-client-http` binding. The latter accepts ordinary Fetch request headers
+shapes. Use it with either `@ifx/rpc-sdk-rsocket` or the separate
+`@ifx/rpc-sdk-http` binding. The latter accepts ordinary Fetch request headers
 for browser authentication and decodes NDJSON incrementally.
 
 The `ifx.subsystem` bundle provides an opinionated default host with RSocket,
@@ -585,7 +585,7 @@ and streaming results.
 
 For example, a host resolved to port `8080` exposes the UI at
 `http://localhost:8080/`. The webapp calls `IActuator.catalog()` through the
-ordinary generated service client.
+ordinary generated service SDK.
 
 ```kotlin
 val host = Host.default(
@@ -600,44 +600,44 @@ built directory in the application or container distribution. Leave
 `serviceExplorerDirectory` unset when the explorer is deployed separately.
 
 Generated TypeScript contracts export a `{Service}Description` value in
-addition to their typed client. It contains the same operations and runtime
+addition to their typed SDK. It contains the same operations and runtime
 wire-type schema used by the hosted explorer, so other development tools can
 reuse the metadata without attempting to reflect on erased TypeScript types.
 
 Each generated contract also contains a protocol-neutral concrete
-`{Service}Client`. Choose a separate protocol package when connecting it. The
-protocol client appends the generated service address to its base URL, while the
-generated service client sends the exact Kotlin operation signatures through
-the selected binding:
+`{Service}Sdk`. Choose a separate protocol package when connecting it. The
+protocol SDK entrypoint appends the generated service address to its base URL,
+while the generated service SDK sends the exact Kotlin operation signatures
+through the selected binding:
 
 ```typescript
-import { RSocketClient } from "@ifx/rpc-client-rsocket";
-import { JsonRpcClient } from "@ifx/rpc-client-jsonrpc";
-import { ISalesManagerClient } from "./generated/ISalesManager";
+import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
+import { JsonRpcSdk } from "@ifx/rpc-sdk-jsonrpc";
+import { ISalesManagerSdk } from "./generated/ISalesManager";
 
-const streamingClient = await RSocketClient.connect(
-    ISalesManagerClient,
+const streamingSdk = await RSocketSdk.connect(
+    ISalesManagerSdk,
     "ws://localhost:7000",
 );
-const httpClient = await JsonRpcClient.connect(
-    ISalesManagerClient,
+const jsonRpcSdk = await JsonRpcSdk.connect(
+    ISalesManagerSdk,
     "http://localhost:7001",
 );
 
 try {
-  for await (const product of streamingClient.listProducts()) {
+  for await (const product of streamingSdk.listProducts()) {
     console.log(product)
   }
 } finally {
-  streamingClient.close()
-  httpClient.close()
+  streamingSdk.close()
+  jsonRpcSdk.close()
 }
 ```
 
-`@ifx/rpc-client` contains only the shared binding, generated-client, service
-description, header, and interceptor contracts. `@ifx/rpc-client-rsocket` owns
+`@ifx/rpc-sdk` contains only the shared binding, generated SDK, service
+description, header, and interceptor contracts. `@ifx/rpc-sdk-rsocket` owns
 RSocket/WebSocket dependencies and supports all interaction types.
-`@ifx/rpc-client-jsonrpc` uses Fetch and supports notifications and
+`@ifx/rpc-sdk-jsonrpc` uses Fetch and supports notifications and
 request/response; request streams fail explicitly because JSON-RPC over HTTP
 has no standard streaming interaction. The RSocket dependencies remain pinned
 to `1.0.0-alpha.3`; this upstream API is still an alpha.

@@ -1,13 +1,13 @@
-# @ifx/rpc-client-rsocket
+# @ifx/rpc-sdk-rsocket
 
-RSocket over WebSocket client for generated iFX TypeScript service clients.
+RSocket over WebSocket transport for generated iFX TypeScript SDKs.
 
 ```ts
-import { RSocketClient } from "@ifx/rpc-client-rsocket";
-import { ISalesManagerClient } from "./generated/ISalesManager";
+import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
+import { ISalesManagerSdk } from "./generated/ISalesManager";
 
-const client = await RSocketClient.connect(
-  ISalesManagerClient,
+const sdk = await RSocketSdk.connect(
+  ISalesManagerSdk,
   "ws://localhost:7000",
   {
     headers: () => ({
@@ -19,11 +19,11 @@ const client = await RSocketClient.connect(
 );
 
 try {
-  for await (const product of client.listProducts()) {
+  for await (const product of sdk.listProducts()) {
     console.log(product);
   }
 } finally {
-  client.close();
+  sdk.close();
 }
 ```
 

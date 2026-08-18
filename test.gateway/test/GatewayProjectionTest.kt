@@ -3,7 +3,7 @@ package test.gateway
 import ifx.gateway.bind
 import ifx.gateway.endpointSource
 import ifx.gateway.contract.GatewayFailureException
-import ifx.gateway.typescript.renderTypeScriptClient
+import ifx.gateway.typescript.renderTypeScriptSdk
 import ifx.gateway.ktor.renderOpenApi
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
@@ -75,8 +75,8 @@ class GatewayProjectionTest {
     }
 
     @Test
-    fun `projected TypeScript client preserves DTOs and groups only exposed operations`() {
-        val source = ProductWebApi.renderTypeScriptClient()
+    fun `projected TypeScript SDK preserves DTOs and groups only exposed operations`() {
+        val source = ProductWebApi.renderTypeScriptSdk()
 
         assertTrue(source.contains("readonly productAccess"))
         assertTrue(source.contains("filter(criteria: ProductCriteria)"))

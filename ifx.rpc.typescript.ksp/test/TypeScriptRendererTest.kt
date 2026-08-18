@@ -54,7 +54,7 @@ class TypeScriptRendererTest {
             import {
               type IfxBinding as __IfxBinding,
               type IfxServiceDescription as __IfxServiceDescription,
-            } from "@ifx/rpc-client";
+            } from "@ifx/rpc-sdk";
 
             export const CatalogServiceAddress = "example.CatalogService";
 
@@ -88,7 +88,7 @@ class TypeScriptRendererTest {
               find(criteria: CatalogService.FindRequest): AsyncIterable<CatalogService.FindResponse>;
             }
 
-            export class CatalogServiceClient implements CatalogService {
+            export class CatalogServiceSdk implements CatalogService {
               static readonly address = CatalogServiceAddress;
 
               constructor(private readonly binding: __IfxBinding) {}

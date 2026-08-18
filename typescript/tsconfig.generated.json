@@ -8,14 +8,14 @@
     "moduleResolution": "Node16",
     "noEmit": true,
     "paths": {
-      "@ifx/rpc-client": [
-        "./ifx-rpc-client/src/index.ts"
+      "@ifx/rpc-sdk": [
+        "./ifx-rpc-sdk/src/index.ts"
       ],
-      "@ifx/rpc-client-jsonrpc": [
-        "./ifx-rpc-client-jsonrpc/src/index.ts"
+      "@ifx/rpc-sdk-jsonrpc": [
+        "./ifx-rpc-sdk-jsonrpc/src/index.ts"
       ],
-      "@ifx/rpc-client-rsocket": [
-        "./ifx-rpc-client-rsocket/src/index.ts"
+      "@ifx/rpc-sdk-rsocket": [
+        "./ifx-rpc-sdk-rsocket/src/index.ts"
       ]
     },
     "strict": true,
@@ -23,6 +23,6 @@
   },
   "include": [
     "../build/generated/test.test-system/main/resources/ksp/**/*.ts",
-    "generated-client-smoke.ts"
+    "generated-sdk-smoke.ts"
   ]
 }

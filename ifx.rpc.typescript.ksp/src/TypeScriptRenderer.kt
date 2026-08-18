@@ -9,7 +9,7 @@ internal class TypeScriptRenderer {
             appendLine("import {")
             appendLine("  type IfxBinding as __IfxBinding,")
             appendLine("  type IfxServiceDescription as __IfxServiceDescription,")
-            appendLine("} from \"@ifx/rpc-client\";")
+            appendLine("} from \"@ifx/rpc-sdk\";")
             appendLine()
             appendLine("export const ${identifier(service.name)}Address = ${stringLiteral(service.address)};")
             appendLine()
@@ -38,13 +38,13 @@ internal class TypeScriptRenderer {
             appendLine("}")
 
             appendLine()
-            appendLine("export class ${identifier(service.name)}Client implements ${identifier(service.name)} {")
+            appendLine("export class ${identifier(service.name)}Sdk implements ${identifier(service.name)} {")
             appendLine("  static readonly address = ${identifier(service.name)}Address;")
             appendLine()
             appendLine("  constructor(private readonly binding: __IfxBinding) {}")
             appendLine()
             service.operations.forEachIndexed { index, operation ->
-                append(renderClientMethod(service, operation))
+                append(renderSdkMethod(service, operation))
                 if (index != service.operations.lastIndex) appendLine()
             }
             appendLine()
@@ -126,7 +126,7 @@ internal class TypeScriptRenderer {
             " target: ${renderTypeReference(declaration.target)} }"
     }
 
-    private fun renderClientMethod(service: ServiceModel, operation: OperationModel): String {
+    private fun renderSdkMethod(service: ServiceModel, operation: OperationModel): String {
         val serviceName = identifier(service.name)
         val parameter = operation.parameterName?.let {
             "${identifier(it)}: $serviceName.${identifier(operation.typeName)}Request"
@@ -199,7 +199,7 @@ internal class TypeScriptRenderer {
         val generatedNames = setOf(
             service.name,
             "${service.name}Address",
-            "${service.name}Client",
+            "${service.name}Sdk",
             "${service.name}Description",
         )
         return service.declarations.associate { declaration ->
