@@ -96,7 +96,7 @@ internal class ServiceDescriptionRenderer {
         declarations[name] = when {
             declaration.classKind == ClassKind.ENUM_CLASS -> stringUnion(declaration, name)
             Modifier.SEALED in declaration.modifiers -> sealedUnion(declaration, name)
-            Modifier.VALUE in declaration.modifiers -> alias(declaration, name)
+            declaration.isValueClass() -> alias(declaration, name)
             else -> objectType(declaration, name)
         }
         collecting.remove(name)
@@ -186,6 +186,10 @@ internal class ServiceDescriptionRenderer {
 
     private fun KSAnnotated.isTransient(): Boolean = annotation(TRANSIENT) != null
 
+    // KSP exposes dependency-loaded value classes as INLINE, while source symbols use VALUE.
+    private fun KSClassDeclaration.isValueClass(): Boolean =
+        Modifier.VALUE in modifiers || Modifier.INLINE in modifiers || annotation(JVM_INLINE) != null
+
     private fun KSDeclaration.serialName(): String = annotation(SERIAL_NAME)
         ?.arguments?.firstOrNull { it.name?.asString() == "value" }
         ?.value as? String ?: simpleName.asString()
@@ -245,6 +249,7 @@ internal class ServiceDescriptionRenderer {
         const val TRANSIENT = "kotlinx.serialization.Transient"
         const val REQUIRED = "kotlinx.serialization.Required"
         const val JSON_CLASS_DISCRIMINATOR = "kotlinx.serialization.json.JsonClassDiscriminator"
+        const val JVM_INLINE = "kotlin.jvm.JvmInline"
 
         val NUMBER_TYPES = setOf(
             "kotlin.Byte", "kotlin.Short", "kotlin.Int", "kotlin.Long", "kotlin.Float", "kotlin.Double",

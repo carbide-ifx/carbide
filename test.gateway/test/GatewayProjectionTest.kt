@@ -9,6 +9,7 @@ import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.contract.Message
+import ifx.protocol.contract.TypeDescription
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
@@ -86,6 +87,18 @@ class GatewayProjectionTest {
         assertTrue(source.contains("\"productAccess/filter\""))
         assertFalse(source.contains("notifyProductViewed"))
         assertFalse(source.contains("productAccess/store"))
+    }
+
+    @Test
+    fun `projected TypeScript SDK renders JVM inline value classes as their wire type`() {
+        val productId = ProductWebApi.services
+            .flatMap { service -> service.descriptor.description.types }
+            .single { type -> type.name == "access.product.contract.ProductId" }
+        val source = ProductWebApi.renderTypeScriptSdk()
+
+        assertTrue(productId is TypeDescription.Alias)
+        assertTrue(source.contains("export type ProductId = string;"))
+        assertFalse(source.contains("export interface ProductId"))
     }
 
     @Test

@@ -3,7 +3,7 @@ settings:
     version: 2.4.10
   publishing:
     group: sonat
-    version: 0.0.8
+    version: 0.0.9
     enabled: true
     publishSources: true
 

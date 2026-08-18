@@ -11,7 +11,7 @@ settings:
         - ../ifx.subsystem.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.8
+        dependency: sonat:ifx-rpc-compiler-plugin:0.0.9
 
 dependencies:
   - ../test.service-contracts

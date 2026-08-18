@@ -1,6 +1,6 @@
 {
   "name": "@ifx/rpc-sdk-http",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Conventional HTTP transport for iFX gateway SDKs",
   "license": "UNLICENSED",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.8"
+    "@ifx/rpc-sdk": "0.0.9"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

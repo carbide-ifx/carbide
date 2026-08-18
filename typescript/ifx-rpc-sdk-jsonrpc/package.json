@@ -1,6 +1,6 @@
 {
   "name": "@ifx/rpc-sdk-jsonrpc",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "JSON-RPC transport for the iFX TypeScript SDK",
   "license": "UNLICENSED",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.8"
+    "@ifx/rpc-sdk": "0.0.9"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

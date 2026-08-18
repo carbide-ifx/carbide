@@ -3,8 +3,19 @@ import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
 import {
   type Bike,
   type Car,
+  type FindByIdRequest,
+  type IProductAccess,
+  type ProductId,
   IProductAccessSdk,
 } from "../build/generated/test.test-system/main/resources/ksp/access/product/contract/IProductAccess";
+
+type Assert<T extends true> = T;
+type IsExact<Left, Right> =
+  (<Value>() => Value extends Left ? 1 : 2) extends
+  (<Value>() => Value extends Right ? 1 : 2) ? true : false;
+
+type ProductIdUsesItsSerializedWireType = Assert<IsExact<ProductId, string>>;
+type OperationRequestPreservesDtoType = Assert<IsExact<IProductAccess.FindByIdRequest, FindByIdRequest>>;
 
 const dependencyDtoShapes: [Bike, Car] = [
   { id: "bike-1", numGears: 12 },
@@ -21,3 +32,7 @@ async function chooseProtocol(): Promise<void> {
 
 void chooseProtocol;
 void dependencyDtoShapes;
+const productIdUsesItsSerializedWireType: ProductIdUsesItsSerializedWireType = true;
+void productIdUsesItsSerializedWireType;
+const operationRequestPreservesDtoType: OperationRequestPreservesDtoType = true;
+void operationRequestPreservesDtoType;

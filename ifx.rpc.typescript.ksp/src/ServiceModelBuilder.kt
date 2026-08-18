@@ -138,7 +138,7 @@ internal class ServiceModelBuilder {
         declarations[qualifiedName] = when {
             declaration.classKind == ClassKind.ENUM_CLASS -> enumDeclaration(declaration, qualifiedName)
             Modifier.SEALED in declaration.modifiers -> sealedDeclaration(declaration, qualifiedName)
-            Modifier.VALUE in declaration.modifiers -> valueDeclaration(declaration, qualifiedName)
+            declaration.isValueClass() -> valueDeclaration(declaration, qualifiedName)
             declaration.classKind == ClassKind.INTERFACE || Modifier.ABSTRACT in declaration.modifiers ->
                 fail("Open polymorphic type $qualifiedName is not supported; use a sealed @Serializable hierarchy", declaration)
             else -> objectDeclaration(declaration, qualifiedName)
@@ -270,6 +270,10 @@ internal class ServiceModelBuilder {
 
     private fun KSAnnotated.isTransient(): Boolean = annotation(TRANSIENT) != null
 
+    // KSP exposes dependency-loaded value classes as INLINE, while source symbols use VALUE.
+    private fun KSClassDeclaration.isValueClass(): Boolean =
+        Modifier.VALUE in modifiers || Modifier.INLINE in modifiers || annotation(JVM_INLINE) != null
+
     private fun KSDeclaration.serialName(): String = annotation(SERIAL_NAME)
         ?.arguments?.firstOrNull { it.name?.asString() == "value" }
         ?.value as? String ?: simpleName.asString()
@@ -321,6 +325,7 @@ internal class ServiceModelBuilder {
         const val TRANSIENT = "kotlinx.serialization.Transient"
         const val REQUIRED = "kotlinx.serialization.Required"
         const val JSON_CLASS_DISCRIMINATOR = "kotlinx.serialization.json.JsonClassDiscriminator"
+        const val JVM_INLINE = "kotlin.jvm.JvmInline"
 
         val NUMBER_TYPES = setOf(
             "kotlin.Byte", "kotlin.Short", "kotlin.Int", "kotlin.Long", "kotlin.Float", "kotlin.Double",

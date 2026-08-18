@@ -707,29 +707,37 @@ function createJsonInput(reference: IfxTypeReference, context: SchemaContext, la
   return { element: wrapper, read: control.read };
 }
 
-function createJsonControl(reference: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
-  if (reference.type === "nullable") return createNullableJsonControl(reference.value, context, label);
+function createJsonControl(
+  reference: IfxTypeReference,
+  context: SchemaContext,
+  label: string,
+  ancestors: ReadonlySet<string> = new Set(),
+): JsonInput {
+  if (reference.type === "nullable") return createNullableJsonControl(reference.value, context, label, ancestors);
   if (reference.type === "parameter") {
-    return createJsonControl(context.parameters.get(reference.name) ?? { type: "string" }, context, label);
+    return createJsonControl(context.parameters.get(reference.name) ?? { type: "string" }, context, label, ancestors);
   }
   if (reference.type === "string") return createStringJsonControl(label);
   if (reference.type === "number") return createNumberJsonControl(label);
   if (reference.type === "boolean") return createBooleanJsonControl(label);
   if (reference.type === "void") return staticJsonControl("null", undefined, "json-null");
-  if (reference.type === "array") return createArrayJsonControl(reference.element, context, label);
+  if (reference.type === "array") return createArrayJsonControl(reference.element, context, label, ancestors);
   if (reference.type === "record") {
     return createRawJsonControl(pretty(exampleValue(reference, context)), label);
   }
 
   const definition = context.definitions.get(reference.name);
   if (!definition) return createRawJsonControl("{}", label);
+  const identity = referenceIdentity(reference);
+  if (ancestors.has(identity)) return createRawJsonControl("{}", label);
+  const nestedAncestors = new Set(ancestors).add(identity);
   const parameters = new Map(context.parameters);
   definition.typeParameters.forEach((name, index) => parameters.set(name, reference.arguments[index] ?? { type: "string" }));
   const nested: SchemaContext = { definitions: context.definitions, parameters };
-  if (definition.type === "alias") return createJsonControl(definition.target, nested, label);
+  if (definition.type === "alias") return createJsonControl(definition.target, nested, label, nestedAncestors);
   if (definition.type === "stringUnion") return createEnumJsonControl(definition.values, label);
-  if (definition.type === "sealedUnion") return createUnionJsonControl(definition, nested, label);
-  return createObjectJsonControl(definition, nested);
+  if (definition.type === "sealedUnion") return createUnionJsonControl(definition, nested, label, nestedAncestors);
+  return createObjectJsonControl(definition, nested, nestedAncestors);
 }
 
 function createStringJsonControl(label: string): JsonInput {
@@ -784,7 +792,12 @@ function createEnumJsonControl(values: readonly string[], label: string): JsonIn
   return { element: wrapper, read: () => select.value };
 }
 
-function createNullableJsonControl(reference: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
+function createNullableJsonControl(
+  reference: IfxTypeReference,
+  context: SchemaContext,
+  label: string,
+  ancestors: ReadonlySet<string>,
+): JsonInput {
   const wrapper = document.createElement("span");
   let isNull = true;
   let active: JsonInput | undefined;
@@ -797,7 +810,7 @@ function createNullableJsonControl(reference: IfxTypeReference, context: SchemaC
     button.title = `Set ${label}`;
     button.addEventListener("click", () => {
       isNull = false;
-      active = createJsonControl(reference, context, label);
+      active = createJsonControl(reference, context, label, ancestors);
       const state = document.createElement("span");
       state.className = "json-null-active";
       const checkbox = document.createElement("input");
@@ -819,10 +832,11 @@ function createNullableJsonControl(reference: IfxTypeReference, context: SchemaC
 function createObjectJsonControl(
   definition: Extract<IfxTypeDescription, { type: "object" }>,
   context: SchemaContext,
+  ancestors: ReadonlySet<string>,
 ): JsonInput {
   const wrapper = document.createElement("span");
   wrapper.className = "json-composite";
-  const members = createObjectMembers(definition, context);
+  const members = createObjectMembers(definition, context, ancestors);
   wrapper.append(document.createTextNode("{"), members.element, document.createTextNode("}"));
   return { element: wrapper, read: members.read };
 }
@@ -830,12 +844,13 @@ function createObjectJsonControl(
 function createObjectMembers(
   definition: Extract<IfxTypeDescription, { type: "object" }>,
   context: SchemaContext,
+  ancestors: ReadonlySet<string>,
 ): JsonObjectMembers {
   const container = document.createElement("span");
   container.className = "json-indent";
   const controls = definition.properties.map((property) => [
     property.name,
-    createJsonControl(property.type, context, property.name),
+    createJsonControl(property.type, context, property.name, ancestors),
   ] as const);
   controls.forEach(([name, control], index) => {
     const row = document.createElement("span");
@@ -856,12 +871,17 @@ function createObjectMembers(
   };
 }
 
-function createArrayJsonControl(elementType: IfxTypeReference, context: SchemaContext, label: string): JsonInput {
+function createArrayJsonControl(
+  elementType: IfxTypeReference,
+  context: SchemaContext,
+  label: string,
+  ancestors: ReadonlySet<string>,
+): JsonInput {
   const wrapper = document.createElement("span");
   wrapper.className = "json-composite";
   const rows = document.createElement("span");
   rows.className = "json-indent";
-  const controls: JsonInput[] = [createJsonControl(elementType, context, `${label} item 0`)];
+  const controls: JsonInput[] = [createJsonControl(elementType, context, `${label} item 0`, ancestors)];
   const refresh = () => {
     rows.replaceChildren();
     controls.forEach((control, index) => {
@@ -884,7 +904,7 @@ function createArrayJsonControl(elementType: IfxTypeReference, context: SchemaCo
     add.className = "json-array-action";
     add.textContent = "+ item";
     add.addEventListener("click", () => {
-      controls.push(createJsonControl(elementType, context, `${label} item ${controls.length}`));
+      controls.push(createJsonControl(elementType, context, `${label} item ${controls.length}`, ancestors));
       refresh();
     });
     const addRow = document.createElement("span");
@@ -901,6 +921,7 @@ function createUnionJsonControl(
   definition: Extract<IfxTypeDescription, { type: "sealedUnion" }>,
   context: SchemaContext,
   label: string,
+  ancestors: ReadonlySet<string>,
 ): JsonInput {
   const wrapper = document.createElement("span");
   wrapper.className = "json-composite";
@@ -922,7 +943,8 @@ function createUnionJsonControl(
     const variant = definition.variants.find((candidate) => candidate.serialName === selected) ?? definition.variants[0];
     const resolved = variant && resolveObjectReference(unionVariantType(variant), context);
     if (resolved) {
-      const members = createObjectMembers(resolved.definition, resolved.context);
+      const variantAncestors = new Set(ancestors).add(referenceIdentity(unionVariantType(variant)));
+      const members = createObjectMembers(resolved.definition, resolved.context, variantAncestors);
       members.element.style.paddingLeft = "0";
       variantRead = members.read;
       slot.replaceChildren(members.element);
@@ -959,7 +981,9 @@ function resolveObjectReference(reference: IfxTypeReference, context: SchemaCont
   return { definition, context: nested };
 }
 
-function unionVariantType(variant: IfxUnionVariantDescription): IfxTypeReference {
+function unionVariantType(
+  variant: IfxUnionVariantDescription,
+): Extract<IfxTypeReference, { type: "named" }> {
   const reference = variant.type as IfxUnionVariantDescription["type"] & { readonly type?: "named" };
   return reference.type === "named"
     ? reference
@@ -1002,6 +1026,10 @@ function typeLabel(reference: IfxTypeReference): string {
   }
 }
 
+function referenceIdentity(reference: Extract<IfxTypeReference, { type: "named" }>): string {
+  return `${reference.name}<${reference.arguments.map(typeLabel).join(",")}>`;
+}
+
 function exampleValue(
   reference: IfxTypeReference,
   context: SchemaContext,
@@ -1021,7 +1049,7 @@ function exampleValue(
 
   const definition = context.definitions.get(reference.name);
   if (!definition) return {};
-  const identity = `${reference.name}<${reference.arguments.map(typeLabel).join(",")}>`;
+  const identity = referenceIdentity(reference);
   if (ancestors.has(identity)) return {};
   const nestedAncestors = new Set(ancestors).add(identity);
   const parameters = new Map(context.parameters);

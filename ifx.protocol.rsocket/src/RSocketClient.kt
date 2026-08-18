@@ -46,7 +46,7 @@ private const val MAX_RECONNECT_DELAY_MILLIS = 5_000L
 val SUBSYSTEM_KEEP_ALIVE: KeepAlive = KeepAlive(interval = 5.seconds, maxLifetime = 15.seconds)
 
 /**
- * The RSocket protocol defaults, for callers reaching a subsystem from outside the backend — a
+ * The RSocket protocol defaults for callers reaching a subsystem from outside the backend — a
  * browser tab, a mobile app, anything that is routinely suspended or on a slow network, where the
  * subsystem window would drop healthy connections during ordinary interruptions.
  */
@@ -168,7 +168,7 @@ class RSocketClient(
     private suspend fun connect(): RSocket {
         val deadline = TimeSource.Monotonic.markNow() + connectTimeout
         var attempt = 0L
-        var lastFailure: Throwable? = null
+        var lastFailure: Throwable?
         while (true) {
             try {
                 return httpClient.rSocket(url)
@@ -177,10 +177,10 @@ class RSocketClient(
                 lastFailure = cause
             }
             if (deadline.hasPassedNow()) break
-            delay(reconnectDelayMillis(attempt++))
+            delay(reconnectDelayMillis(attempt++).milliseconds)
         }
         throw ProtocolException(lastFailure) {
-            "Failed to connect to $url within $connectTimeout: ${lastFailure?.message}"
+            "Failed to connect to $url within $connectTimeout: ${lastFailure.message}"
         }
     }
 

@@ -28,7 +28,7 @@ as their single iFX runtime dependency:
 
 ```yaml
 dependencies:
-  - sonat:ifx.subsystem:0.0.8
+  - sonat:ifx.subsystem:0.0.9
 ```
 
 It exports the host, RSocket and JSON-RPC protocols and proxy factories,
@@ -483,7 +483,7 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.contract.ksp:0.0.8
+        - sonat:ifx.contract.ksp:0.0.9
 ```
 
 A subsystem's KSP run reads the reachable contract indexes and generates one Kotlin
@@ -497,12 +497,12 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.subsystem.ksp:0.0.8
+        - sonat:ifx.subsystem.ksp:0.0.9
         # Optional: generate TypeScript contracts and wire types.
-        - sonat:ifx.rpc.typescript.ksp:0.0.8
+        - sonat:ifx.rpc.typescript.ksp:0.0.9
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.8
+        dependency: sonat:ifx-rpc-compiler-plugin:0.0.9
 ```
 
 The subsystem dependency graph is the contract manifest. Contract modules depend only

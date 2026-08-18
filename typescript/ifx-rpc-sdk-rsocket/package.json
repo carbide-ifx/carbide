@@ -1,6 +1,6 @@
 {
   "name": "@ifx/rpc-sdk-rsocket",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "RSocket transport for the iFX TypeScript SDK",
   "license": "UNLICENSED",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.8",
+    "@ifx/rpc-sdk": "0.0.9",
     "buffer": "6.0.3",
     "rsocket-composite-metadata": "1.0.0-alpha.3",
     "rsocket-core": "1.0.0-alpha.3",
