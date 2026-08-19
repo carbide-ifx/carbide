@@ -105,6 +105,7 @@ internal class ServiceModelBuilder {
             ?: fail("Local and anonymous types are not supported", declaration)
         return when (qualifiedName) {
             "kotlin.String", "kotlin.Char" -> TypeRef.StringType
+            "kotlin.time.Instant" -> TypeRef.StringType
             "kotlin.Boolean" -> TypeRef.BooleanType
             in NUMBER_TYPES -> TypeRef.NumberType
             "kotlin.Unit" -> TypeRef.VoidType
@@ -120,6 +121,7 @@ internal class ServiceModelBuilder {
                 }
                 TypeRef.RecordType(typeArgument(type, 1))
             }
+            RESPONSE -> responseTypeRef(type)
             else -> {
                 collectDeclaration(declaration)
                 TypeRef.Named(qualifiedName, type.arguments.mapIndexed { index, argument ->
@@ -128,6 +130,41 @@ internal class ServiceModelBuilder {
                 })
             }
         }
+    }
+
+    private fun responseTypeRef(type: KSType): TypeRef {
+        if (RESPONSE !in declarations) {
+            declarations[ERROR_CODE] = TypeDeclaration.ObjectType(
+                qualifiedName = ERROR_CODE,
+                typeParameters = emptyList(),
+                properties = listOf(
+                    PropertyModel("code", TypeRef.StringType, optional = false),
+                    PropertyModel("message", TypeRef.StringType, optional = false),
+                ),
+            )
+            declarations[RESPONSE_SUCCESS] = TypeDeclaration.ObjectType(
+                qualifiedName = RESPONSE_SUCCESS,
+                typeParameters = listOf("T"),
+                properties = listOf(PropertyModel("value", TypeRef.TypeParameter("T"), optional = false)),
+            )
+            declarations[RESPONSE_FAILURE] = TypeDeclaration.ObjectType(
+                qualifiedName = RESPONSE_FAILURE,
+                typeParameters = emptyList(),
+                properties = listOf(
+                    PropertyModel("errors", TypeRef.ArrayType(TypeRef.Named(ERROR_CODE)), optional = false),
+                ),
+            )
+            declarations[RESPONSE] = TypeDeclaration.SealedUnion(
+                qualifiedName = RESPONSE,
+                typeParameters = listOf("T"),
+                discriminator = "type",
+                variants = listOf(
+                    SealedVariant(RESPONSE_SUCCESS, TypeRef.Named(RESPONSE_SUCCESS, listOf(TypeRef.TypeParameter("T")))),
+                    SealedVariant(RESPONSE_FAILURE, TypeRef.Named(RESPONSE_FAILURE)),
+                ),
+            )
+        }
+        return TypeRef.Named(RESPONSE, listOf(typeArgument(type, 0)))
     }
 
     private fun collectDeclaration(declaration: KSClassDeclaration) {
@@ -320,6 +357,10 @@ internal class ServiceModelBuilder {
         const val UTILITY = "ifx.service.IUtility"
         const val FIRE_AND_FORGET = "ifx.service.FireAndForget"
         const val FLOW = "kotlinx.coroutines.flow.Flow"
+        const val RESPONSE = "ifx.service.Response"
+        const val RESPONSE_SUCCESS = "ifx.service.Response.Success"
+        const val RESPONSE_FAILURE = "ifx.service.Response.Failure"
+        const val ERROR_CODE = "ifx.service.ErrorCode"
         const val SERIALIZABLE = "kotlinx.serialization.Serializable"
         const val SERIAL_NAME = "kotlinx.serialization.SerialName"
         const val TRANSIENT = "kotlinx.serialization.Transient"
