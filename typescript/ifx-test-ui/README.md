@@ -1,13 +1,15 @@
 # iFX test UI
 
-Browser UI provided by the optional `ifx.service-explorer` module. Its
-`ServiceExplorer` composes the general `ifx.host.webapp` host, reads the
-registered service catalog from `IActuator.catalog()`, and invokes services with
+Browser UI provided by the `ifx.service-explorer` module. Its `ServiceExplorer`
+serves bundled resources by default, delegates an optional development-directory
+override to the general `ifx.host.webapp` host, reads the registered service
+catalog from `IActuator.catalog()`, and invokes services with
 `@ifx/rpc-sdk-rsocket`. There is no separate HTTP catalog endpoint.
 
 The Service Explorer is a normal npm web application. Its build writes
-`index.html` and the bundled JavaScript to `dist/`; no web assets are generated
-into Kotlin source. Build it before starting or packaging a host that serves it:
+`index.html` and the bundled JavaScript to `dist/`, synchronizes JVM resources,
+and generates the compressed Native asset projection in `ifx.service-explorer`.
+Rebuild after changing the frontend:
 
 ```shell
 cd typescript
@@ -17,15 +19,17 @@ npm run build
 
 ## Development
 
-Configure the host to read the development bundle from disk:
+Custom hosts can configure `ServiceExplorer` to read the development bundle from
+disk instead of its bundled resources:
 
 ```kotlin
-import ifx.subsystem.default
+import ifx.service.explorer.ServiceExplorer
 
-Host.default(
-    name = "Test System",
-    rsocketPort = 7070,
-    serviceExplorerDirectory = "typescript/ifx-test-ui/dist",
+install(
+    ServiceExplorer(
+        listener = rsocket,
+        developmentDirectory = "typescript/ifx-test-ui/dist",
+    ),
 )
 ```
 

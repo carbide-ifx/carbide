@@ -26,6 +26,7 @@ import ifx.subsystem.default
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.rsocket.kotlin.RSocketError
 import io.rsocket.kotlin.keepalive.KeepAlive
@@ -44,8 +45,6 @@ import java.net.SocketException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -60,27 +59,21 @@ import kotlin.time.Duration.Companion.seconds
 
 class TestSystemTest {
     @Test
-    fun `default host binds both standard protocols and configured service explorer`() =
-        withServiceExplorerFixture { directory ->
-            runBlocking {
-                val port = ServerSocket(0).use { it.localPort }
-                val host = Host.default(
-                    rsocketPort = port,
-                    serviceExplorerDirectory = directory,
-                ).open()
-                val client = HttpClient()
-                try {
-                    assertEquals(port, host.port(RSOCKET_PROTOCOL_ID))
-                    assertNotEquals(0, host.port(JSON_RPC_PROTOCOL_ID))
-                    assertIs<ContextInterceptor>(host.interceptors.single())
-                    assertEquals(listOf("IActuator"), host.serviceCatalog().services.map { it.name })
-                    assertEquals(HttpStatusCode.OK, client.get("http://localhost:$port/").status)
-                } finally {
-                    client.close()
-                    host.close()
-                }
-            }
+    fun `default host binds both standard protocols and bundled service explorer`() = runBlocking {
+        val port = ServerSocket(0).use { it.localPort }
+        val host = Host.default(rsocketPort = port).open()
+        val client = HttpClient()
+        try {
+            assertEquals(port, host.port(RSOCKET_PROTOCOL_ID))
+            assertNotEquals(0, host.port(JSON_RPC_PROTOCOL_ID))
+            assertIs<ContextInterceptor>(host.interceptors.single())
+            assertEquals(listOf("IActuator"), host.serviceCatalog().services.map { it.name })
+            assertEquals(HttpStatusCode.OK, client.get("http://localhost:$port/").status)
+        } finally {
+            client.close()
+            host.close()
         }
+    }
 
     @Test
     fun `default host resolves port zero to an available port`() = runBlocking {
@@ -109,7 +102,7 @@ class TestSystemTest {
     @Test
     fun `service explorer requires an rsocket listener`() {
         val exception = assertFailsWith<IllegalArgumentException> {
-            ServiceExplorer(ProtocolListener(JsonRpcServerProtocol()), directory = ".")
+            ServiceExplorer(ProtocolListener(JsonRpcServerProtocol()))
         }
 
         assertEquals("ServiceExplorer requires an RSocket listener", exception.message)
@@ -464,47 +457,31 @@ class TestSystemTest {
     }
 
     @Test
-    fun `host serves the explorer webapp without a separate catalog endpoint`() =
-        withServiceExplorerFixture { directory ->
-            runBlocking {
-                val system = startTestSystem(emptyList(), serviceExplorerDirectory = directory)
-                val client = HttpClient()
-                try {
-                    val port = system.port(RSOCKET_PROTOCOL_ID)
-                    val html: String = client.get("http://localhost:$port/").body()
+    fun `host serves the bundled explorer webapp without a separate catalog endpoint`() =
+        runBlocking {
+            val system = startTestSystem(emptyList())
+            val client = HttpClient()
+            try {
+                val port = system.port(RSOCKET_PROTOCOL_ID)
+                val html: String = client.get("http://localhost:$port/").body()
+                val javascript = client.get("http://localhost:$port/test-ui.js")
 
-                    assertEquals(true, "iFX Service Explorer" in html)
-                    assertEquals(
-                        HttpStatusCode.OK,
-                        client.get("http://localhost:$port/test-ui.js").status,
-                    )
-                    assertEquals(
-                        HttpStatusCode.NotFound,
-                        client.get("http://localhost:$port/ifx/services").status,
-                    )
-                    assertEquals(
-                        HttpStatusCode.NotFound,
-                        client.get("http://localhost:${system.port(JSON_RPC_PROTOCOL_ID)}/").status,
-                    )
-                } finally {
-                    client.close()
-                    system.close()
-                }
+                assertEquals(true, "iFX Service Explorer" in html)
+                assertEquals(HttpStatusCode.OK, javascript.status)
+                assertEquals("gzip", javascript.headers[HttpHeaders.ContentEncoding])
+                assertEquals(
+                    HttpStatusCode.NotFound,
+                    client.get("http://localhost:$port/ifx/services").status,
+                )
+                assertEquals(
+                    HttpStatusCode.NotFound,
+                    client.get("http://localhost:${system.port(JSON_RPC_PROTOCOL_ID)}/").status,
+                )
+            } finally {
+                client.close()
+                system.close()
             }
         }
-}
-
-private inline fun <T> withServiceExplorerFixture(block: (String) -> T): T {
-    val directory = createTempDirectory("ifx-service-explorer-")
-    directory.resolve("index.html").writeText(
-        "<title>iFX Service Explorer</title><script src=\"./test-ui.js\"></script>",
-    )
-    directory.resolve("test-ui.js").writeText("console.log('service explorer')")
-    return try {
-        block(directory.toString())
-    } finally {
-        directory.toFile().deleteRecursively()
-    }
 }
 
 private class TcpProxy(

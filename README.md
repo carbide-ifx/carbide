@@ -573,11 +573,11 @@ val host = Host(name = "Example") {
 }
 ```
 
-The `ifx.service-explorer` module composes that general host with the Service
-Explorer's npm build directory. The explorer targets an RSocket listener because
-its browser client invokes services and streams logs through RSocket.
-`Host.default()` installs it when `serviceExplorerDirectory` is supplied; custom
-hosts can install it directly. The landing page obtains the host catalog from the
+The `ifx.service-explorer` module bundles the Service Explorer's npm build. The
+explorer targets an RSocket listener because its browser client invokes services
+and streams logs through RSocket. `Host.default()` always installs it; callers do
+not configure or package a frontend directory. Custom hosts can install
+`ServiceExplorer` directly. The landing page obtains the host catalog from the
 registered `IActuator` utility service; no separate HTTP catalog endpoint is
 exposed. Selecting a component opens its operations, generates request controls
 from the serialized wire types, and displays request/response, fire-and-forget,
@@ -591,13 +591,14 @@ ordinary generated service SDK.
 val host = Host.default(
     name = "Test System",
     rsocketPort = 8080,
-    serviceExplorerDirectory = "typescript/ifx-test-ui/dist",
 )
 ```
 
-The directory and its `index.html` must exist when the host opens. Include the
-built directory in the application or container distribution. Leave
-`serviceExplorerDirectory` unset when the explorer is deployed separately.
+The frontend build is published inside `ifx.service-explorer` for JVM and Native.
+JVM uses ordinary JAR resources; Native uses a generated compressed asset
+projection because Native library resources require application-level packaging.
+Running the frontend build updates these projections and its local `dist/`
+directory.
 
 Generated TypeScript contracts export a `{Service}Description` value in
 addition to their typed SDK. It contains the same operations and runtime
