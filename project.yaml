@@ -27,6 +27,7 @@ modules:
   - ifx.subsystem.ksp
   - ifx.telemetry.otel
   - ifx.testing
+  - terpal.compiler-plugin
   - test.gateway
   - test.service-aggregation
   - test.service-contracts
