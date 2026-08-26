@@ -7,6 +7,7 @@ import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.ServiceEndpoint
 import ifx.protocol.contract.withContext
 import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
@@ -102,8 +103,13 @@ class RSocketClientProtocol(
 
     private val httpClient: HttpClient = rsocketHttpClient(keepAlive, setupData)
 
-    override fun createClientBinding(address: String): IBinding = try {
-        RSocketClient(httpClient, "${baseUrl().trimEnd('/')}/$address", connectTimeout)
+    override fun createClientBinding(address: String): IBinding = createClientBinding(baseUrl(), address)
+
+    override fun createClientBinding(endpoint: ServiceEndpoint, address: String): IBinding =
+        createClientBinding("ws://${endpoint.host}:${endpoint.port}", address)
+
+    private fun createClientBinding(baseUrl: String, address: String): IBinding = try {
+        RSocketClient(httpClient, "${baseUrl.trimEnd('/')}/$address", connectTimeout)
     } catch (exception: Throwable) {
         throw ProtocolException(exception) {
             "Failed to create RSocket client for $address: ${exception.message}"

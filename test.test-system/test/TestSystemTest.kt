@@ -18,6 +18,7 @@ import ifx.protocol.rsocket.EXTERNAL_KEEP_ALIVE
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
 import ifx.protocol.rsocket.RSocketServerProtocol
+import ifx.proxy.contract.ServiceEndpoint
 import ifx.proxy.contract.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
@@ -372,6 +373,61 @@ class TestSystemTest {
     }
 
     @Test
+    fun `destination-bound rsocket proxies route to their explicit hosts and reuse connections`() = runBlocking {
+        val firstHost = Host {
+            listen(RSocketServerProtocol())
+        }.registerService(
+            IProductAccessDescriptor,
+            ProductAccessEmulator(mutableMapOf("first" to access.product.contract.Product.Bike("first", 3))),
+        )
+        val secondHost = Host {
+            listen(RSocketServerProtocol())
+        }.registerService(
+            IProductAccessDescriptor,
+            ProductAccessEmulator(mutableMapOf("second" to access.product.contract.Product.Bike("second", 7))),
+        )
+
+        firstHost.open()
+        secondHost.open()
+        try {
+            TcpProxy(firstHost.port(RSOCKET_PROTOCOL_ID)).use { firstProxy ->
+                TcpProxy(secondHost.port(RSOCKET_PROTOCOL_ID)).use { secondProxy ->
+                    val proxyFactory = RSocketProxyFactory(port = firstProxy.port)
+                    try {
+                        val firstEndpoint = ServiceEndpoint("localhost", firstProxy.port)
+                        val secondEndpoint = ServiceEndpoint("localhost", secondProxy.port)
+
+                        repeat(2) {
+                            assertEquals(
+                                listOf("first"),
+                                proxyFactory.at(firstEndpoint)
+                                    .create<IProductAccess>()
+                                    .filter(ProductCriteria())
+                                    .map { it.id },
+                            )
+                            assertEquals(
+                                listOf("second"),
+                                proxyFactory.at(secondEndpoint)
+                                    .create<IProductAccess>()
+                                    .filter(ProductCriteria())
+                                    .map { it.id },
+                            )
+                        }
+
+                        assertEquals(1, firstProxy.acceptedConnectionCount)
+                        assertEquals(1, secondProxy.acceptedConnectionCount)
+                    } finally {
+                        proxyFactory.close()
+                    }
+                }
+            }
+        } finally {
+            secondHost.close()
+            firstHost.close()
+        }
+    }
+
+    @Test
     fun `a failing remote operation keeps the shared connection`() = runBlocking {
         withProxiedHost(ThrowingProductAccess("business rule violated")) { proxy, proxyFactory ->
             val productAccess = proxyFactory.create<IProductAccess>()
@@ -453,6 +509,31 @@ class TestSystemTest {
         } finally {
             proxyFactory.close()
             system.close()
+        }
+    }
+
+    @Test
+    fun `destination-bound json rpc proxy routes to its explicit host`() = runBlocking {
+        val remote = Host {
+            listen(JsonRpcServerProtocol())
+        }.registerService(
+            IProductAccessDescriptor,
+            ProductAccessEmulator(mutableMapOf("remote" to access.product.contract.Product.Bike("remote", 5))),
+        ).open()
+        val proxyFactory = JsonRpcProxyFactory(port = 1)
+
+        try {
+            val productAccess = proxyFactory
+                .at(ServiceEndpoint("localhost", remote.port(JSON_RPC_PROTOCOL_ID)))
+                .create<IProductAccess>()
+
+            assertEquals(
+                listOf("remote"),
+                productAccess.filter(ProductCriteria()).map { it.id },
+            )
+        } finally {
+            proxyFactory.close()
+            remote.close()
         }
     }
 

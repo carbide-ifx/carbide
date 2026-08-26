@@ -6,31 +6,45 @@ import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.contract.ClientInterceptorPipeline
 import ifx.protocol.contract.IBinding
+import ifx.protocol.contract.ServiceEndpoint
 import ifx.protocol.contract.ServiceDescriptor
 import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
 import kotlin.concurrent.atomics.AtomicReference
 
-class ProxyFactoryBase(
+class ProxyFactoryBase private constructor(
     val protocol: IClientProtocol,
+    private val endpoint: ServiceEndpoint?,
+    val interceptors: MutableList<IInterceptor>,
+    private val bindings: AtomicReference<Map<BindingKey, IBinding>>,
 ) : IProxyFactory {
-    val interceptors: MutableList<IInterceptor> = mutableListOf()
+    constructor(protocol: IClientProtocol) : this(
+        protocol = protocol,
+        endpoint = null,
+        interceptors = mutableListOf(),
+        bindings = AtomicReference(emptyMap()),
+    )
 
     /**
-     * One binding, and therefore one connection, per service address. Repeated [create] calls for
-     * the same service reuse it, so proxies may be created per call site or per request without
-     * accumulating transport resources.
+     * One binding, and therefore one connection, per destination and service address. Repeated
+     * [create] calls for the same service reuse it, so proxies may be created per call site or per
+     * request without accumulating transport resources.
      */
-    private val bindings = AtomicReference<Map<String, IBinding>>(emptyMap())
-
     override fun addInterceptors(vararg i: IInterceptor): ProxyFactoryBase = apply { interceptors.addAll(i) }
     override fun addInterceptors(i: List<IInterceptor>): ProxyFactoryBase = apply { interceptors.addAll(i) }
+
+    override fun at(endpoint: ServiceEndpoint): ProxyFactoryBase = ProxyFactoryBase(
+        protocol = protocol,
+        endpoint = endpoint,
+        interceptors = interceptors,
+        bindings = bindings,
+    )
 
     override fun <T : IService> create(descriptor: ServiceDescriptor<T>): T {
         val interceptorPipeline = ClientInterceptorPipeline(
             descriptor.address,
             interceptors,
-            bindingFor(descriptor.address),
+            bindingFor(endpoint, descriptor.address),
         )
         return descriptor.createClient(interceptorPipeline)
     }
@@ -40,14 +54,23 @@ class ProxyFactoryBase(
         protocol.close()
     }
 
-    private fun bindingFor(address: String): IBinding {
+    private fun bindingFor(endpoint: ServiceEndpoint?, address: String): IBinding {
+        val key = BindingKey(endpoint, address)
         while (true) {
             val current = bindings.load()
-            current[address]?.let { return it }
+            current[key]?.let { return it }
 
             // A binding that loses the race is discarded before it connects, so it holds nothing.
-            val binding = protocol.createClientBinding(address)
-            if (bindings.compareAndSet(current, current + (address to binding))) return binding
+            val binding = when (endpoint) {
+                null -> protocol.createClientBinding(address)
+                else -> protocol.createClientBinding(endpoint, address)
+            }
+            if (bindings.compareAndSet(current, current + (key to binding))) return binding
         }
     }
+
+    private data class BindingKey(
+        val endpoint: ServiceEndpoint?,
+        val address: String,
+    )
 }

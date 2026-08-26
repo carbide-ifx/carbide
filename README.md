@@ -292,7 +292,7 @@ For a custom protocol or tooling composition, construct `Host` directly.
 
 A proxy factory owns the client transport, so it is a long-lived object: hold one
 per subsystem rather than creating one per call. Each factory keeps a single
-binding — and therefore a single connection — per service address, so
+binding — and therefore a single connection — per destination and service address, so
 `create<T>()` is cheap and repeatable. This is what makes the common manager
 shape safe:
 
@@ -301,6 +301,21 @@ class SalesManager(val proxyFactory: IProxyFactory) : ISalesManager {
     val productAccess get() = proxyFactory.create<IProductAccess>()
 }
 ```
+
+When a dependency lives on another host, bind a lightweight view of the factory to that
+destination. The view shares the factory's transport, interceptors, connection cache, and
+lifecycle:
+
+```kotlin
+val productAccess = proxyFactory
+    .at(ServiceEndpoint("product-service.internal", 8081))
+    .create<IProductAccess>()
+```
+
+Bindings are cached by destination and service address, so repeated `at(endpoint).create<T>()`
+calls do not create additional transport clients or connections. They remain cached until the
+factory closes, so the set of destinations should be stable and bounded. Keep endpoint construction
+in the composition root when deployment configuration is static.
 
 Close the factory during shutdown to release its connections:
 

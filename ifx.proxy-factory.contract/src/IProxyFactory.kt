@@ -6,6 +6,14 @@ import ifx.service.IService
 
 interface IProxyFactory {
     fun <T : IService> create(descriptor: ServiceDescriptor<T>): T
+
+    /**
+     * Returns a lightweight view whose proxies connect to [endpoint]. The view shares this factory's
+     * transport, interceptors, binding cache, and lifecycle.
+     */
+    fun at(endpoint: ServiceEndpoint): IProxyFactory =
+        throw UnsupportedOperationException("This proxy factory does not support explicit service endpoints")
+
     fun addInterceptors(vararg i: IInterceptor): IProxyFactory
     fun addInterceptors(i: List<IInterceptor>): IProxyFactory
 
