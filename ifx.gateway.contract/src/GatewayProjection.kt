@@ -73,7 +73,6 @@ class GatewayProjectionBuilder internal constructor(
         try {
             selection?.invoke(descriptor)
             val operations = selectedOperations ?: descriptor.description.operations
-                .filterNot { operation -> operation.name in LIFECYCLE_OPERATIONS }
                 .map { operation -> SelectedOperation(
                     serviceAddress = descriptor.address,
                     description = operation,
@@ -122,9 +121,6 @@ class GatewayProjectionBuilder internal constructor(
         val descriptor = checkNotNull(selecting) { "only(...) must be called inside expose(...)" }
         require(operations.isNotEmpty()) { "only(...) requires at least one operation" }
         operations.forEach { operation ->
-            require(operation.description.name !in LIFECYCLE_OPERATIONS) {
-                "Service lifecycle operation ${operation.description.name} cannot be exposed"
-            }
             require(operation.serviceAddress == descriptor.address) {
                 "Operation ${operation.description.name} belongs to ${operation.serviceAddress}, not ${descriptor.address}"
             }
@@ -157,9 +153,6 @@ class GatewayProjectionBuilder internal constructor(
     private fun String.dropInterfacePrefix(): String =
         if (length > 1 && first() == 'I' && this[1].isUpperCase()) drop(1) else this
 
-    private companion object {
-        val LIFECYCLE_OPERATIONS = setOf("status", "init", "isReady", "isLive")
-    }
 }
 
 private data class SelectedOperation(

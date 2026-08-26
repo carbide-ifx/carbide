@@ -9,30 +9,53 @@ import ifx.protocol.contract.ProtocolListenerDescription
 import ifx.protocol.contract.ServerInterceptorPipeline
 import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
+import ifx.protocol.contract.ServiceKind
 import ifx.protocol.contract.interceptors.ContextInterceptor
 import ifx.protocol.contract.interceptors.UnhandledExceptionInterceptor
 import ifx.service.IService
+import ifx.service.IServiceLifecycle
+import ifx.service.ServiceHealth
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.engine.embeddedServer
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.seconds
 
 class Host(
     private val listeners: List<ProtocolListener>,
     override val name: String = "Service Host",
     interceptors: MutableList<IInterceptor> = mutableListOf(),
     private val extensions: List<HostExtension> = emptyList(),
+    private val healthCheckTimeout: Duration = 5.seconds,
+    private val drainDelay: Duration = ZERO,
+    private val requestDrainTimeout: Duration = 20.seconds,
 ) : IHost {
     private val endpoints = mutableListOf<Endpoint>()
+    private val registeredServices = mutableListOf<RegisteredService>()
+    private val startedServiceLifecycles = mutableListOf<IServiceLifecycle>()
     private val runningServers = mutableListOf<RunningServer>()
     private val closeActions = mutableListOf<() -> Unit>()
     private val additionalInterceptors = interceptors
     private val contextInterceptor = ContextInterceptor()
+    private val callTracker = HostCallTracker()
 
     /** Interceptors safe to mirror onto clients, in client registration order. */
     override val interceptors: List<IInterceptor>
         get() = listOf(contextInterceptor) + additionalInterceptors
+
+    override var state: HostState = HostState.NEW
+        private set
 
     override var boundListeners: List<BoundProtocolListener> = requestedListeners()
         private set
@@ -64,30 +87,51 @@ class Host(
         protocol: IServerProtocol,
         vararg additionalProtocols: IServerProtocol,
         name: String = "Service Host",
+        healthCheckTimeout: Duration = 5.seconds,
+        drainDelay: Duration = ZERO,
+        requestDrainTimeout: Duration = 20.seconds,
     ) : this(
         listeners = listOf(protocol, *additionalProtocols).map(::ProtocolListener),
         name = name,
+        healthCheckTimeout = healthCheckTimeout,
+        drainDelay = drainDelay,
+        requestDrainTimeout = requestDrainTimeout,
     )
 
     constructor(
         name: String = "Service Host",
+        healthCheckTimeout: Duration = 5.seconds,
+        drainDelay: Duration = ZERO,
+        requestDrainTimeout: Duration = 20.seconds,
         configure: HostBuilder.() -> Unit,
-    ) : this(HostBuilder().apply(configure).build(), name)
+    ) : this(
+        HostBuilder().apply(configure).build(),
+        name,
+        healthCheckTimeout,
+        drainDelay,
+        requestDrainTimeout,
+    )
 
     private constructor(
         configuration: HostConfiguration,
         name: String,
+        healthCheckTimeout: Duration,
+        drainDelay: Duration,
+        requestDrainTimeout: Duration,
     ) : this(
         listeners = configuration.listeners,
         name = name,
         extensions = configuration.extensions,
+        healthCheckTimeout = healthCheckTimeout,
+        drainDelay = drainDelay,
+        requestDrainTimeout = requestDrainTimeout,
     )
 
     override suspend fun <T : IService> registerService(
         descriptor: ServiceDescriptor<T>,
         instance: T,
     ): IHost = apply {
-        check(runningServers.isEmpty()) { "Services cannot be registered while the host is open" }
+        check(state == HostState.NEW) { "Services can only be registered before the host starts" }
         val serviceBinding = descriptor.bind(instance)
         val exceptionLog = Log(
             LogTag(
@@ -103,6 +147,9 @@ class Host(
                     "Unhandled exception in $interaction ${call.operation}"
                 }
             },
+            lifecycle = HostLifecycleInterceptor(callTracker) { call ->
+                descriptor.description.kind == ServiceKind.UTILITY && call.operation == "health()"
+            },
         )
         val interceptorBinding: IBinding =
             ServerInterceptorPipeline(
@@ -111,6 +158,7 @@ class Host(
                 serviceBinding,
             )
         endpoints += Endpoint(descriptor.address, interceptorBinding, descriptor.description)
+        registeredServices += RegisteredService(descriptor.address, instance as? IServiceLifecycle)
     }
 
     override suspend fun <T : IService> registerService(
@@ -128,8 +176,30 @@ class Host(
         additionalInterceptors.addAll(interceptors)
     }
 
-    override fun open(): IHost = apply {
-        check(runningServers.isEmpty()) { "Host is already open" }
+    override suspend fun start(): IHost = apply {
+        check(state == HostState.NEW) { "Host can only be started once; current state is $state" }
+        state = HostState.STARTING
+        try {
+            registeredServices.mapNotNull(RegisteredService::lifecycle).forEach { lifecycle ->
+                lifecycle.start()
+                startedServiceLifecycles += lifecycle
+            }
+            openListeners()
+            callTracker.startAccepting()
+            state = HostState.READY
+        } catch (failure: Throwable) {
+            startedServiceLifecycles.asReversed().forEach { lifecycle ->
+                runCatching { lifecycle.stop() }.exceptionOrNull()?.let(failure::addSuppressed)
+            }
+            startedServiceLifecycles.clear()
+            state = HostState.FAILED
+            throw failure
+        }
+    }
+
+    override fun open(): IHost = runBlocking { start() }
+
+    private fun openListeners() {
         val started = mutableListOf<RunningServer>()
         try {
             listeners.forEach { config ->
@@ -154,19 +224,78 @@ class Host(
 
     override fun onClose(action: () -> Unit): IHost = apply { closeActions += action }
 
-    override fun close(): IHost = apply {
-        runningServers.asReversed().forEach { it.stop() }
+    override suspend fun stop(): IHost = withContext(NonCancellable) {
+        if (state == HostState.STOPPED) return@withContext this@Host
+        if (state == HostState.READY) {
+            callTracker.beginDrain()
+            state = HostState.DRAINING
+            delay(drainDelay)
+            callTracker.awaitIdle(requestDrainTimeout)
+            callTracker.finishDrain()
+        }
+        state = HostState.STOPPING
+        val failures = mutableListOf<Throwable>()
+        startedServiceLifecycles.asReversed().forEach { lifecycle ->
+            runCatching { lifecycle.stop() }.exceptionOrNull()?.let(failures::add)
+        }
+        startedServiceLifecycles.clear()
+
+        runningServers.asReversed().forEach { server ->
+            runCatching { server.stop() }.exceptionOrNull()?.let(failures::add)
+        }
         runningServers.clear()
         boundListeners = requestedListeners()
 
-        val failures = closeActions.asReversed().mapNotNull { action ->
-            runCatching(action).exceptionOrNull()
+        closeActions.asReversed().forEach { action ->
+            runCatching(action).exceptionOrNull()?.let(failures::add)
         }
         closeActions.clear()
+        state = HostState.STOPPED
         failures.firstOrNull()?.let { first ->
             failures.drop(1).forEach(first::addSuppressed)
             throw first
         }
+        this@Host
+    }
+
+    override fun close(): IHost = runBlocking { stop() }
+
+    override suspend fun health(): HostHealth {
+        val services = coroutineScope {
+            registeredServices.map { service ->
+                async { service.healthSnapshot() }
+            }.awaitAll()
+        }
+        return HostHealth(
+            state = state,
+            ready = state == HostState.READY && services.all(ServiceHealthSnapshot::ready),
+            live = state != HostState.FAILED && state != HostState.STOPPED &&
+                services.all(ServiceHealthSnapshot::live),
+            services = services,
+        )
+    }
+
+    private suspend fun RegisteredService.healthSnapshot(): ServiceHealthSnapshot {
+        val health = lifecycle?.let { lifecycle ->
+            try {
+                withTimeoutOrNull(healthCheckTimeout) { lifecycle.health() }
+                    ?: ServiceHealth(
+                        ready = false,
+                        live = false,
+                        detail = "Health check timed out after ${healthCheckTimeout.inWholeMilliseconds}ms",
+                    )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Throwable) {
+                ServiceHealth(ready = false, live = false, detail = failure.message)
+            }
+        } ?: ServiceHealth.healthy()
+        return ServiceHealthSnapshot(
+            serviceInterface = address,
+            ready = health.ready,
+            live = health.live,
+            detail = health.detail,
+        )
     }
 
     override fun serviceCatalog(): ServiceCatalog = ServiceCatalog(
@@ -197,7 +326,7 @@ class Host(
             },
         ) {
             config.protocol.install(this, listenerEndpoints)
-            val context = HostExtensionContext(name, listenerEndpoints) { boundListeners }
+            val context = HostExtensionContext(name, listenerEndpoints, { boundListeners }, ::health)
             extensions.filter { it.listener === config }.forEach { extension ->
                 extension.install(this, context)
             }
@@ -225,6 +354,11 @@ class Host(
         fun start(): Int = startServer()
         fun stop(): Unit = stopServer()
     }
+
+    private data class RegisteredService(
+        val address: String,
+        val lifecycle: IServiceLifecycle?,
+    )
 
     companion object
 }
@@ -255,12 +389,14 @@ internal data class HostConfiguration(
 
 /**
  * Mandatory server interceptors straddle caller-supplied interceptors so that context is decoded
- * closest to the service and exception reporting is outermost after server-order reversal.
+ * closest to the service, exceptions are reported outside caller interceptors, and lifecycle
+ * admission and in-flight tracking wrap the complete invocation.
  */
 private data class MandatoryInterceptors(
     val context: IInterceptor,
     val exception: IInterceptor,
+    val lifecycle: IInterceptor,
 ) {
     fun withAdditional(additional: List<IInterceptor>): List<IInterceptor> =
-        listOf(context) + additional + exception
+        listOf(context) + additional + exception + lifecycle
 }

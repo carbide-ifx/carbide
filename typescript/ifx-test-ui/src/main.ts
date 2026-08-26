@@ -166,13 +166,23 @@ const styles = `
   @media (max-width: 760px) { .topbar { padding: 0 20px; } main { width: min(100% - 28px, 1320px); padding-top: 36px; } .architecture { display: block; } .architecture-layer { display: block; } .client-layer, .business-layer, .access-layer, .resources-layer, .unclassified-layer { border-top: 0; border-bottom: 1px dashed #89928c; } .layer-label { padding: 17px 20px; border-right: 0; border-bottom: 1px dashed #89928c; } .layer-content { padding: 20px; } .utilities-layer { padding: 20px; border-left: 0; border-bottom: 1px dashed #89928c; } .utilities-label { text-align: left; } .service-card { width: 100%; } .service-head { display: block; padding: 24px 22px; } .service-contract { padding: 0 22px 24px; } .service-meta { margin-top: 18px; text-align: left; } .operations-intro { display: block; padding-top: 22px; } .operations-intro p { margin-top: 9px; } .operation-body { grid-template-columns: 1fr; } .response { border-top: 1px solid #d2dbd4; border-left: 0; } .service-logs { padding: 24px 22px; } .logs-intro { display: block; } .logs-controls { margin-top: 14px; justify-content: space-between; } .log-entry { grid-template-columns: 82px 54px minmax(0, 1fr); } .log-message, .log-throwable { grid-column: 1 / -1; } }
 `;
 
-const I_SERVICE_OPERATIONS = new Set(["status", "init", "isReady", "isLive"]);
 interface JsonInput { readonly element: HTMLElement; readonly read: () => unknown }
 interface SchemaContext { readonly definitions: ReadonlyMap<string, IfxTypeDescription>; readonly parameters: ReadonlyMap<string, IfxTypeReference> }
 interface JsonObjectMembers { readonly element: HTMLElement; readonly count: number; readonly read: () => Record<string, unknown> }
 interface ResolvedObject { readonly definition: Extract<IfxTypeDescription, { type: "object" }>; readonly context: SchemaContext }
 type ServiceKind = "manager" | "engine" | "access" | "utility" | "unclassified";
 interface CatalogService { readonly service: IfxServiceDescription; readonly index: number; readonly kind: ServiceKind }
+interface HostHealth {
+  readonly ready: boolean;
+  readonly live: boolean;
+  readonly services: readonly ServiceHealth[];
+}
+interface ServiceHealth {
+  readonly serviceInterface: string;
+  readonly ready: boolean;
+  readonly live: boolean;
+  readonly detail: string | null;
+}
 interface LogTailEntry {
   readonly sequence: number;
   readonly timestampEpochMilliseconds: number;
@@ -199,6 +209,10 @@ class ActuatorClient {
 
   catalog(): Promise<IfxServiceCatalog> {
     return this.binding.requestResponse<IfxServiceCatalog>("catalog()");
+  }
+
+  health(): Promise<HostHealth> {
+    return this.binding.requestResponse<HostHealth>("health()");
   }
 
   logTail(serviceInterface: string): AsyncIterable<LogTailEntry> {
@@ -294,11 +308,7 @@ function renderCatalog(catalog: IfxServiceCatalog): void {
     <p class="lede">Explore the running system by layer. Select a service component to inspect its contract and invoke its operations.</p>
     <section class="architecture" aria-label="Service architecture">${architecture}</section>`);
 
-  for (const card of app.querySelectorAll<HTMLElement>(".service-card[data-service-index]")) {
-    const service = catalog.services[Number(card.dataset.serviceIndex)];
-    const pill = card.querySelector<HTMLElement>(".service-status");
-    if (service && pill) void loadServiceStatus(service, pill);
-  }
+  void loadServiceStatuses(catalog);
 }
 
 function renderArchitectureLayer(
@@ -380,7 +390,7 @@ function renderService(catalog: IfxServiceCatalog, service: IfxServiceDescriptio
   const definitions = new Map(service.types.map((definition) => [definition.name, definition]));
   const operations = visibleOperations(service);
   if (operations.length === 0) {
-    container.innerHTML = `<div class="empty">This service does not declare any operations beyond the IService lifecycle.</div>`;
+    container.innerHTML = `<div class="empty">This service does not declare any RPC operations.</div>`;
     return;
   }
   for (const operation of operations) container.append(renderOperation(service, operation, definitions));
@@ -468,30 +478,31 @@ function logTimestamp(epochMilliseconds: number): string {
 }
 
 function visibleOperations(service: IfxServiceDescription): readonly IfxOperationDescription[] {
-  return service.operations.filter((operation) => !I_SERVICE_OPERATIONS.has(operation.name));
+  return service.operations;
 }
 
-async function loadServiceStatus(service: IfxServiceDescription, pill: HTMLElement): Promise<void> {
-  const operation = service.operations.find((candidate) => candidate.name === "status");
-  if (!operation) {
-    setServiceStatus(pill, "Unknown", "unknown");
-    return;
-  }
-
-  let binding: RSocketBinding | undefined;
+async function loadServiceStatuses(catalog: IfxServiceCatalog): Promise<void> {
+  let actuator: ActuatorClient | undefined;
   try {
-    const scheme = location.protocol === "https:" ? "wss:" : "ws:";
-    binding = await RSocketBinding.connect({
-      url: RSocketBinding.serviceUrl(`${scheme}//${location.host}`, service.address),
-    });
-    const status = await binding.requestResponse<{ readonly ready: boolean; readonly live: boolean }>(operation.route);
-    if (!status.live) setServiceStatus(pill, "Not live", "unavailable");
-    else if (!status.ready) setServiceStatus(pill, "Starting", "starting");
-    else setServiceStatus(pill, "Ready", "ready");
+    actuator = await ActuatorClient.connect();
+    const health = await actuator.health();
+    const byService = new Map(health.services.map((service) => [service.serviceInterface, service]));
+    for (const card of app.querySelectorAll<HTMLElement>(".service-card[data-service-index]")) {
+      const service = catalog.services[Number(card.dataset.serviceIndex)];
+      const pill = card.querySelector<HTMLElement>(".service-status");
+      if (!service || !pill) continue;
+      const status = byService.get(service.address);
+      if (!status) setServiceStatus(pill, "Unknown", "unknown");
+      else if (!status.live) setServiceStatus(pill, "Not live", "unavailable", status.detail);
+      else if (!status.ready) setServiceStatus(pill, "Starting", "starting", status.detail);
+      else setServiceStatus(pill, "Ready", "ready", status.detail);
+    }
   } catch {
-    setServiceStatus(pill, "Offline", "unavailable");
+    for (const pill of app.querySelectorAll<HTMLElement>(".service-status")) {
+      setServiceStatus(pill, "Offline", "unavailable");
+    }
   } finally {
-    binding?.close();
+    actuator?.close();
   }
 }
 
@@ -499,9 +510,12 @@ function setServiceStatus(
   pill: HTMLElement,
   label: string,
   state: "unknown" | "ready" | "starting" | "unavailable",
+  detail?: string | null,
 ): void {
   pill.textContent = label;
   pill.className = `service-status ${state}`;
+  if (detail) pill.title = detail;
+  else pill.removeAttribute("title");
 }
 
 function renderOperation(

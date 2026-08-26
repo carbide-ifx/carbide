@@ -1,5 +1,6 @@
 package ifx.actuator
 
+import ifx.host.HostHealth
 import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.serviceAddressOf
 import ifx.service.IService
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface IActuator : IUtility {
     suspend fun catalog(): ServiceCatalog
+    suspend fun health(): HostHealth
 
     fun logTail(serviceInterface: String): Flow<LogTailEntry>
 }

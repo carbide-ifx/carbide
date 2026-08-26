@@ -36,6 +36,10 @@ host.registerService<AwesomeService> {
 val client = proxyFactory.create<AwesomeService>()
 ```
 
+`IService` is only the RPC-contract marker. An implementation that owns resources may also
+implement `IServiceLifecycle`; the host calls its suspending `start`, `health`, and `stop` methods
+locally. Lifecycle methods are never generated as remotely callable service operations.
+
 ## Subsystem dependency
 
 Applications that host a subsystem can use the published `ifx.subsystem` module
@@ -130,7 +134,7 @@ val host = Host.default(
 )
 
 host.registerService<AwesomeService> { AwesomeServiceImpl() }
-host.open()
+host.start()
 
 val rsocketClient = RSocketProxyFactory.forHost(host).create<AwesomeService>()
 val jsonRpcClient = JsonRpcProxyFactory.forHost(host).create<AwesomeService>()
@@ -607,11 +611,16 @@ The `ifx.service-explorer` module bundles the Service Explorer's npm build. The
 explorer targets an RSocket listener because its browser client invokes services
 and streams logs through RSocket. `Host.default()` always installs it; callers do
 not configure or package a frontend directory. Custom hosts can install
-`ServiceExplorer` directly. The landing page obtains the host catalog from the
-registered `IActuator` utility service; no separate HTTP catalog endpoint is
-exposed. Selecting a component opens its operations, generates request controls
-from the serialized wire types, and displays request/response, fire-and-forget,
-and streaming results.
+`ServiceExplorer` directly. The landing page obtains the host catalog and
+per-service health from the registered `IActuator` utility service; no separate
+HTTP catalog endpoint is exposed. Selecting a component opens its operations,
+generates request controls from the serialized wire types, and displays
+request/response, fire-and-forget, and streaming results. The standard host also
+publishes Kubernetes-compatible JSON probes at `/ifx/health/ready`,
+`/ifx/health/live`, and `/ifx/health` on its RSocket HTTP listener.
+Set `drainDelay` on `Host.default()` to the deployment's endpoint-propagation window; it defaults
+to zero so local shutdown is immediate. `requestDrainTimeout` bounds how long shutdown waits for
+accepted calls and streams before stopping services and listeners.
 
 For example, a host resolved to port `8080` exposes the UI at
 `http://localhost:8080/`. The webapp calls `IActuator.catalog()` through the

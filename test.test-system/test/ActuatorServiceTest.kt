@@ -2,6 +2,9 @@ import access.product.contract.IProductAccess
 import access.product.service.ProductAccessEmulator
 import ifx.actuator.IActuator
 import ifx.actuator.logTail
+import ifx.host.HostHealth
+import ifx.host.HostState
+import ifx.host.ServiceHealthSnapshot
 import ifx.logging.Log
 import ifx.protocol.contract.ServiceKind
 import ifx.protocol.contract.forService
@@ -42,6 +45,53 @@ class ActuatorServiceTest {
                 catalog.listeners.map { it.protocolId },
             )
             catalog.listeners.forEach { listener -> assertNotEquals(0, listener.port) }
+        } finally {
+            proxyFactory.close()
+            system.close()
+        }
+    }
+
+    @Test
+    fun `service contracts do not expose host lifecycle operations`() = runBlocking {
+        val system = startTestSystem(emptyList())
+        val proxyFactory = RSocketProxyFactory.forHost(system)
+        try {
+            val exposedLifecycleOperations = proxyFactory
+                .create<IActuator>()
+                .catalog()
+                .services
+                .flatMap { service ->
+                    service.operations
+                        .filter { it.name in setOf("init", "status", "isReady", "isLive", "start", "stop") }
+                        .map { "${service.name}.${it.name}" }
+                }
+
+            assertEquals(emptyList(), exposedLifecycleOperations)
+        } finally {
+            proxyFactory.close()
+            system.close()
+        }
+    }
+
+    @Test
+    fun `actuator exposes aggregate host health through IFX`() = runBlocking {
+        val system = startTestSystem(emptyList())
+        val proxyFactory = RSocketProxyFactory.forHost(system)
+        try {
+            assertEquals(
+                HostHealth(
+                    state = HostState.READY,
+                    ready = true,
+                    live = true,
+                    services = listOf(
+                        ServiceHealthSnapshot("ifx.actuator.IActuator", ready = true, live = true),
+                        ServiceHealthSnapshot("access.product.contract.IProductAccess", ready = true, live = true),
+                        ServiceHealthSnapshot("engine.pricing.contract.IPricingEngine", ready = true, live = true),
+                        ServiceHealthSnapshot("manager.sales.contract.ISalesManager", ready = true, live = true),
+                    ),
+                ),
+                proxyFactory.create<IActuator>().health(),
+            )
         } finally {
             proxyFactory.close()
             system.close()

@@ -47,16 +47,24 @@ class HostExtensionContext(
     val hostName: String,
     val endpoints: List<Endpoint>,
     val boundListeners: () -> List<BoundProtocolListener>,
+    val health: suspend () -> HostHealth = {
+        HostHealth(HostState.NEW, ready = false, live = true, services = emptyList())
+    },
 )
 
 interface IHost {
     val name: String
+    val state: HostState
 
     suspend fun <T : IService> registerService(descriptor: ServiceDescriptor<T>, instance: T): IHost
     suspend fun <T : IService> registerService(
         descriptor: ServiceDescriptor<T>,
         factory: suspend () -> T,
     ): IHost
+
+    suspend fun start(): IHost
+    suspend fun stop(): IHost
+    suspend fun health(): HostHealth
 
     fun open(): IHost
     fun close(): IHost

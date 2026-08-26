@@ -31,7 +31,7 @@ suspend fun startTestSystem(
     host.registerService<IProductAccess> { ProductAccessEmulator().apply { seedTestData() } }
         .registerService<IPricingEngine> { PricingEngine(proxyFactory) }
         .registerService<ISalesManager> { SalesManager(proxyFactory) }
-        .open()
+        .start()
 
     return host
 }
@@ -59,7 +59,7 @@ fun main(): Unit = runBlocking {
         readln()
     } finally {
         proxyFactory.close()
-        system.close()
+        system.stop()
         telemetryExporter.close()
     }
 }

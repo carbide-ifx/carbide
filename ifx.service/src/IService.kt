@@ -6,18 +6,26 @@ import kotlinx.serialization.Serializable
 interface IService {
     val log: Log
         get() = Log(this::class.qualifiedName ?: this::class.simpleName ?: "IService")
+}
 
-    suspend fun status() = Status(isReady(), isLive())
+/** Host-local lifecycle implemented by service instances, never inherited by their RPC contracts. */
+interface IServiceLifecycle {
+    suspend fun start() = Unit
 
-    suspend fun init() = Unit
+    suspend fun stop() = Unit
 
-    suspend fun isReady(): Boolean = true
-
-    suspend fun isLive(): Boolean = true
-
+    suspend fun health(): ServiceHealth = ServiceHealth.healthy()
 }
 
 @Serializable
-data class Status(val ready: Boolean, val live: Boolean)
+data class ServiceHealth(
+    val ready: Boolean,
+    val live: Boolean,
+    val detail: String? = null,
+) {
+    companion object {
+        fun healthy(): ServiceHealth = ServiceHealth(ready = true, live = true)
+    }
+}
 
 interface IUtility : IService

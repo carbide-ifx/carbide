@@ -8,6 +8,8 @@ import engine.pricing.service.PricingEngine
 import ifx.actuator.LogTail
 import ifx.actuator.LogTailSeverity
 import ifx.host.Host
+import ifx.host.HostHealth
+import ifx.host.HostState
 import ifx.host.ProtocolListener
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.interceptors.ContextInterceptor
@@ -27,6 +29,7 @@ import ifx.subsystem.default
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.rsocket.kotlin.RSocketError
@@ -38,6 +41,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.Json
 import manager.sales.contract.ISalesManager
 import manager.sales.contract.Product
 import java.net.ServerSocket
@@ -59,6 +63,27 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class TestSystemTest {
+    @Test
+    fun `default host publishes Kubernetes health endpoints`() = runBlocking {
+        val host = Host.default().start()
+        val client = HttpClient()
+        try {
+            val baseUrl = "http://localhost:${host.port(RSOCKET_PROTOCOL_ID)}/ifx/health"
+            val ready = client.get("$baseUrl/ready")
+            val live = client.get("$baseUrl/live")
+            val detail = client.get(baseUrl)
+
+            assertEquals(
+                listOf(HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK),
+                listOf(ready.status, live.status, detail.status),
+            )
+            assertEquals(HostState.READY, Json.decodeFromString<HostHealth>(detail.bodyAsText()).state)
+        } finally {
+            client.close()
+            host.stop()
+        }
+    }
+
     @Test
     fun `default host binds both standard protocols and bundled service explorer`() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
