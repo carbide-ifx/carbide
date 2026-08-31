@@ -1,6 +1,14 @@
 
 # iFX.kotlin
 
+iFX is a Kotlin Multiplatform framework for defining typed service contracts, hosting their
+implementations, and calling them over interchangeable RPC protocols. Start with:
+
+- [Design and component model](docs/design.md) — what iFX consists of and how calls flow through it.
+- [Getting started](docs/getting-started.md) — define, host, and call a service.
+
+The sections below are reference documentation for individual capabilities.
+
 ## Building from source
 
 The repository includes a Kotlin 2.4 compatibility build for the Terpal compiler plugin. Amper
