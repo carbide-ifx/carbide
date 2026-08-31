@@ -84,7 +84,7 @@ import example.greeter.contract.GreetResponse
 import example.greeter.contract.IGreeter
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
-import ifx.proxy.contract.create
+import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.subsystem.default
 import kotlinx.coroutines.runBlocking
@@ -152,7 +152,7 @@ dependencies:
 
 ```kotlin
 val clients = RSocketProxyFactory.forHost(host)
-host.onClose { clients.close() }
+host.onStop { clients.close() }
 
 host.registerService<IProductAccess> { ProductAccess(database) }
     .registerService<ISalesManager> { SalesManager(clients) }
@@ -222,6 +222,7 @@ snippet differ.
 
 ## Next steps
 
-- Read [Design](design.md) for component ownership and dependency direction.
+- Read the [architecture overview](architecture.md) for component ownership and dependency
+  direction, and the [module catalog](module-catalog.md) for what each module owns.
 - See the root [README](../README.md) for custom hosts, endpoint projections, gateways, TypeScript
   generation, container images, context propagation, tracing, and proxy lifetime details.
