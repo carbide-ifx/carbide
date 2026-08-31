@@ -8,6 +8,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 val RpcFormat = kotlinx.serialization.json.Json {
     encodeDefaults = true
     prettyPrint = false
+    ignoreUnknownKeys = true
 }
 
 suspend inline fun <reified T> T.encodeToMessage(): Message = Message(
