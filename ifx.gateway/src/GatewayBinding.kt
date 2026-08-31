@@ -39,7 +39,6 @@ fun GatewayProjection.bind(
 
     val address = version?.let { "$name/v$it" } ?: name
     return Endpoint(
-        address = address,
         binding = GatewayBinding(routes),
         description = ServiceDescription(
             name = name,

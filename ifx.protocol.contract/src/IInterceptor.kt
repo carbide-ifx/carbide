@@ -12,32 +12,27 @@ enum class InteractionType {
     REQUEST_STREAM,
 }
 
-sealed interface InterceptorCall {
+/**
+ * Which side of the transport an invocation is passing through.
+ *
+ * Interceptors are registered once and installed on both sides, so a layer that must behave
+ * asymmetrically — encrypt outbound, decrypt inbound — branches on this.
+ */
+enum class CallDirection {
+    CLIENT,
+    SERVER,
+}
+
+data class InterceptorCall(
+    val direction: CallDirection,
     /** Fully qualified service descriptor address. */
-    val service: String
-    val interactionType: InteractionType
-    val operation: String
-    val message: Message
-
-    fun withMessage(message: Message): InterceptorCall
-}
-
-data class ClientCall(
-    override val service: String,
-    override val interactionType: InteractionType,
-    override val operation: String,
-    override val message: Message,
-) : InterceptorCall {
-    override fun withMessage(message: Message): ClientCall = copy(message = message)
-}
-
-data class ServerCall(
-    override val service: String,
-    override val interactionType: InteractionType,
-    override val operation: String,
-    override val message: Message,
-) : InterceptorCall {
-    override fun withMessage(message: Message): ServerCall = copy(message = message)
+    val service: String,
+    val interactionType: InteractionType,
+    val operation: String,
+    val message: Message,
+) {
+    val isClient: Boolean get() = direction == CallDirection.CLIENT
+    val isServer: Boolean get() = direction == CallDirection.SERVER
 }
 
 fun interface InterceptorChain {

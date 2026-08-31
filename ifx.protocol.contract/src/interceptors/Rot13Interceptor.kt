@@ -1,11 +1,10 @@
 package ifx.protocol.contract.interceptors
 
-import ifx.protocol.contract.ClientCall
+import ifx.protocol.contract.CallDirection
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.InterceptorCall
 import ifx.protocol.contract.InterceptorChain
 import ifx.protocol.contract.Message
-import ifx.protocol.contract.ServerCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -25,7 +24,7 @@ object Rot13Interceptor : IInterceptor {
     )
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> =
-        next(call.withMessage(transform(call.message))).map(::transform)
+        next(call.copy(message = transform(call.message))).map(::transform)
 }
 
 
@@ -42,14 +41,14 @@ object Encryption : IInterceptor {
         Message(header = message.header.decrypt(), body = message.body.decrypt())
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> {
-        val request = when (call) {
-            is ClientCall -> encrypt(call.message)
-            is ServerCall -> decrypt(call.message)
+        val request = when (call.direction) {
+            CallDirection.CLIENT -> encrypt(call.message)
+            CallDirection.SERVER -> decrypt(call.message)
         }
-        return next(call.withMessage(request)).map { response ->
-            when (call) {
-                is ClientCall -> decrypt(response)
-                is ServerCall -> encrypt(response)
+        return next(call.copy(message = request)).map { response ->
+            when (call.direction) {
+                CallDirection.CLIENT -> decrypt(response)
+                CallDirection.SERVER -> encrypt(response)
             }
         }
     }

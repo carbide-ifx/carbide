@@ -1,11 +1,11 @@
 package ifx.protocol.contract
 
 interface IClientProtocol {
-    fun createClientBinding(address: String): IBinding
-
-    /** Creates a binding to [address] at an explicit network [endpoint]. */
-    fun createClientBinding(endpoint: ServiceEndpoint, address: String): IBinding =
-        throw UnsupportedOperationException("This client protocol does not support explicit service endpoints")
+    /**
+     * Creates a binding to [address]. [endpoint] overrides the destination this protocol was
+     * configured with; `null` uses that default.
+     */
+    fun createClientBinding(address: String, endpoint: ServiceEndpoint? = null): IBinding
 
     /**
      * Releases the transport resources shared by every binding this protocol created. Bindings

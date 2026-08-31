@@ -5,7 +5,6 @@ product:
 
 dependencies:
   - ../ifx.host.contract
-  - ../ifx.proxy-factory.contract: exported
-  - ../ifx.proxy-factory.base: exported
+  - ../ifx.proxy-factory: exported
   - ../ifx.protocol.rsocket: exported
   - ../ifx.protocol.contract: exported

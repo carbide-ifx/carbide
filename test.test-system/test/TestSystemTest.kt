@@ -20,8 +20,8 @@ import ifx.protocol.rsocket.EXTERNAL_KEEP_ALIVE
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
 import ifx.protocol.rsocket.RSocketServerProtocol
-import ifx.proxy.contract.ServiceEndpoint
-import ifx.proxy.contract.create
+import ifx.protocol.contract.ServiceEndpoint
+import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
 import ifx.service.explorer.ServiceExplorer
@@ -87,7 +87,7 @@ class TestSystemTest {
     @Test
     fun `default host binds both standard protocols and bundled service explorer`() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
-        val host = Host.default(rsocketPort = port).open()
+        val host = Host.default(rsocketPort = port).start()
         val client = HttpClient()
         try {
             assertEquals(port, host.port(RSOCKET_PROTOCOL_ID))
@@ -97,19 +97,19 @@ class TestSystemTest {
             assertEquals(HttpStatusCode.OK, client.get("http://localhost:$port/").status)
         } finally {
             client.close()
-            host.close()
+            host.stop()
         }
     }
 
     @Test
     fun `default host resolves port zero to an available port`() = runBlocking {
-        val host = Host.default().open()
+        val host = Host.default().start()
         try {
             assertNotEquals(0, host.port(RSOCKET_PROTOCOL_ID))
             assertNotEquals(0, host.port(JSON_RPC_PROTOCOL_ID))
             assertNotEquals(host.port(RSOCKET_PROTOCOL_ID), host.port(JSON_RPC_PROTOCOL_ID))
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -128,21 +128,26 @@ class TestSystemTest {
     @Test
     fun `service explorer requires an rsocket listener`() {
         val exception = assertFailsWith<IllegalArgumentException> {
-            ServiceExplorer(ProtocolListener(JsonRpcServerProtocol()))
+            Host {
+                listen(JsonRpcServerProtocol()) { install(ServiceExplorer()) }
+            }
         }
 
-        assertEquals("ServiceExplorer requires an RSocket listener", exception.message)
+        assertEquals(
+            "ServiceExplorer requires a rsocket listener but was installed on json-rpc",
+            exception.message,
+        )
     }
 
     @Test
-    fun `host can be created directly from one protocol`() {
+    fun `host can be created directly from one protocol`() = runBlocking {
         val host = Host {
             listen(RSocketServerProtocol())
-        }.open()
+        }.start()
         try {
             assertNotEquals(0, host.port(RSOCKET_PROTOCOL_ID))
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -167,7 +172,7 @@ class TestSystemTest {
             }
         } finally {
             proxyFactory.close()
-            system.close()
+            system.stop()
         }
     }
 
@@ -178,7 +183,7 @@ class TestSystemTest {
             listen(RSocketServerProtocol(), hostPort)
         }.registerService(IProductAccessDescriptor, ProductAccessEmulator())
 
-        host.open()
+        host.start()
         try {
             TcpProxy(hostPort).use { proxy ->
                 val protocol = RSocketClientProtocol(
@@ -213,7 +218,7 @@ class TestSystemTest {
                 }
             }
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -231,12 +236,12 @@ class TestSystemTest {
                     port = proxy.port,
                     keepAlive = KeepAlive(interval = 100.milliseconds, maxLifetime = 300.milliseconds),
                 )
-                host.onClose { engineFactory.close() }
+                host.onStop { engineFactory.close() }
                 host.registerService(
                     IProductAccessDescriptor,
                     ProductAccessEmulator().apply { seedTestData() },
                 ).registerService(IPricingEngineDescriptor, PricingEngine(engineFactory))
-                    .open()
+                    .start()
 
                 val clientFactory = RSocketProxyFactory(port = hostPort)
                 LogTail.install()
@@ -262,7 +267,7 @@ class TestSystemTest {
                     assertEquals(LogTailSeverity.Error, entry.severity)
                 } finally {
                     clientFactory.close()
-                    host.close()
+                    host.stop()
                 }
             }
         }
@@ -274,7 +279,7 @@ class TestSystemTest {
             listen(RSocketServerProtocol(), hostPort)
         }.registerService(IProductAccessDescriptor, ProductAccessEmulator())
 
-        host.open()
+        host.start()
         try {
             TcpProxy(hostPort).use { proxy ->
                 val protocol = RSocketClientProtocol(
@@ -309,7 +314,7 @@ class TestSystemTest {
                 }
             }
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -320,7 +325,7 @@ class TestSystemTest {
             listen(RSocketServerProtocol(), hostPort)
         }.registerService(IProductAccessDescriptor, ProductAccessEmulator())
 
-        host.open()
+        host.start()
         try {
             // A separate proxy per client so their connection counts can be told apart.
             TcpProxy(hostPort).use { backendRoute ->
@@ -366,7 +371,7 @@ class TestSystemTest {
                 }
             }
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -377,7 +382,7 @@ class TestSystemTest {
             listen(RSocketServerProtocol(), hostPort)
         }.registerService(IProductAccessDescriptor, ProductAccessEmulator())
 
-        host.open()
+        host.start()
         try {
             TcpProxy(hostPort).use { proxy ->
                 val proxyFactory = RSocketProxyFactory(port = proxy.port)
@@ -393,7 +398,7 @@ class TestSystemTest {
                 }
             }
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -412,8 +417,8 @@ class TestSystemTest {
             ProductAccessEmulator(mutableMapOf("second" to access.product.contract.Product.Bike("second", 7))),
         )
 
-        firstHost.open()
-        secondHost.open()
+        firstHost.start()
+        secondHost.start()
         try {
             TcpProxy(firstHost.port(RSOCKET_PROTOCOL_ID)).use { firstProxy ->
                 TcpProxy(secondHost.port(RSOCKET_PROTOCOL_ID)).use { secondProxy ->
@@ -447,8 +452,8 @@ class TestSystemTest {
                 }
             }
         } finally {
-            secondHost.close()
-            firstHost.close()
+            secondHost.stop()
+            firstHost.stop()
         }
     }
 
@@ -493,7 +498,7 @@ class TestSystemTest {
             listen(RSocketServerProtocol(), hostPort)
         }.registerService(IProductAccessDescriptor, service)
 
-        host.open()
+        host.start()
         try {
             TcpProxy(hostPort).use { proxy ->
                 val proxyFactory = RSocketProxyFactory(port = proxy.port)
@@ -504,7 +509,7 @@ class TestSystemTest {
                 }
             }
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -533,7 +538,7 @@ class TestSystemTest {
             Unit
         } finally {
             proxyFactory.close()
-            system.close()
+            system.stop()
         }
     }
 
@@ -544,7 +549,7 @@ class TestSystemTest {
         }.registerService(
             IProductAccessDescriptor,
             ProductAccessEmulator(mutableMapOf("remote" to access.product.contract.Product.Bike("remote", 5))),
-        ).open()
+        ).start()
         val proxyFactory = JsonRpcProxyFactory(port = 1)
 
         try {
@@ -558,7 +563,7 @@ class TestSystemTest {
             )
         } finally {
             proxyFactory.close()
-            remote.close()
+            remote.stop()
         }
     }
 
@@ -585,7 +590,7 @@ class TestSystemTest {
                 )
             } finally {
                 client.close()
-                system.close()
+                system.stop()
             }
         }
 }

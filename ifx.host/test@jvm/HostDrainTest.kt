@@ -82,10 +82,9 @@ private class BlockingService(
 
 private object BlockingServiceDescriptor : ServiceDescriptor<IBlockingService> {
     override val contract = IBlockingService::class
-    override val address: String = "test.IBlockingService"
     override val description = ServiceDescription(
         name = "IBlockingService",
-        address = address,
+        address = "test.IBlockingService",
         kind = ServiceKind.SERVICE,
         operations = listOf(
             OperationDescription(

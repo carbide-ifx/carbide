@@ -2,12 +2,10 @@ package ifx.host.webapp
 
 import ifx.host.HostExtension
 import ifx.host.HostExtensionContext
-import ifx.host.ProtocolListener
 import io.ktor.server.application.Application
 
 /** Hosts a web application built into a filesystem directory. */
 class WebApp(
-    override val listener: ProtocolListener,
     directory: String,
     mountPath: String = "/",
     indexFile: String = "index.html",

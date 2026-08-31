@@ -336,7 +336,7 @@ try {
     // serve requests
 } finally {
     proxyFactory.close()
-    host.close()
+    host.stop()
 }
 ```
 
@@ -605,13 +605,9 @@ its output and does not know about RPC services or tooling.
 
 ```kotlin
 val host = Host(name = "Example") {
-    val listener = listen(RSocketServerProtocol(), port = 8080)
-    install(
-        WebApp(
-            listener = listener,
-            directory = "webapp/dist",
-        ),
-    )
+    listen(RSocketServerProtocol(), port = 8080) {
+        install(WebApp(directory = "webapp/dist"))
+    }
 }
 ```
 

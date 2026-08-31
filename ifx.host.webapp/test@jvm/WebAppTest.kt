@@ -2,7 +2,6 @@ package ifx.host.webapp
 
 import ifx.host.HostExtensionContext
 import ifx.host.IServerProtocol
-import ifx.host.ProtocolListener
 import ifx.protocol.contract.Endpoint
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -26,9 +25,9 @@ class WebAppTest {
 
         testApplication {
             application {
-                WebApp(ProtocolListener(TestProtocol), directory.toString()).install(
+                WebApp(directory.toString()).install(
                     this,
-                    HostExtensionContext("test", emptyList(), { emptyList() }),
+                    HostExtensionContext(),
                 )
             }
 
@@ -48,10 +47,9 @@ class WebAppTest {
         testApplication {
             application {
                 WebApp(
-                    listener = ProtocolListener(TestProtocol),
                     directory = directory.toString(),
                     mountPath = "/explorer",
-                ).install(this, HostExtensionContext("test", emptyList(), { emptyList() }))
+                ).install(this, HostExtensionContext())
             }
 
             assertEquals(HttpStatusCode.NotFound, client.get("/").status)

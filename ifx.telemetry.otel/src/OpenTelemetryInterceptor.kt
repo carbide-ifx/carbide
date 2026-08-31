@@ -1,11 +1,10 @@
 package ifx.telemetry.otel
 
-import ifx.protocol.contract.ClientCall
+import ifx.protocol.contract.CallDirection
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.InterceptorCall
 import ifx.protocol.contract.InterceptorChain
 import ifx.protocol.contract.Message
-import ifx.protocol.contract.ServerCall
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -24,11 +23,11 @@ class OpenTelemetryInterceptor(
     }
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
-        val parent = when (call) {
-            is ClientCall -> currentCoroutineContext()[ActiveSpan]
+        val parent = when (call.direction) {
+            CallDirection.CLIENT -> currentCoroutineContext()[ActiveSpan]
                 ?: call.message.traceParentOrNull()?.toActiveSpan()
 
-            is ServerCall -> call.message.traceParentOrNull()?.toActiveSpan()
+            CallDirection.SERVER -> call.message.traceParentOrNull()?.toActiveSpan()
         }
         val activeSpan = ActiveSpan(
             traceId = parent?.traceId ?: newTraceId(),
@@ -36,15 +35,15 @@ class OpenTelemetryInterceptor(
             traceFlags = parent?.traceFlags ?: if (sampled) "01" else "00",
             traceState = parent?.traceState,
         )
-        val request = when (call) {
-            is ClientCall -> call.message.withTraceParent(activeSpan)
-            is ServerCall -> call.message
+        val request = when (call.direction) {
+            CallDirection.CLIENT -> call.message.withTraceParent(activeSpan)
+            CallDirection.SERVER -> call.message
         }
         val startTime = unixTimeNanos()
         var failure: Throwable? = null
 
         try {
-            emitAll(next(call.withMessage(request)).flowOn(activeSpan))
+            emitAll(next(call.copy(message = request)).flowOn(activeSpan))
         } catch (throwable: Throwable) {
             failure = throwable
             throw throwable
@@ -88,9 +87,9 @@ private fun InterceptorCall.finishedSpan(
         traceFlags = span.traceFlags,
         traceState = span.traceState,
         name = "${service.substringAfterLast('.')}.$operation",
-        kind = when (this) {
-            is ClientCall -> SpanKind.CLIENT
-            is ServerCall -> SpanKind.SERVER
+        kind = when (direction) {
+            CallDirection.CLIENT -> SpanKind.CLIENT
+            CallDirection.SERVER -> SpanKind.SERVER
         },
         startTimeUnixNano = startTime,
         endTimeUnixNano = unixTimeNanos(),

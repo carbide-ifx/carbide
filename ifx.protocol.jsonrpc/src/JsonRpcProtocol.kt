@@ -137,13 +137,10 @@ class JsonRpcClientProtocol private constructor(
 
     constructor(host: String, port: Int) : this({ "http://$host:$port" })
 
-    override fun createClientBinding(address: String): IBinding = createClientBinding(baseUrl(), address)
-
-    override fun createClientBinding(endpoint: ServiceEndpoint, address: String): IBinding =
-        createClientBinding("http://${endpoint.host}:${endpoint.port}", address)
-
-    private fun createClientBinding(baseUrl: String, address: String): IBinding =
-        JsonRpcClient(httpClient, "${baseUrl.trimEnd('/')}/$address")
+    override fun createClientBinding(address: String, endpoint: ServiceEndpoint?): IBinding {
+        val base = endpoint?.let { "http://${it.host}:${it.port}" } ?: baseUrl()
+        return JsonRpcClient(httpClient, "${base.trimEnd('/')}/$address")
+    }
 
     override fun close() {
         if (ownsHttpClient) httpClient.close()

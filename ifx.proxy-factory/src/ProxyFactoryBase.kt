@@ -4,11 +4,11 @@ package ifx.proxy.factory
 
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.IClientProtocol
-import ifx.protocol.contract.ClientInterceptorPipeline
+import ifx.protocol.contract.CallDirection
+import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.ServiceEndpoint
 import ifx.protocol.contract.ServiceDescriptor
-import ifx.proxy.contract.IProxyFactory
 import ifx.service.IService
 import kotlin.concurrent.atomics.AtomicReference
 
@@ -41,8 +41,9 @@ class ProxyFactoryBase private constructor(
     )
 
     override fun <T : IService> create(descriptor: ServiceDescriptor<T>): T {
-        val interceptorPipeline = ClientInterceptorPipeline(
+        val interceptorPipeline = InterceptorPipeline(
             descriptor.address,
+            CallDirection.CLIENT,
             interceptors,
             bindingFor(endpoint, descriptor.address),
         )
@@ -61,10 +62,7 @@ class ProxyFactoryBase private constructor(
             current[key]?.let { return it }
 
             // A binding that loses the race is discarded before it connects, so it holds nothing.
-            val binding = when (endpoint) {
-                null -> protocol.createClientBinding(address)
-                else -> protocol.createClientBinding(endpoint, address)
-            }
+            val binding = protocol.createClientBinding(address, endpoint)
             if (bindings.compareAndSet(current, current + (key to binding))) return binding
         }
     }

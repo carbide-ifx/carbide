@@ -6,21 +6,23 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.single
 
-/** Executes pre-ordered interceptor onion layers around [nextBinding]. */
-sealed class InterceptorPipeline protected constructor(
-    interceptors: List<IInterceptor>,
+/**
+ * Executes interceptor onion layers around [nextBinding].
+ *
+ * Client calls enter interceptors in registration order and server calls in reverse, so one shared
+ * interceptor list produces a symmetric onion across the transport.
+ */
+class InterceptorPipeline(
+    private val service: String,
+    private val direction: CallDirection,
+    interceptors: List<IInterceptor> = emptyList(),
     private val nextBinding: IBinding,
 ) : IBinding {
     private val chain: InterceptorChain = interceptors
+        .let { if (direction == CallDirection.SERVER) it.asReversed() else it }
         .foldRight(InterceptorChain(::invokeBinding)) { interceptor, next ->
             InterceptorChain { call -> interceptor.intercept(call, next) }
         }
-
-    protected abstract fun createCall(
-        interactionType: InteractionType,
-        operation: String,
-        message: Message,
-    ): InterceptorCall
 
     override suspend fun fireAndForget(operation: String, message: Message) {
         invoke(InteractionType.FIRE_AND_FORGET, operation, message).collect()
@@ -36,7 +38,7 @@ sealed class InterceptorPipeline protected constructor(
         interactionType: InteractionType,
         operation: String,
         message: Message,
-    ): Flow<Message> = chain(createCall(interactionType, operation, message))
+    ): Flow<Message> = chain(InterceptorCall(direction, service, interactionType, operation, message))
 
     private fun invokeBinding(call: InterceptorCall): Flow<Message> = flow {
         when (call.interactionType) {
@@ -50,33 +52,4 @@ sealed class InterceptorPipeline protected constructor(
                 emitAll(nextBinding.requestStream(call.operation, call.message))
         }
     }
-}
-
-/** Client calls enter interceptors in registration order. */
-class ClientInterceptorPipeline(
-    private val service: String,
-    interceptors: List<IInterceptor> = emptyList(),
-    nextBinding: IBinding,
-) : InterceptorPipeline(interceptors, nextBinding) {
-    override fun createCall(
-        interactionType: InteractionType,
-        operation: String,
-        message: Message,
-    ): ClientCall = ClientCall(service, interactionType, operation, message)
-}
-
-/**
- * Server calls enter interceptors in reverse registration order, making a
- * shared client/server interceptor list symmetrical across the transport.
- */
-class ServerInterceptorPipeline(
-    private val service: String,
-    interceptors: List<IInterceptor> = emptyList(),
-    nextBinding: IBinding,
-) : InterceptorPipeline(interceptors.asReversed(), nextBinding) {
-    override fun createCall(
-        interactionType: InteractionType,
-        operation: String,
-        message: Message,
-    ): ServerCall = ServerCall(service, interactionType, operation, message)
 }

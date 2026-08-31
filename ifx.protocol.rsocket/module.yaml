@@ -21,5 +21,5 @@ dependencies@macosArm64:
   - io.ktor:ktor-client-darwin:3.1.1: exported
 
 test-dependencies@jvm:
-  - ../ifx.proxy-factory.base
+  - ../ifx.proxy-factory
   - ../ifx.testing

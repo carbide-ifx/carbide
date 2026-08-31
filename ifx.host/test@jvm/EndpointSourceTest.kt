@@ -8,13 +8,14 @@ import ifx.protocol.contract.ServiceKind
 import io.ktor.server.application.Application
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class EndpointSourceTest {
     @Test
-    fun `listener installs only endpoints selected by its endpoint source`() {
+    fun `listener installs only endpoints selected by its endpoint source`() = runBlocking {
         val projectedEndpoint = endpoint("product-web")
         val protocol = RecordingServerProtocol()
         val host = Host {
@@ -25,10 +26,10 @@ class EndpointSourceTest {
         }
 
         try {
-            host.open()
+            host.start()
             assertEquals(listOf(projectedEndpoint), protocol.installedEndpoints)
         } finally {
-            host.close()
+            host.stop()
         }
     }
 
@@ -40,7 +41,7 @@ class EndpointSourceTest {
             listen(protocol, id = "operator-api")
         }
 
-        assertEquals(listOf("customer-api", "operator-api"), host.boundListeners.map { it.id })
+        assertEquals(listOf("customer-api", "operator-api"), host.boundListeners.map { it.listenerId })
         assertFailsWith<IllegalArgumentException> {
             Host {
                 listen(protocol, id = "duplicate")
@@ -50,7 +51,6 @@ class EndpointSourceTest {
     }
 
     private fun endpoint(address: String) = Endpoint(
-        address = address,
         binding = EmptyBinding,
         description = ServiceDescription(
             name = address,

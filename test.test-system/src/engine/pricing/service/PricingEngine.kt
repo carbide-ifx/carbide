@@ -4,8 +4,8 @@ import access.product.contract.IProductAccess
 import access.product.contract.ProductCriteria
 import access.product.contract.Product
 import engine.pricing.contract.IPricingEngine
-import ifx.proxy.contract.IProxyFactory
-import ifx.proxy.contract.create
+import ifx.proxy.factory.IProxyFactory
+import ifx.proxy.factory.create
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 

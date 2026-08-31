@@ -103,13 +103,9 @@ class RSocketClientProtocol(
 
     private val httpClient: HttpClient = rsocketHttpClient(keepAlive, setupData)
 
-    override fun createClientBinding(address: String): IBinding = createClientBinding(baseUrl(), address)
-
-    override fun createClientBinding(endpoint: ServiceEndpoint, address: String): IBinding =
-        createClientBinding("ws://${endpoint.host}:${endpoint.port}", address)
-
-    private fun createClientBinding(baseUrl: String, address: String): IBinding = try {
-        RSocketClient(httpClient, "${baseUrl.trimEnd('/')}/$address", connectTimeout)
+    override fun createClientBinding(address: String, endpoint: ServiceEndpoint?): IBinding = try {
+        val base = endpoint?.let { "ws://${it.host}:${it.port}" } ?: baseUrl()
+        RSocketClient(httpClient, "${base.trimEnd('/')}/$address", connectTimeout)
     } catch (exception: Throwable) {
         throw ProtocolException(exception) {
             "Failed to create RSocket client for $address: ${exception.message}"

@@ -27,8 +27,8 @@ import org.jetbrains.kotlin.name.Name
 
 private val HOST_CLASS_ID = ClassId.topLevel(FqName("ifx.host.IHost"))
 private val HOST_COMPANION_CLASS_ID = HOST_CLASS_ID.createNestedClassId(Name.identifier("Companion"))
-private val PROXY_FACTORY_CLASS_ID = ClassId.topLevel(FqName("ifx.proxy.contract.IProxyFactory"))
-private val PROXY_CREATE_CALLABLE_ID = CallableId(FqName("ifx.proxy.contract"), Name.identifier("create"))
+private val PROXY_FACTORY_CLASS_ID = ClassId.topLevel(FqName("ifx.proxy.factory.IProxyFactory"))
+private val PROXY_CREATE_CALLABLE_ID = CallableId(FqName("ifx.proxy.factory"), Name.identifier("create"))
 private val DESCRIPTOR_TYPE = FqName("ifx.protocol.contract.ServiceDescriptor")
 
 /** Replaces typed host/proxy conveniences with calls that pass their generated descriptor directly. */

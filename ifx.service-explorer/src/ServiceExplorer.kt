@@ -2,7 +2,6 @@ package ifx.service.explorer
 
 import ifx.host.HostExtension
 import ifx.host.HostExtensionContext
-import ifx.host.ProtocolListener
 import ifx.host.webapp.WebApp
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import io.ktor.http.ContentType
@@ -13,20 +12,13 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 
 class ServiceExplorer(
-    override val listener: ProtocolListener,
     developmentDirectory: String? = null,
 ) : HostExtension {
-    init {
-        require(listener.protocol.id == RSOCKET_PROTOCOL_ID) {
-            "ServiceExplorer requires an RSocket listener"
-        }
-    }
+    /** The browser client invokes services and streams logs over RSocket. */
+    override val requiredProtocolId: String = RSOCKET_PROTOCOL_ID
 
     private val developmentWebApp = developmentDirectory?.let { directory ->
-        WebApp(
-            listener = listener,
-            directory = directory,
-        )
+        WebApp(directory = directory)
     }
 
     override fun install(application: Application, context: HostExtensionContext) {

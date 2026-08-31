@@ -21,7 +21,8 @@ class InterceptorPipelineTest {
     @Test
     fun `client interceptors surround the complete stream in registration order`() = runBlocking {
         val events = mutableListOf<String>()
-        val pipeline = ClientInterceptorPipeline(
+        val pipeline = InterceptorPipeline(
+            direction = CallDirection.CLIENT,
             service = "test.Service",
             interceptors = listOf(RecordingInterceptor("first", events), RecordingInterceptor("second", events)),
             nextBinding = RecordingBinding(events),
@@ -46,7 +47,8 @@ class InterceptorPipelineTest {
     @Test
     fun `server interceptors mirror client order`() = runBlocking {
         val events = mutableListOf<String>()
-        val pipeline = ServerInterceptorPipeline(
+        val pipeline = InterceptorPipeline(
+            direction = CallDirection.SERVER,
             service = "test.Service",
             interceptors = listOf(RecordingInterceptor("first", events), RecordingInterceptor("second", events)),
             nextBinding = RecordingBinding(events),
@@ -80,7 +82,8 @@ class InterceptorPipelineTest {
             override suspend fun requestResponse(operation: String, message: Message): Message =
                 Message("{}", "response")
         }
-        val pipeline = ClientInterceptorPipeline(
+        val pipeline = InterceptorPipeline(
+            direction = CallDirection.CLIENT,
             service = "manager.sales.contract.ISalesManager",
             interceptors = listOf(inspector),
             nextBinding = binding,
@@ -110,7 +113,7 @@ class InterceptorPipelineTest {
                 return Message("{}", "response")
             }
         }
-        val pipeline = ClientInterceptorPipeline("test.Service", listOf(contextInterceptor, inspector), binding)
+        val pipeline = InterceptorPipeline("test.Service", CallDirection.CLIENT, listOf(contextInterceptor, inspector), binding)
 
         withContext(Context().set(expected)) {
             pipeline.requestResponse("response", Message("{}", "request"))
@@ -139,8 +142,9 @@ class InterceptorPipelineTest {
                 emit(Message("{}", "response"))
             }
         }
-        val pipeline = ServerInterceptorPipeline(
+        val pipeline = InterceptorPipeline(
             "test.Service",
+            CallDirection.SERVER,
             interceptors = listOf(contextInterceptor),
             nextBinding = binding,
         )
@@ -164,7 +168,7 @@ class InterceptorPipelineTest {
                 return Message("{}", "response")
             }
         }
-        val pipeline = ClientInterceptorPipeline("test.Service", listOf(contextInterceptor), binding)
+        val pipeline = InterceptorPipeline("test.Service", CallDirection.CLIENT, listOf(contextInterceptor), binding)
 
         val response = withContext(Context().set(expected)) {
             pipeline.requestResponse("response", Message("{}", "request"))

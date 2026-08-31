@@ -10,7 +10,7 @@ import ifx.protocol.contract.ServiceKind
 import ifx.protocol.contract.forService
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
-import ifx.proxy.contract.create
+import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -47,7 +47,7 @@ class ActuatorServiceTest {
             catalog.listeners.forEach { listener -> assertNotEquals(0, listener.port) }
         } finally {
             proxyFactory.close()
-            system.close()
+            system.stop()
         }
     }
 
@@ -69,7 +69,7 @@ class ActuatorServiceTest {
             assertEquals(emptyList(), exposedLifecycleOperations)
         } finally {
             proxyFactory.close()
-            system.close()
+            system.stop()
         }
     }
 
@@ -94,7 +94,7 @@ class ActuatorServiceTest {
             )
         } finally {
             proxyFactory.close()
-            system.close()
+            system.stop()
         }
     }
 
@@ -121,7 +121,7 @@ class ActuatorServiceTest {
             assertEquals(message, entry.message)
         } finally {
             proxyFactory.close()
-            system.close()
+            system.stop()
         }
     }
 }

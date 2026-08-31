@@ -1,9 +1,0 @@
-apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
-product:
-  type: lib
-  platforms: [ jvm, macosArm64 ]
-
-dependencies:
-  - ../ifx.service
-  - ../ifx.proxy-factory.contract: exported
-  - ../ifx.protocol.contract: exported

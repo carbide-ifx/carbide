@@ -3,7 +3,6 @@ package ifx.actuator
 import ifx.host.HostExtension
 import ifx.host.HostExtensionContext
 import ifx.host.HostHealth
-import ifx.host.ProtocolListener
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -13,9 +12,7 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class HealthEndpoints(
-    override val listener: ProtocolListener,
-) : HostExtension {
+class HealthEndpoints : HostExtension {
     override fun install(application: Application, context: HostExtensionContext) {
         application.routing {
             get("/ifx/health") {

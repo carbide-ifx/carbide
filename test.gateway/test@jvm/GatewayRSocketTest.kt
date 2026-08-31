@@ -40,7 +40,7 @@ class GatewayRSocketTest {
                 ),
                 endpointSource = EndpointSource { listOf(endpoint) },
             )
-        }.open()
+        }.start()
         val protocol = RSocketClientProtocol(
             baseUrl = { "ws://localhost:${host.port("rsocket")}" },
             connectTimeout = 2.seconds,
@@ -57,7 +57,7 @@ class GatewayRSocketTest {
             assertTrue(target.message?.context()?.isEmpty == true)
         } finally {
             protocol.close()
-            host.close()
+            host.stop()
         }
     }
 }
@@ -81,7 +81,6 @@ private class ContextRecordingBinding : IBinding {
 }
 
 private fun gatewayEndpoint(binding: IBinding): Endpoint = Endpoint(
-    address = "product-web",
     binding = binding,
     description = ServiceDescription(
         name = "product-web",

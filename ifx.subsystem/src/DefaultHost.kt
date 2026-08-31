@@ -34,10 +34,11 @@ suspend fun Host.Companion.default(
         drainDelay = drainDelay,
         requestDrainTimeout = requestDrainTimeout,
     ) {
-        val rsocket = listen(RSocketServerProtocol(), rsocketPort)
+        listen(RSocketServerProtocol(), rsocketPort) {
+            install(ServiceExplorer())
+            install(HealthEndpoints())
+        }
         listen(JsonRpcServerProtocol(), jsonRpcPort)
-        install(ServiceExplorer(rsocket))
-        install(HealthEndpoints(rsocket))
     }
     host.addInterceptors(interceptors)
     host.registerActuator(actuatorDescriptor)

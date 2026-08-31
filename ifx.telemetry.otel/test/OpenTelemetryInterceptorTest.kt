@@ -1,13 +1,12 @@
 package ifx.telemetry.otel
 
-import ifx.protocol.contract.ClientCall
-import ifx.protocol.contract.ClientInterceptorPipeline
+import ifx.protocol.contract.CallDirection
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.InteractionType
+import ifx.protocol.contract.InterceptorCall
 import ifx.protocol.contract.InterceptorChain
 import ifx.protocol.contract.Message
-import ifx.protocol.contract.ServerCall
-import ifx.protocol.contract.ServerInterceptorPipeline
+import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.headers
 import ifx.protocol.contract.withHeader
 import kotlinx.coroutines.flow.flow
@@ -34,13 +33,15 @@ class OpenTelemetryInterceptorTest {
 
             override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flowOf()
         }
-        val server = ServerInterceptorPipeline(
+        val server = InterceptorPipeline(
             service = "manager.sales.contract.ISalesManager",
+            direction = CallDirection.SERVER,
             interceptors = listOf(interceptor),
             nextBinding = serviceBinding,
         )
-        val client = ClientInterceptorPipeline(
+        val client = InterceptorPipeline(
             service = "manager.sales.contract.ISalesManager",
+            direction = CallDirection.CLIENT,
             interceptors = listOf(interceptor),
             nextBinding = server,
         )
@@ -66,7 +67,7 @@ class OpenTelemetryInterceptorTest {
         }
 
         interceptor.intercept(
-            ClientCall(
+            InterceptorCall(CallDirection.CLIENT,
                 service = "manager.sales.contract.ISalesManager",
                 interactionType = InteractionType.REQUEST_RESPONSE,
                 operation = "listProducts()",
@@ -99,7 +100,7 @@ class OpenTelemetryInterceptorTest {
         ).withHeader("TraceState", JsonPrimitive("vendor=value"))
 
         interceptor.intercept(
-            ServerCall(
+            InterceptorCall(CallDirection.SERVER,
                 service = "manager.sales.contract.ISalesManager",
                 interactionType = InteractionType.REQUEST_RESPONSE,
                 operation = "listProducts()",
@@ -120,7 +121,7 @@ class OpenTelemetryInterceptorTest {
     fun `span covers stream failure and records the error`() = runBlocking {
         val exporter = RecordingExporter()
         val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "stream-client")
-        val call = ClientCall(
+        val call = InterceptorCall(CallDirection.CLIENT,
             service = "test.StreamService",
             interactionType = InteractionType.REQUEST_STREAM,
             operation = "stream()",
@@ -150,7 +151,7 @@ class OpenTelemetryInterceptorTest {
     fun `invalid traceparent starts a new trace`() = runBlocking {
         val exporter = RecordingExporter()
         val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "notification-service")
-        val call = ServerCall(
+        val call = InterceptorCall(CallDirection.SERVER,
             service = "test.Service",
             interactionType = InteractionType.FIRE_AND_FORGET,
             operation = "notify()",
@@ -174,7 +175,7 @@ class OpenTelemetryInterceptorTest {
             sampled = false,
         )
         var forwardedMessage: Message? = null
-        val call = ClientCall(
+        val call = InterceptorCall(CallDirection.CLIENT,
             service = "test.Service",
             interactionType = InteractionType.REQUEST_RESPONSE,
             operation = "call()",
@@ -204,7 +205,7 @@ class OpenTelemetryInterceptorTest {
                 error("diagnostic callback failed")
             },
         )
-        val call = ClientCall(
+        val call = InterceptorCall(CallDirection.CLIENT,
             service = "test.Service",
             interactionType = InteractionType.REQUEST_RESPONSE,
             operation = "call()",

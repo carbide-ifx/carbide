@@ -191,7 +191,6 @@ ${functions.joinToString("\n") { clientMethod(it) }}
 
 public object $descriptorName : ServiceDescriptor<$contractName> {
     override val contract = $contractName::class
-    override val address = "$address"
     override val description = $description
 ${operationProperties.joinToString("\n") { (function, propertyName) -> operationProperty(contractName, function, propertyName) }}
     override fun createClient(binding: IBinding): $contractName = ${contractName}Proxy(binding)

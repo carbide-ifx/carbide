@@ -11,7 +11,7 @@ import ifx.protocol.contract.ProtocolException
 import ifx.protocol.contract.forService
 import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
-import ifx.proxy.contract.create
+import ifx.proxy.factory.create
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -46,7 +46,7 @@ class ServiceLogTest {
         val host = Host(JsonRpcServerProtocol()).addInterceptors(LoggingInterceptor())
 
         LogTail.install()
-        host.registerService(IProductAccessDescriptor, service).open()
+        host.registerService(IProductAccessDescriptor, service).start()
         val proxyFactory = JsonRpcProxyFactory.forHost(host)
         try {
             val productAccess = proxyFactory.create<IProductAccess>()
@@ -65,7 +65,7 @@ class ServiceLogTest {
             assertEquals(LogTailSeverity.Error, entry.severity)
         } finally {
             proxyFactory.close()
-            host.close()
+            host.stop()
         }
     }
 }

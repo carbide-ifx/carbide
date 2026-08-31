@@ -187,10 +187,9 @@ private class RecordingService(
 
 private object RecordingServiceDescriptor : ServiceDescriptor<IRecordingService> {
     override val contract = IRecordingService::class
-    override val address: String = "test.IRecordingService"
     override val description = ServiceDescription(
         name = "IRecordingService",
-        address = address,
+        address = "test.IRecordingService",
         kind = ServiceKind.SERVICE,
         operations = emptyList(),
         types = emptyList(),
@@ -202,10 +201,9 @@ private object RecordingServiceDescriptor : ServiceDescriptor<IRecordingService>
 }
 
 private object SecondRecordingServiceDescriptor : ServiceDescriptor<IRecordingService> by RecordingServiceDescriptor {
-    override val address: String = "test.ISecondRecordingService"
     override val description: ServiceDescription = RecordingServiceDescriptor.description.copy(
         name = "ISecondRecordingService",
-        address = address,
+        address = "test.ISecondRecordingService",
     )
 }
 

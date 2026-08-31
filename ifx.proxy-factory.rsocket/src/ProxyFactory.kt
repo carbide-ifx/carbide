@@ -5,7 +5,7 @@ import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
 import ifx.protocol.rsocket.SUBSYSTEM_KEEP_ALIVE
-import ifx.proxy.contract.IProxyFactory
+import ifx.proxy.factory.IProxyFactory
 import io.rsocket.kotlin.keepalive.KeepAlive
 
 /**

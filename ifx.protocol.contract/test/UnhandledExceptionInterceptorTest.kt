@@ -99,8 +99,9 @@ class UnhandledExceptionInterceptorTest {
     private fun pipeline(
         interceptor: IInterceptor,
         binding: IBinding,
-    ): ServerInterceptorPipeline = ServerInterceptorPipeline(
+    ): InterceptorPipeline = InterceptorPipeline(
         service = "test.IProductAccess",
+        direction = CallDirection.SERVER,
         interceptors = listOf(interceptor),
         nextBinding = binding,
     )

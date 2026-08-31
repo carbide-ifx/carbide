@@ -8,7 +8,7 @@ import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.interceptors.LoggingInterceptor
-import ifx.proxy.contract.create
+import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.subsystem.default
 import ifx.telemetry.otel.OpenTelemetryInterceptor
@@ -26,7 +26,7 @@ suspend fun startTestSystem(
     )
     // The services below hold this factory, so its connections live exactly as long as the host.
     val proxyFactory = RSocketProxyFactory.forHost(host)
-    host.onClose { proxyFactory.close() }
+    host.onStop { proxyFactory.close() }
 
     host.registerService<IProductAccess> { ProductAccessEmulator().apply { seedTestData() } }
         .registerService<IPricingEngine> { PricingEngine(proxyFactory) }

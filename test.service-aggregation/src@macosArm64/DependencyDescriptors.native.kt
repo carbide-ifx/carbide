@@ -4,8 +4,8 @@ import access.product.contract.IProductAccess
 import access.product.contract.IProductAccessDescriptor
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
-import ifx.proxy.contract.IProxyFactory
-import ifx.proxy.contract.create
+import ifx.proxy.factory.IProxyFactory
+import ifx.proxy.factory.create
 import ifx.subsystem.default
 
 /** Compile-time proof that descriptors are generated in the Native subsystem compilation. */

@@ -5,8 +5,9 @@ import ifx.logging.LogTag
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.CallDirection
+import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.ProtocolListenerDescription
-import ifx.protocol.contract.ServerInterceptorPipeline
 import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
 import ifx.protocol.contract.ServiceKind
@@ -36,7 +37,6 @@ class Host(
     private val listeners: List<ProtocolListener>,
     override val name: String = "Service Host",
     interceptors: MutableList<IInterceptor> = mutableListOf(),
-    private val extensions: List<HostExtension> = emptyList(),
     private val healthCheckTimeout: Duration = 5.seconds,
     private val drainDelay: Duration = ZERO,
     private val requestDrainTimeout: Duration = 20.seconds,
@@ -45,7 +45,7 @@ class Host(
     private val registeredServices = mutableListOf<RegisteredService>()
     private val startedServiceLifecycles = mutableListOf<IServiceLifecycle>()
     private val runningServers = mutableListOf<RunningServer>()
-    private val closeActions = mutableListOf<() -> Unit>()
+    private val stopActions = mutableListOf<() -> Unit>()
     private val additionalInterceptors = interceptors
     private val contextInterceptor = ContextInterceptor()
     private val callTracker = HostCallTracker()
@@ -57,7 +57,7 @@ class Host(
     override var state: HostState = HostState.NEW
         private set
 
-    override var boundListeners: List<BoundProtocolListener> = requestedListeners()
+    override var boundListeners: List<ProtocolListenerDescription> = requestedListeners()
         private set
 
     init {
@@ -74,12 +74,6 @@ class Host(
             .keys
         require(duplicatePorts.isEmpty()) {
             "Each protocol listener must use a separate port: ${duplicatePorts.joinToString()}"
-        }
-        val missingExtensionListeners = extensions
-            .map(HostExtension::listener)
-            .filterNot { target -> listeners.any { listener -> listener === target } }
-        require(missingExtensionListeners.isEmpty()) {
-            "Every host extension must target a listener configured on the host"
         }
     }
 
@@ -121,7 +115,6 @@ class Host(
     ) : this(
         listeners = configuration.listeners,
         name = name,
-        extensions = configuration.extensions,
         healthCheckTimeout = healthCheckTimeout,
         drainDelay = drainDelay,
         requestDrainTimeout = requestDrainTimeout,
@@ -152,12 +145,13 @@ class Host(
             },
         )
         val interceptorBinding: IBinding =
-            ServerInterceptorPipeline(
+            InterceptorPipeline(
                 descriptor.address,
+                CallDirection.SERVER,
                 mandatoryInterceptors.withAdditional(additionalInterceptors),
                 serviceBinding,
             )
-        endpoints += Endpoint(descriptor.address, interceptorBinding, descriptor.description)
+        endpoints += Endpoint(interceptorBinding, descriptor.description)
         registeredServices += RegisteredService(descriptor.address, instance as? IServiceLifecycle)
     }
 
@@ -197,8 +191,6 @@ class Host(
         }
     }
 
-    override fun open(): IHost = runBlocking { start() }
-
     private fun openListeners() {
         val started = mutableListOf<RunningServer>()
         try {
@@ -209,11 +201,11 @@ class Host(
             }
             runningServers += started
             boundListeners = started.map { running ->
-                BoundProtocolListener(
+                ProtocolListenerDescription(
                     protocolId = running.config.protocol.id,
                     host = running.config.host,
                     port = running.port,
-                    id = running.config.id,
+                    listenerId = running.config.id,
                 )
             }
         } catch (exception: Throwable) {
@@ -222,7 +214,7 @@ class Host(
         }
     }
 
-    override fun onClose(action: () -> Unit): IHost = apply { closeActions += action }
+    override fun onStop(action: () -> Unit): IHost = apply { stopActions += action }
 
     override suspend fun stop(): IHost = withContext(NonCancellable) {
         if (state == HostState.STOPPED) return@withContext this@Host
@@ -246,10 +238,10 @@ class Host(
         runningServers.clear()
         boundListeners = requestedListeners()
 
-        closeActions.asReversed().forEach { action ->
+        stopActions.asReversed().forEach { action ->
             runCatching(action).exceptionOrNull()?.let(failures::add)
         }
-        closeActions.clear()
+        stopActions.clear()
         state = HostState.STOPPED
         failures.firstOrNull()?.let { first ->
             failures.drop(1).forEach(first::addSuppressed)
@@ -257,8 +249,6 @@ class Host(
         }
         this@Host
     }
-
-    override fun close(): IHost = runBlocking { stop() }
 
     override suspend fun health(): HostHealth {
         val services = coroutineScope {
@@ -301,14 +291,7 @@ class Host(
     override fun serviceCatalog(): ServiceCatalog = ServiceCatalog(
         name = name,
         services = endpoints.map(Endpoint::description),
-        listeners = boundListeners.map { listener ->
-            ProtocolListenerDescription(
-                protocolId = listener.protocolId,
-                host = listener.host,
-                port = listener.port,
-                listenerId = listener.id,
-            )
-        },
+        listeners = boundListeners,
     )
 
     private fun createServer(config: ProtocolListener): RunningServer {
@@ -326,10 +309,8 @@ class Host(
             },
         ) {
             config.protocol.install(this, listenerEndpoints)
-            val context = HostExtensionContext(name, listenerEndpoints, { boundListeners }, ::health)
-            extensions.filter { it.listener === config }.forEach { extension ->
-                extension.install(this, context)
-            }
+            val context = HostExtensionContext(::health)
+            config.extensions.forEach { extension -> extension.install(this, context) }
         }
         return RunningServer(
             config = config,
@@ -341,8 +322,8 @@ class Host(
         )
     }
 
-    private fun requestedListeners(): List<BoundProtocolListener> = listeners.map { config ->
-        BoundProtocolListener(config.protocol.id, config.host, config.port, config.id)
+    private fun requestedListeners(): List<ProtocolListenerDescription> = listeners.map { config ->
+        ProtocolListenerDescription(config.protocol.id, config.host, config.port, config.id)
     }
 
     private class RunningServer(
@@ -365,7 +346,6 @@ class Host(
 
 class HostBuilder internal constructor() {
     private val listeners = mutableListOf<ProtocolListener>()
-    private val extensions = mutableListOf<HostExtension>()
 
     fun listen(
         protocol: IServerProtocol,
@@ -373,18 +353,35 @@ class HostBuilder internal constructor() {
         host: String = "0.0.0.0",
         id: String = protocol.id,
         endpointSource: EndpointSource = EndpointSource.Registered,
-    ): ProtocolListener = ProtocolListener(protocol, port, host, id, endpointSource).also(listeners::add)
+        configure: ListenerBuilder.() -> Unit = {},
+    ): ProtocolListener = ProtocolListener(
+        protocol = protocol,
+        port = port,
+        host = host,
+        id = id,
+        endpointSource = endpointSource,
+        extensions = ListenerBuilder(protocol).apply(configure).build(),
+    ).also(listeners::add)
+
+    internal fun build(): HostConfiguration = HostConfiguration(listeners.toList())
+}
+
+class ListenerBuilder internal constructor(private val protocol: IServerProtocol) {
+    private val extensions = mutableListOf<HostExtension>()
 
     fun install(extension: HostExtension) {
+        val required = extension.requiredProtocolId
+        require(required == null || required == protocol.id) {
+            "${extension::class.simpleName} requires a $required listener but was installed on ${protocol.id}"
+        }
         extensions += extension
     }
 
-    internal fun build(): HostConfiguration = HostConfiguration(listeners.toList(), extensions.toList())
+    internal fun build(): List<HostExtension> = extensions.toList()
 }
 
 internal data class HostConfiguration(
     val listeners: List<ProtocolListener>,
-    val extensions: List<HostExtension>,
 )
 
 /**

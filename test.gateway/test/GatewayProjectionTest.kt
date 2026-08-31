@@ -9,6 +9,7 @@ import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.contract.Message
+import ifx.protocol.contract.ServiceEndpoint
 import ifx.protocol.contract.TypeDescription
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -58,7 +59,6 @@ class GatewayProjectionTest {
         val salesTarget = RecordingBinding()
         val registered = ProductWebApi.services.map { service ->
             Endpoint(
-                address = service.descriptor.address,
                 binding = if (service.name == "productAccess") productTarget else salesTarget,
                 description = service.descriptor.description,
             )
@@ -181,7 +181,7 @@ private class RecordingClientProtocol : IClientProtocol {
     val addresses = mutableListOf<String>()
     val target = RecordingBinding()
 
-    override fun createClientBinding(address: String): IBinding {
+    override fun createClientBinding(address: String, endpoint: ServiceEndpoint?): IBinding {
         addresses += address
         return target
     }

@@ -4,7 +4,7 @@ import ifx.host.IHost
 import ifx.protocol.contract.IClientProtocol
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcClientProtocol
-import ifx.proxy.contract.IProxyFactory
+import ifx.proxy.factory.IProxyFactory
 import ifx.proxy.factory.ProxyFactoryBase
 
 class JsonRpcProxyFactory private constructor(
