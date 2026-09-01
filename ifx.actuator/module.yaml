@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
+description: Diagnostics, health checks, service catalog, and structured log streaming for Carbide hosts.
+
 product:
   type: lib
   platforms: [ jvm, macosArm64 ]

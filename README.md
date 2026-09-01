@@ -1,13 +1,14 @@
 
-# iFX.kotlin
+# Carbide
 
-iFX is a Kotlin Multiplatform framework for defining typed service contracts, hosting their
+Carbide is a Kotlin Multiplatform framework for defining typed service contracts, hosting their
 implementations, and calling them over interchangeable RPC protocols. Start with:
 
 - [Getting started](docs/getting-started.md) — define, host, and call a service.
-- [Architecture overview](docs/architecture.md) — what iFX consists of and how calls flow through it.
+- [Architecture overview](docs/architecture.md) — what Carbide consists of and how calls flow through it.
 - [All architecture documentation](docs/README.md) — module catalog, code generation, gateway,
   design decisions, and diagrams.
+- [Publishing](docs/publishing.md) — supported Maven modules and the Central release boundary.
 
 The sections below are reference documentation for individual capabilities.
 
@@ -53,11 +54,11 @@ locally. Lifecycle methods are never generated as remotely callable service oper
 ## Subsystem dependency
 
 Applications that host a subsystem can use the published `ifx.subsystem` module
-as their single iFX runtime dependency:
+as their single Carbide runtime dependency:
 
 ```yaml
 dependencies:
-  - sonat:ifx.subsystem:0.0.9
+  - io.carbide-ifx:ifx.subsystem:0.1.0
 ```
 
 It exports the host, RSocket and JSON-RPC protocols and proxy factories,
@@ -472,7 +473,7 @@ re-thrown to the active transport. Exception reporting never replaces the
 original RPC failure or changes the transport's error response.
 
 Register the separate actuator service to expose that flow through the normal
-service transport. Callers use the generated actuator client or an iFX proxy;
+service transport. Callers use the generated actuator client or a Carbide proxy;
 there is no separate HTTP streaming endpoint:
 
 ```kotlin
@@ -527,7 +528,7 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.contract.ksp:0.0.9
+        - io.carbide-ifx:ifx.contract.ksp:0.1.0
 ```
 
 A subsystem's KSP run reads the reachable contract indexes and generates one Kotlin
@@ -541,12 +542,12 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.subsystem.ksp:0.0.9
+        - io.carbide-ifx:ifx.subsystem.ksp:0.1.0
         # Optional: generate TypeScript contracts and wire types.
-        - sonat:ifx.rpc.typescript.ksp:0.0.9
+        - io.carbide-ifx:ifx.rpc.typescript.ksp:0.1.0
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.9
+        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
 ```
 
 The subsystem dependency graph is the contract manifest. Contract modules depend only
@@ -757,7 +758,7 @@ In the name of efficiency, effectiveness and productivity:
 * Sand down rough edges  
 * Extract razorblades
 
-###  iFX should
+### Carbide should
 -   Mitigate technology as a risk
 -   Wrap best practice usage (consistent+repeatable)
 -   Enforce policy

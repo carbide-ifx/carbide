@@ -2,20 +2,24 @@ settings:
   kotlin:
     version: 2.4.10
   publishing:
-    group: sonat
-    version: 0.0.9
+    group: io.carbide-ifx
+    version: 0.1.0
     enabled: true
+    mavenCentral: enabled
+    signArtifacts: true
     publishSources: true
+    pom:
+      url: https://carbide-ifx.io
+      scm: https://github.com/carbide-ifx/carbide.git
+      developers:
+        - name: Carbide contributors
+          organization: Carbide
+          organizationUrl: https://carbide-ifx.io
+      licenses:
+        - name: The Apache License, Version 2.0
+          url: https://www.apache.org/licenses/LICENSE-2.0.txt
 
 repositories:
-  - id: github
-    publish: true
-    resolve: true
-    url: https://maven.pkg.github.com/Sonat-Consulting-Trondheim/ifx.kotlin
-    credentials:
-      file: repository-credentials.properties
-      usernameKey: github.username
-      passwordKey: github.token
   - id: local
     publish: true
     resolve: true

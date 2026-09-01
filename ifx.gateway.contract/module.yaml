@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
+description: Transport-neutral gateway projection contracts and DSL for Carbide services.
+
 product:
   type: lib
   platforms: [ jvm, macosArm64 ]

@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
+description: Core Carbide service contracts, lifecycle, fire-and-forget, and response types.
+
 product:
   type: lib
   platforms: [jvm, macosArm64]

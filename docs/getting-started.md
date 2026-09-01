@@ -1,7 +1,7 @@
-# Getting started with iFX
+# Getting started with Carbide
 
 This walkthrough creates one contract, hosts an implementation, and calls it through a typed proxy.
-It uses the standard subsystem composition. The examples assume iFX version `0.0.9`, matching the
+It uses the standard subsystem composition. The examples assume Carbide version `0.1.0`, matching the
 current repository configuration.
 
 ## 1. Create a contract module
@@ -17,10 +17,10 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.contract.ksp:0.0.9
+        - io.carbide-ifx:ifx.contract.ksp:0.1.0
 
 dependencies:
-  - sonat:ifx.service:0.0.9
+  - io.carbide-ifx:ifx.service:0.1.0
 ```
 
 Define an interface extending `IService`. Request and response models that cross the wire must be
@@ -61,14 +61,14 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.subsystem.ksp:0.0.9
+        - io.carbide-ifx:ifx.subsystem.ksp:0.1.0
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.9
+        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
 
 dependencies:
   - ../greeter.contract
-  - sonat:ifx.subsystem:0.0.9
+  - io.carbide-ifx:ifx.subsystem:0.1.0
 ```
 
 `ifx.subsystem` is the single normal runtime dependency. It exports the host, protocols, proxy
@@ -123,7 +123,7 @@ generated descriptor explicitly.
 
 ## 4. Choose the interaction shape
 
-iFX derives the interaction from the Kotlin signature:
+Carbide derives the interaction from the Kotlin signature:
 
 ```kotlin
 interface IExample : IService {
@@ -203,7 +203,7 @@ RSocket listener:
 ```
 
 The actuator exposes the service catalog, service health, and retained log tails through normal
-iFX RPC calls.
+Carbide RPC calls.
 
 ## 7. Build and run this repository's example
 

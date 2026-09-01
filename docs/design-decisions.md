@@ -17,7 +17,7 @@ annotation-driven model would let the contract and its exposure drift.
 **Cost.** Everything the framework needs must be inferable from the signature. Interaction type is
 derived (a `Flow` return is a stream), which means `@FireAndForget` has to exist as the one thing that
 *cannot* be inferred — a suspending `Unit` operation is ambiguous between one-way and
-wait-for-completion. iFX resolves that ambiguity toward the safer default and makes one-way opt-in.
+wait-for-completion. Carbide resolves that ambiguity toward the safer default and makes one-way opt-in.
 
 ---
 
@@ -128,7 +128,7 @@ counts the whole invocation, context innermost so caller layers can decode heade
 
 ## Context has no predefined fields
 
-**Decision.** `Context` is an opaque `Map<String, JsonElement>` keyed by `@SerialName`. iFX does not
+**Decision.** `Context` is an opaque `Map<String, JsonElement>` keyed by `@SerialName`. Carbide does not
 define a caller, tenant, or request id.
 
 **Why.** Every organization means something different by "caller". Values serialize on `set`, so a

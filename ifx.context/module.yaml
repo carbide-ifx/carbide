@@ -1,4 +1,6 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
+description: Serializable per-call context propagated through Carbide services.
+
 product:
   type: lib
   platforms: [jvm, macosArm64]

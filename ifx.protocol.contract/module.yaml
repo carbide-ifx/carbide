@@ -1,4 +1,6 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
+description: Transport-neutral RPC bindings, descriptors, messages, and interceptors for Carbide.
+
 product:
   type: lib
   platforms: [ jvm, macosArm64 ]

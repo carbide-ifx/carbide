@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
+description: Standard runtime composition for hosting Carbide service subsystems.
+
 product:
   type: lib
   platforms: [ jvm, macosArm64 ]

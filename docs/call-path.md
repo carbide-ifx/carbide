@@ -145,7 +145,7 @@ Interceptors must be added before any service is registered; `addInterceptors` a
 ## Context propagation
 
 `Context` is an immutable `CoroutineContext.Element` holding `Map<String, JsonElement>`. It has **no
-predefined application fields** — iFX does not decide what a caller, a tenant, or a request id is.
+predefined application fields** — Carbide does not decide what a caller, a tenant, or a request id is.
 
 ```kotlin
 @Serializable
@@ -184,7 +184,7 @@ in the service.
 - A remote error travels as a per-stream error frame and leaves the shared connection intact.
 - **Calls have no built-in deadline.** Only acquiring a connection is bounded by a client-side timeout.
   An application deadline belongs to the caller: wrap the call in `withTimeout`.
-- **A failed call is never replayed.** iFX will not silently retry a non-idempotent operation.
+- **A failed call is never replayed.** Carbide will not silently retry a non-idempotent operation.
 - Because calls carry no timeout, the RSocket **keep-alive** sets the worst case for noticing a dead
   peer. The protocol default (20 s interval, 90 s lifetime) means a call can hang roughly 110 s;
   tighten `KeepAlive` per factory when that is too slow. Each connection negotiates its own window, so

@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml ]
 
+description: KSP processor that generates TypeScript SDK contracts for Carbide services.
+
 product:
   type: jvm/lib
 

@@ -1,6 +1,6 @@
 # Architecture overview
 
-iFX is infrastructure for code. It takes the concerns that every distributed system re-implements —
+Carbide is infrastructure for code. It takes the concerns that every distributed system re-implements —
 hosting, invocation, serialization, context propagation, logging, health, diagnostics, tooling — and
 puts them behind a small set of contracts so that application code contains only business behaviour.
 
@@ -21,7 +21,7 @@ wire schema, the OpenAPI document, and the TypeScript SDK are all derived from i
 
 ## The three planes
 
-iFX splits into three planes that touch each other only through generated code and contracts.
+Carbide splits into three planes that touch each other only through generated code and contracts.
 
 ```mermaid
 flowchart TB
@@ -55,7 +55,7 @@ flowchart TB
 
 **Contract plane** modules contain interfaces and serializable data only. They pull in no transport,
 no server, and no generated code. A service module depends on `ifx.service` and nothing else from
-iFX.
+Carbide.
 
 **Runtime plane** modules implement those contracts. They are chosen at the application's composition
 root, not by the service author. Swapping RSocket for JSON-RPC changes one line in the host builder
@@ -94,7 +94,7 @@ Two consequences follow from this ordering:
 
 ## The pivot abstraction: `IBinding`
 
-Every part of iFX that moves a call is an `IBinding`:
+Every part of Carbide that moves a call is an `IBinding`:
 
 ```kotlin
 interface IBinding {
@@ -179,7 +179,7 @@ call.
 
 ## Composition root
 
-An application assembles iFX in one place. `Host.default()` from `ifx.subsystem` is the opinionated
+An application assembles Carbide in one place. `Host.default()` from `ifx.subsystem` is the opinionated
 standard assembly:
 
 ```kotlin
@@ -193,7 +193,7 @@ Kubernetes probes at `/ifx/health`, `/ifx/health/ready`, `/ifx/health/live`, and
 Explorer at `/`. Applications that need a different composition construct `Host` directly with the
 builder — nothing in `Host.default()` is privileged.
 
-## What iFX gives a service author for free
+## What Carbide gives a service author for free
 
 | Concern | Mechanism | Module |
 | --- | --- | --- |
@@ -215,9 +215,9 @@ builder — nothing in `Host.default()` is privileged.
 (Business Process → System Interaction → Static Architecture → Module Catalog → Call Chain). It
 classifies modules as **Client, Manager, Engine, ResourceAccess, Utility, Resource**.
 
-iFX is the runtime that method targets, and the mapping is direct:
+Carbide is the runtime that method targets, and the mapping is direct:
 
-| Methodology role | iFX expression |
+| Methodology role | Carbide expression |
 | --- | --- |
 | Manager, Engine, ResourceAccess | An `IService` contract plus its implementation, registered on a host |
 | Utility | An `IUtility` contract (`IActuator` is the built-in example); shown separately in the catalog |

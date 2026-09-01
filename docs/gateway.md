@@ -1,6 +1,6 @@
 # Gateway design
 
-An iFX gateway is a **static, transport-neutral projection of existing service operations**. It is not
+A Carbide gateway is a **static, transport-neutral projection of existing service operations**. It is not
 a service, not a set of routes, and not a second copy of the domain model. In the common case a
 gateway contains no DTOs, no mapping code, no annotations, and no duplicate interfaces — only a
 selection.

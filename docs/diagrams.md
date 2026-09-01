@@ -1,9 +1,9 @@
 # Diagrams
 
-A visual index of how iFX fits together, from the outside in. Each diagram is followed by what to
+A visual index of how Carbide fits together, from the outside in. Each diagram is followed by what to
 read from it. Diagrams are Mermaid so they render on GitHub and stay diffable in review.
 
-1. [System context](#1-system-context) — what talks to an iFX system
+1. [System context](#1-system-context) — what talks to a Carbide system
 2. [Module dependency graph](#2-module-dependency-graph) — the real graph, verified against `module.yaml`
 3. [The contract / implementation pattern](#3-the-contract--implementation-pattern)
 4. [Anatomy of a subsystem process](#4-anatomy-of-a-subsystem-process)
@@ -26,7 +26,7 @@ flowchart TB
     k8s["Kubernetes kubelet"]
     otel["OTLP collector"]
 
-    subgraph estate["iFX estate"]
+    subgraph estate["Carbide estate"]
         gw["Gateway surface<br/><i>projection of selected operations</i>"]
         s1["Subsystem A<br/><i>Managers</i>"]
         s2["Subsystem B<br/><i>Engines, ResourceAccess</i>"]
@@ -128,7 +128,7 @@ flowchart BT
 **Read:**
 
 - Arrows point *downward* to dependencies. The graph is acyclic and narrow at the bottom:
-  `ifx.context` and `ifx.logging` depend on nothing in iFX.
+  `ifx.context` and `ifx.logging` depend on nothing in Carbide.
 - `ifx.protocol.contract` is the waist. Everything above it goes through it; it depends only on
   `ifx.service`. This is why `IBinding` can be implemented by a gateway, a test double, or a real
   transport without any of them knowing about each other.

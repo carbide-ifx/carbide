@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
+description: Small multiplatform Kotlin utilities shared by Carbide applications.
+
 product:
   type: lib
   platforms: [jvm, macosArm64]

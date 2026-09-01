@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml ]
 
+description: Kotlin compiler plugin that connects Carbide service calls to generated descriptors.
+
 product: jvm/lib
 layout: maven-like
 

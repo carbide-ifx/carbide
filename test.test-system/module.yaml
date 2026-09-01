@@ -1,19 +1,25 @@
-apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
+apply: [ ../common.module-template.yaml ]
 
 product:
   type: jvm/app
+
+repositories:
+  - id: local
+    resolve: true
+    url: mavenLocal
 
 settings:
   jvm:
     mainClass: TestSystemKt
   kotlin:
+    version: 2.4.10
     ksp:
       processors:
         - ../ifx.subsystem.ksp
         - ../ifx.rpc.typescript.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:0.0.9
+        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
 
 dependencies:
   - ../test.service-contracts

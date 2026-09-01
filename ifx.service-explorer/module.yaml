@@ -1,4 +1,6 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
+description: Browser-based service catalog, request explorer, and live log viewer for Carbide hosts.
+
 product:
   type: lib
   platforms: [jvm, macosArm64]

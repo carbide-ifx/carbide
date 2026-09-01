@@ -1,6 +1,6 @@
 # Code generation pipeline
 
-Nothing in iFX discovers services at runtime. There is no classpath scanning, no reflection, no
+Nothing in Carbide discovers services at runtime. There is no classpath scanning, no reflection, no
 service-locator registry, and no annotation on the contract. The wiring is resolved entirely at
 compile time by four cooperating tools, and **the subsystem's dependency graph is the manifest** —
 adding or removing a service-module dependency changes what is generated, with no second list to
@@ -37,7 +37,7 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.contract.ksp:<version>
+        - io.carbide-ifx:ifx.contract.ksp:<version>
 ```
 
 It finds every non-private interface in the module assignable to `IService` (excluding the framework
@@ -67,10 +67,10 @@ settings:
   kotlin:
     ksp:
       processors:
-        - sonat:ifx.subsystem.ksp:<version>
+        - io.carbide-ifx:ifx.subsystem.ksp:<version>
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: sonat:ifx-rpc-compiler-plugin:<version>
+        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:<version>
 ```
 
 The processor collects contracts from two sources and merges them:

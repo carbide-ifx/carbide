@@ -4,7 +4,7 @@ One entry per module in `project.yaml`. Each entry states what the module owns, 
 does not own, and what it depends on.
 
 Unless noted, a module is a Kotlin Multiplatform library targeting **JVM and macosArm64**, published
-to the `sonat` group at the version in `publishing.module-template.yaml`. Modules named `*.contract`
+to the `io.carbide-ifx` group at the version in `publishing.module-template.yaml`. Modules named `*.contract`
 contain interfaces and serializable data only.
 
 ---
@@ -32,7 +32,7 @@ attaches the service identity while keeping a readable console tag such as
 Does not own retention or the log tail — those belong to `ifx.actuator`.
 
 ### `ifx.service`
-The service programming model. This is the only iFX module a pure contract module depends on.
+The service programming model. This is the only Carbide module a pure contract module depends on.
 
 Owns:
 - `IService` — the RPC-contract marker, and `IUtility` for infrastructure services.
@@ -177,7 +177,7 @@ re-exports the standard runtime set. Being a suspending factory (it registers th
 be called from a coroutine.
 
 ### `ifx.testing`
-Shared test scaffolding: TestBalloon framework plus Kotest assertions, and iFX-specific assertions.
+Shared test scaffolding: TestBalloon framework plus Kotest assertions, and Carbide-specific assertions.
 
 ---
 
@@ -201,7 +201,7 @@ produce. See [Code generation pipeline](code-generation.md).
 ## Utilities
 
 ### `utility.stdlib`
-Small cross-project helpers with no iFX dependency: `IdGenerator`, `TimeSpan`, `DbConfig`,
+Small cross-project helpers with no Carbide dependency: `IdGenerator`, `TimeSpan`, `DbConfig`,
 `CriteriaExtensions`. Multiplatform.
 
 ### `utility.db`

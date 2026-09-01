@@ -1,4 +1,6 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
+description: RSocket over WebSocket server and client transport for Carbide services.
+
 product:
   type: lib
   platforms: [jvm, macosArm64]

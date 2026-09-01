@@ -1,5 +1,7 @@
 apply: [ ../publishing.module-template.yaml, ../common.module-template.yaml ]
 
+description: Ktor HTTP gateway adapter and OpenAPI rendering for Carbide services.
+
 product:
   type: lib
   platforms: [jvm, macosArm64]

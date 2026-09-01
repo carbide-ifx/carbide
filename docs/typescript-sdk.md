@@ -1,6 +1,6 @@
 # TypeScript SDK
 
-Browsers and Node clients call iFX services through generated TypeScript SDKs. The design mirrors the
+Browsers and Node clients call Carbide services through generated TypeScript SDKs. The design mirrors the
 Kotlin side exactly: a **generated contract** that knows the operations, and a **separately chosen
 protocol package** that knows the wire.
 
