@@ -10,13 +10,11 @@ const navigation = [
 ] as const;
 
 export function SiteHeader({ current }: { current: PageKey }) {
-  const displayName = siteConfig.productName ?? siteConfig.fallbackName;
-
   return (
     <header className="site-header">
       <a className="wordmark" href="/" aria-label="Go to the home page">
         <span className="wordmark-mark" aria-hidden="true">[ ]</span>
-        <span>{displayName}</span>
+        <span>{siteConfig.productName}</span>
       </a>
       <nav aria-label="Main navigation">
         {navigation.map(([key, href, label]) => (
@@ -39,7 +37,7 @@ export function SiteFooter() {
     <footer>
       <div className="footer-mark" aria-hidden="true">[ ]</div>
       <p>Keep the code<br />about the business.</p>
-      <div className="footer-meta"><span>Kotlin service infrastructure</span><span>Documentation site preview</span></div>
+      <div className="footer-meta"><span>Carbide</span><span>Kotlin service infrastructure</span></div>
     </footer>
   );
 }

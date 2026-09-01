@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import { avoidedWork, capabilities, routePages } from "../content";
 import { SiteFooter, SiteHeader } from "../site-chrome";
+import { siteConfig } from "../site-config";
 
 const page = routePages.infrastructure;
+const title = `${page.title} — ${siteConfig.productName}`;
 
 export const metadata: Metadata = {
-  title: `${page.title} — Kotlin service infrastructure`,
+  title,
   description: page.description,
-  openGraph: { title: page.heading, description: page.description, images: [] },
-  twitter: { title: page.heading, description: page.description, images: [] },
+  openGraph: { title, description: page.description, images: [] },
+  twitter: { title, description: page.description, images: [] },
 };
 
 export default function InfrastructurePage() {

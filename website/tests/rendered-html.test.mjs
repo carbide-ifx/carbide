@@ -20,10 +20,19 @@ async function htmlFor(path) {
   return response.text();
 }
 
+function metaContent(html, attribute, value) {
+  const tags = html.match(/<meta\b[^>]*>/gi) ?? [];
+  const tag = tags.find((candidate) => candidate.includes(`${attribute}="${value}"`));
+  return tag?.match(/content="([^"]*)"/i)?.[1];
+}
+
 test("server-renders the home page as the four-page entry point", async () => {
   const html = await htmlFor("/");
 
-  assert.match(html, /<title>Write the business code\. Get the infrastructure\.<\/title>/i);
+  assert.match(html, /<title>Carbide — Kotlin service infrastructure<\/title>/i);
+  assert.match(html, /<span>Carbide<\/span>/i);
+  assert.equal(metaContent(html, "property", "og:title"), "Carbide — Kotlin service infrastructure");
+  assert.equal(metaContent(html, "name", "twitter:title"), "Carbide — Kotlin service infrastructure");
   assert.match(html, /Write the/);
   assert.match(html, /A shorter path to the part you need/);
   assert.match(html, /href="\/infrastructure"/);
@@ -37,21 +46,24 @@ test("server-renders the home page as the four-page entry point", async () => {
 const detailPages = [
   {
     path: "/infrastructure",
-    title: "Infrastructure — Kotlin service infrastructure",
+    title: "Infrastructure — Carbide",
     heading: "The infrastructure around your services",
     current: "Infrastructure",
+    description: "Hosting, transport, generated clients, call policies, observability, and public delivery—supplied around the business code.",
   },
   {
     path: "/architecture",
-    title: "Architecture — Kotlin service infrastructure",
+    title: "Architecture — Carbide",
     heading: "One boundary",
     current: "Architecture",
+    description: "See how pure Kotlin contracts connect to compile-time generation and a composable runtime.",
   },
   {
     path: "/get-started",
-    title: "Get started — Kotlin service infrastructure",
+    title: "Get started — Carbide",
     heading: "One interface. One implementation",
     current: "Get started",
+    description: "Register a service once, then use the generated descriptor to connect both sides.",
   },
 ];
 
@@ -62,6 +74,11 @@ for (const detail of detailPages) {
     assert.match(html, new RegExp(`<title>${detail.title}<\\/title>`, "i"));
     assert.match(html, new RegExp(detail.heading.replaceAll(".", "\\."), "i"));
     assert.match(html, new RegExp(`aria-current="page"[^>]*>${detail.current}`, "i"));
+    assert.equal(metaContent(html, "name", "description"), detail.description);
+    assert.equal(metaContent(html, "property", "og:title"), detail.title);
+    assert.equal(metaContent(html, "property", "og:description"), detail.description);
+    assert.equal(metaContent(html, "name", "twitter:title"), detail.title);
+    assert.equal(metaContent(html, "name", "twitter:description"), detail.description);
     assert.doesNotMatch(html, /\/og\.png/);
     assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/);
   });

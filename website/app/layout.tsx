@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = `${protocol}://${host}`;
-  const title = siteConfig.productName ?? siteConfig.title;
+  const title = siteConfig.title;
   const image = `${origin}/og.png`;
 
   return {
@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description: siteConfig.description,
-      images: [{ url: image, width: 1731, height: 909, alt: "You write the business code" }],
+      images: [{ url: image, width: 1731, height: 909, alt: "Carbide — write the business code" }],
     },
     twitter: {
       card: "summary_large_image",

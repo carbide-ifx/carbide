@@ -1,7 +1,7 @@
-# Framework website preview
+# Carbide website
 
-Name-neutral four-page website for the Kotlin service framework. Product naming and repository links
-are centralized in `app/site-config.ts`; the current fallback label is intentionally descriptive.
+Four-page website for Carbide, the Kotlin service infrastructure framework. Product metadata and
+repository links are centralized in `app/site-config.ts`.
 
 ## Local development
 
@@ -21,4 +21,4 @@ npm test
 ```
 
 This creates the production build and verifies all four server-rendered pages. Hosting and public URLs
-remain deliberately unconfigured until the project name and repository location are final.
+remain deliberately unconfigured until the repository location and publishing setup are final.
