@@ -9,6 +9,11 @@ import ifx.protocol.contract.Message
 import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.headers
 import ifx.protocol.contract.withHeader
+import ifx.telemetry.otel.metric.RpcCallMeasurement
+import ifx.telemetry.otel.metric.RpcMetricRecorder
+import ifx.telemetry.otel.trace.FinishedSpan
+import ifx.telemetry.otel.trace.SpanExporter
+import ifx.telemetry.otel.trace.SpanKind
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -20,11 +25,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class OpenTelemetryInterceptorTest {
+class OpenTelemetryRpcInterceptorTest {
     @Test
     fun `client and server pipelines create parented spans in one trace`() = runBlocking {
         val exporter = RecordingExporter()
-        val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "test-system")
+        val interceptor = OpenTelemetryRpcInterceptor(exporter, serviceName = "test-system")
         val serviceBinding = object : IBinding {
             override suspend fun fireAndForget(operation: String, message: Message) = Unit
 
@@ -59,7 +64,7 @@ class OpenTelemetryInterceptorTest {
     @Test
     fun `client span is propagated as traceparent`() = runBlocking {
         val exporter = RecordingExporter()
-        val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "sales-client")
+        val interceptor = OpenTelemetryRpcInterceptor(exporter, serviceName = "sales-client")
         var forwardedMessage: Message? = null
         val chain = InterceptorChain { call ->
             forwardedMessage = call.message
@@ -92,6 +97,7 @@ class OpenTelemetryInterceptorTest {
     @Test
     fun `finished span carries the configured resource`() = runBlocking {
         val exporter = RecordingExporter()
+        var measurement: RpcCallMeasurement? = null
         val resource = TelemetryResource(
             serviceName = "sales-service",
             serviceNamespace = "commerce",
@@ -100,7 +106,11 @@ class OpenTelemetryInterceptorTest {
             deploymentEnvironmentName = "staging",
             attributes = mapOf("cloud.region" to "eu-west-1"),
         )
-        val interceptor = OpenTelemetryInterceptor(exporter, resource)
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            resource = resource,
+            metricRecorder = RpcMetricRecorder { measurement = it },
+        )
 
         interceptor.intercept(
             InterceptorCall(CallDirection.SERVER,
@@ -112,13 +122,18 @@ class OpenTelemetryInterceptorTest {
             InterceptorChain { flowOf(Message("{}", "response")) },
         ).toList()
 
-        assertEquals(resource, exporter.spans.single().resource)
+        val span = exporter.spans.single()
+        assertEquals(resource, span.resource)
+        assertEquals(
+            (span.endTimeUnixNano - span.startTimeUnixNano) / 1_000_000_000.0,
+            requireNotNull(measurement).durationSeconds,
+        )
     }
 
     @Test
     fun `server span continues the remote trace`() = runBlocking {
         val exporter = RecordingExporter()
-        val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "sales-service")
+        val interceptor = OpenTelemetryRpcInterceptor(exporter, serviceName = "sales-service")
         val remoteTraceId = "4bf92f3577b34da6a3ce929d0e0e4736"
         val remoteSpanId = "00f067aa0ba902b7"
         val message = Message("{}", "request").withHeader(
@@ -147,7 +162,12 @@ class OpenTelemetryInterceptorTest {
     @Test
     fun `span covers stream failure and records the error`() = runBlocking {
         val exporter = RecordingExporter()
-        val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "stream-client")
+        var measurement: RpcCallMeasurement? = null
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            serviceName = "stream-client",
+            metricRecorder = RpcMetricRecorder { measurement = it },
+        )
         val call = InterceptorCall(CallDirection.CLIENT,
             service = "test.StreamService",
             interactionType = InteractionType.REQUEST_STREAM,
@@ -172,12 +192,13 @@ class OpenTelemetryInterceptorTest {
         assertEquals("stream failed", span.error?.message)
         assertEquals(true, span.attributes["error.type"]?.endsWith("IllegalStateException"))
         assertEquals("request_stream", span.attributes["ifx.interaction.type"])
+        assertEquals(span.attributes["error.type"], measurement?.errorType)
     }
 
     @Test
     fun `invalid traceparent starts a new trace`() = runBlocking {
         val exporter = RecordingExporter()
-        val interceptor = OpenTelemetryInterceptor(exporter, serviceName = "notification-service")
+        val interceptor = OpenTelemetryRpcInterceptor(exporter, serviceName = "notification-service")
         val call = InterceptorCall(CallDirection.SERVER,
             service = "test.Service",
             interactionType = InteractionType.FIRE_AND_FORGET,
@@ -196,7 +217,7 @@ class OpenTelemetryInterceptorTest {
     @Test
     fun `unsampled calls propagate but are not exported`() = runBlocking {
         val exporter = RecordingExporter()
-        val interceptor = OpenTelemetryInterceptor(
+        val interceptor = OpenTelemetryRpcInterceptor(
             exporter = exporter,
             serviceName = "test-client",
             sampled = false,
@@ -222,9 +243,39 @@ class OpenTelemetryInterceptorTest {
     }
 
     @Test
+    fun `RPC duration is recorded independently of trace sampling`() = runBlocking {
+        val exporter = RecordingExporter()
+        var measurement: RpcCallMeasurement? = null
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            resource = TelemetryResource("test-client"),
+            sampled = false,
+            metricRecorder = RpcMetricRecorder { measurement = it },
+        )
+        val call = InterceptorCall(CallDirection.CLIENT,
+            service = "test.Service",
+            interactionType = InteractionType.REQUEST_RESPONSE,
+            operation = "call()",
+            message = Message("{}", "request"),
+        )
+
+        interceptor.intercept(
+            call,
+            InterceptorChain { flowOf(Message("{}", "response")) },
+        ).toList()
+
+        assertEquals(emptyList(), exporter.spans)
+        assertEquals("test.Service/call()", measurement?.rpcMethod)
+        assertEquals(CallDirection.CLIENT, measurement?.direction)
+        assertEquals("test-client", measurement?.resource?.serviceName)
+        assertEquals(null, measurement?.errorType)
+        assertEquals(true, requireNotNull(measurement).durationSeconds >= 0.0)
+    }
+
+    @Test
     fun `export failures do not fail the RPC`() = runBlocking {
         var exportFailure: Throwable? = null
-        val interceptor = OpenTelemetryInterceptor(
+        val interceptor = OpenTelemetryRpcInterceptor(
             exporter = SpanExporter { error("collector unavailable") },
             serviceName = "test-client",
             onExportFailure = {

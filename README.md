@@ -504,7 +504,15 @@ val spanProcessor = BatchSpanProcessor(
         }
     },
 )
-val telemetry = OpenTelemetryInterceptor(
+val rpcMetrics = RpcMetrics(
+    exporter = OtlpHttpMetricExporter(
+        endpoint = "http://localhost:4318/v1/metrics",
+    ),
+    onExportFailure = { error ->
+        Log("OpenTelemetry").warn(error) { "Failed to export RPC metrics" }
+    },
+)
+val telemetry = OpenTelemetryRpcInterceptor(
     spanProcessor = spanProcessor,
     resource = TelemetryResource(
         serviceName = "sales-manager",
@@ -514,6 +522,7 @@ val telemetry = OpenTelemetryInterceptor(
         deploymentEnvironmentName = "production",
         attributes = mapOf("cloud.region" to "eu-west-1"),
     ),
+    metricRecorder = rpcMetrics,
 )
 val interceptors = listOf(
     LoggingInterceptor(),
@@ -536,9 +545,14 @@ application. Call `flush()` to export queued spans without stopping, and call su
 from the application lifecycle to drain the queue and close the HTTP exporter. Spans completed after
 shutdown are rejected and reported.
 
-Passing a `SpanExporter` directly to `OpenTelemetryInterceptor` remains available for intentionally
+Passing a `SpanExporter` directly to `OpenTelemetryRpcInterceptor` remains available for intentionally
 synchronous export. The `serviceName` constructor remains as shorthand for a resource containing only
 `service.name`.
+
+`RpcMetrics` records `rpc.client.call.duration` and `rpc.server.call.duration` as cumulative
+histograms in seconds. Recording only updates an in-process aggregate; `OtlpHttpMetricExporter` sends
+it periodically, on `flush()`, and during suspending `shutdown()`. Call `rpcMetrics.shutdown()` from
+the application lifecycle after stopping RPC traffic.
 
 Service modules do not generate descriptors or proxies. Modules that declare interfaces
 inheriting `IService` apply the index processor, which generates only a small contract

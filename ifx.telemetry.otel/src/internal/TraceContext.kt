@@ -1,10 +1,22 @@
-package ifx.telemetry.otel
+package ifx.telemetry.otel.internal
 
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.headers
 import ifx.protocol.contract.withHeader
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
+
+internal data class ActiveSpan(
+    val traceId: String,
+    val spanId: String,
+    val traceFlags: String,
+    val traceState: String?,
+) : CoroutineContext.Element {
+    override val key: CoroutineContext.Key<ActiveSpan> get() = Key
+
+    companion object Key : CoroutineContext.Key<ActiveSpan>
+}
 
 internal const val TRACEPARENT_HEADER = "traceparent"
 internal const val TRACESTATE_HEADER = "tracestate"

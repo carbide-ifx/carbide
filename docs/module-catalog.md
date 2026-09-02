@@ -167,12 +167,14 @@ compressed asset projection on Native (Native library resources require applicat
 An optional `developmentDirectory` delegates to `WebApp` instead.
 
 ### `ifx.telemetry.otel`
-Tracing without a platform-specific OpenTelemetry SDK. `OpenTelemetryInterceptor` creates spans
+Tracing without a platform-specific OpenTelemetry SDK. `OpenTelemetryRpcInterceptor` creates spans
 around invocations and propagates W3C `traceparent` / `tracestate`; `OtlpHttpSpanExporter` exports
 OTLP/HTTP JSON through Ktor on both JVM and macOS. `BatchSpanProcessor` provides bounded asynchronous
 batching, export timeout and drop diagnostics, plus explicit flush and suspending shutdown. Export
 failure never fails the RPC. `TelemetryResource` supplies immutable service, deployment, and
-application-defined resource identity shared by every span from an interceptor.
+application-defined resource identity shared by traces and metrics. `RpcMetrics` records the standard
+client and server duration histograms and `OtlpHttpMetricExporter` exports cumulative OTLP metrics
+outside the RPC path.
 
 ### `ifx.subsystem`
 The single runtime dependency for an application. It adds one function — `Host.default()` — and

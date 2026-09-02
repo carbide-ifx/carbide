@@ -1,5 +1,10 @@
-package ifx.telemetry.otel
+package ifx.telemetry.otel.export.otlp
 
+import ifx.telemetry.otel.INSTRUMENTATION_SCOPE_NAME
+import ifx.telemetry.otel.TELEMETRY_SDK_VERSION
+import ifx.telemetry.otel.internal.isSampled
+import ifx.telemetry.otel.trace.FinishedSpan
+import ifx.telemetry.otel.trace.SpanExporter
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -50,9 +55,6 @@ private val OtlpJson = Json {
     encodeDefaults = false
     explicitNulls = false
 }
-
-private const val TELEMETRY_SDK_VERSION = "0.1.0"
-private const val INSTRUMENTATION_SCOPE_NAME = "ifx.telemetry.otel"
 
 internal fun FinishedSpan.toOtlpJson(): String = listOf(this).toOtlpJson()
 

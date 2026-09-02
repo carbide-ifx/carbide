@@ -186,7 +186,10 @@ unhandled-exception reporting itself:
 val spanProcessor = BatchSpanProcessor(
     exporter = OtlpHttpSpanExporter("http://localhost:4318/v1/traces"),
 )
-val telemetry = OpenTelemetryInterceptor(
+val rpcMetrics = RpcMetrics(
+    exporter = OtlpHttpMetricExporter("http://localhost:4318/v1/metrics"),
+)
+val telemetry = OpenTelemetryRpcInterceptor(
     spanProcessor = spanProcessor,
     resource = TelemetryResource(
         serviceName = "greeter-system",
@@ -195,6 +198,7 @@ val telemetry = OpenTelemetryInterceptor(
         serviceInstanceId = instanceId,
         deploymentEnvironmentName = "development",
     ),
+    metricRecorder = rpcMetrics,
 )
 val interceptors = listOf(LoggingInterceptor(), telemetry)
 
@@ -204,7 +208,8 @@ val clients = RSocketProxyFactory.forHost(host)
 
 The application lifecycle must call suspending `spanProcessor.shutdown()` after stopping the host;
 this drains queued spans and closes the exporter. Use `spanProcessor.flush()` when queued spans must
-be exported without stopping telemetry.
+be exported without stopping telemetry. Likewise, call `rpcMetrics.shutdown()` to export the final
+cumulative RPC histograms and close the metric exporter.
 
 `TelemetryResource` also accepts application resource attributes. Its typed identity fields take
 precedence if the same standard key appears in that map.

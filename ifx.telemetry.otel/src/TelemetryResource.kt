@@ -1,5 +1,8 @@
 package ifx.telemetry.otel
 
+internal const val TELEMETRY_SDK_VERSION = "0.1.0"
+internal const val INSTRUMENTATION_SCOPE_NAME = "ifx.telemetry.otel"
+
 /** Immutable identity shared by telemetry emitted from one service instance. */
 class TelemetryResource(
     val serviceName: String,

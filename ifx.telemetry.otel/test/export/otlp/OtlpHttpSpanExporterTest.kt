@@ -1,5 +1,8 @@
-package ifx.telemetry.otel
+package ifx.telemetry.otel.export.otlp
 
+import ifx.telemetry.otel.TelemetryResource
+import ifx.telemetry.otel.trace.FinishedSpan
+import ifx.telemetry.otel.trace.SpanKind
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

@@ -1,6 +1,6 @@
 @file:OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
 
-package ifx.telemetry.otel
+package ifx.telemetry.otel.trace
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

@@ -11,10 +11,12 @@ import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.subsystem.default
-import ifx.telemetry.otel.BatchSpanProcessor
-import ifx.telemetry.otel.OpenTelemetryInterceptor
-import ifx.telemetry.otel.OtlpHttpSpanExporter
+import ifx.telemetry.otel.OpenTelemetryRpcInterceptor
 import ifx.telemetry.otel.TelemetryResource
+import ifx.telemetry.otel.export.otlp.OtlpHttpMetricExporter
+import ifx.telemetry.otel.export.otlp.OtlpHttpSpanExporter
+import ifx.telemetry.otel.metric.RpcMetrics
+import ifx.telemetry.otel.trace.BatchSpanProcessor
 import kotlinx.coroutines.runBlocking
 import manager.sales.contract.ISalesManager
 import manager.sales.service.SalesManager
@@ -48,7 +50,13 @@ fun main(): Unit = runBlocking {
             }
         },
     )
-    val telemetry = OpenTelemetryInterceptor(
+    val rpcMetrics = RpcMetrics(
+        exporter = OtlpHttpMetricExporter(endpoint = "http://localhost:4318/v1/metrics"),
+        onExportFailure = { error ->
+            Log("OpenTelemetry").warn(error) { "Failed to export RPC metrics" }
+        },
+    )
+    val telemetry = OpenTelemetryRpcInterceptor(
         spanProcessor = telemetryProcessor,
         resource = TelemetryResource(
             serviceName = "test-system",
@@ -56,6 +64,7 @@ fun main(): Unit = runBlocking {
             serviceVersion = "0.1.0",
             deploymentEnvironmentName = "local",
         ),
+        metricRecorder = rpcMetrics,
     )
     val system = startTestSystem(
         interceptors = listOf(LoggingInterceptor(), telemetry),
@@ -73,5 +82,6 @@ fun main(): Unit = runBlocking {
         proxyFactory.close()
         system.stop()
         telemetryProcessor.shutdown()
+        rpcMetrics.shutdown()
     }
 }

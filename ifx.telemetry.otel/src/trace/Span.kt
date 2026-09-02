@@ -1,7 +1,7 @@
-package ifx.telemetry.otel
+package ifx.telemetry.otel.trace
 
+import ifx.telemetry.otel.TelemetryResource
 import kotlinx.coroutines.sync.Mutex
-import kotlin.coroutines.CoroutineContext
 
 enum class SpanKind(internal val otlpValue: Int) {
     SERVER(2),
@@ -108,15 +108,4 @@ class SimpleSpanProcessor(
             mutex.unlock()
         }
     }
-}
-
-internal data class ActiveSpan(
-    val traceId: String,
-    val spanId: String,
-    val traceFlags: String,
-    val traceState: String?,
-) : CoroutineContext.Element {
-    override val key: CoroutineContext.Key<ActiveSpan> get() = Key
-
-    companion object Key : CoroutineContext.Key<ActiveSpan>
 }

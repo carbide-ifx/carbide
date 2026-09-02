@@ -234,3 +234,7 @@ bounded `BatchSpanProcessor` between the interceptor and exporter so collector I
 path. Its `onDroppedSpans` callback reports queue overflow, shutdown rejection, timeout, and export
 failure without changing the RPC outcome. The processor does not retry; application shutdown must
 call its suspending `shutdown()` to drain queued spans and close the exporter.
+
+An optional `RpcMetrics` recorder measures client and server call duration independently of trace
+sampling. It aggregates low-cardinality method, interaction, and error series in memory and exports
+cumulative OTLP histograms periodically rather than performing collector I/O in the RPC path.
