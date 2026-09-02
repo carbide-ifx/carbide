@@ -9,6 +9,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -40,11 +43,52 @@ class OtlpHttpSpanExporterTest {
         assertContains(requestBody, "\"resourceSpans\"")
         assertContains(requestBody, "\"service.name\"")
         assertContains(requestBody, "\"stringValue\":\"sales-service\"")
+        assertContains(
+            requestBody,
+            "\"key\":\"telemetry.sdk.name\",\"value\":{\"stringValue\":\"opentelemetry\"}",
+        )
+        assertContains(
+            requestBody,
+            "\"key\":\"telemetry.sdk.version\",\"value\":{\"stringValue\":\"0.1.0\"}",
+        )
+        assertContains(requestBody, "\"scope\":{\"name\":\"ifx.telemetry.otel\",\"version\":\"0.1.0\"}")
         assertContains(requestBody, "\"traceId\":\"4bf92f3577b34da6a3ce929d0e0e4736\"")
         assertContains(requestBody, "\"spanId\":\"00f067aa0ba902b7\"")
         assertContains(requestBody, "\"traceState\":\"vendor=value\"")
         assertContains(requestBody, "\"kind\":3")
         assertContains(requestBody, "\"startTimeUnixNano\":\"1000000001\"")
+    }
+
+    @Test
+    fun `exporter emits complete resource identity and application attributes`() = runBlocking {
+        var requestBody = ""
+        val engine = MockEngine { request ->
+            requestBody = request.body.toByteArray().decodeToString()
+            respond("{}", HttpStatusCode.OK)
+        }
+        val resource = TelemetryResource(
+            serviceName = "sales-service",
+            serviceNamespace = "commerce",
+            serviceVersion = "2.1.0",
+            serviceInstanceId = "sales-7f9d",
+            deploymentEnvironmentName = "staging",
+            attributes = mapOf("cloud.region" to "eu-west-1"),
+        )
+        val exporter = OtlpHttpSpanExporter(httpClient = HttpClient(engine))
+
+        exporter.export(testSpan().copy(resource = resource))
+        exporter.shutdown()
+
+        assertContains(requestBody, "\"service.namespace\"")
+        assertContains(requestBody, "\"stringValue\":\"commerce\"")
+        assertContains(requestBody, "\"service.version\"")
+        assertContains(requestBody, "\"stringValue\":\"2.1.0\"")
+        assertContains(requestBody, "\"service.instance.id\"")
+        assertContains(requestBody, "\"stringValue\":\"sales-7f9d\"")
+        assertContains(requestBody, "\"deployment.environment.name\"")
+        assertContains(requestBody, "\"stringValue\":\"staging\"")
+        assertContains(requestBody, "\"cloud.region\"")
+        assertContains(requestBody, "\"stringValue\":\"eu-west-1\"")
     }
 
     @Test
@@ -64,6 +108,28 @@ class OtlpHttpSpanExporterTest {
         assertEquals(1, requests)
         assertContains(requestBody, "\"spanId\":\"00f067aa0ba902b7\"")
         assertContains(requestBody, "\"spanId\":\"10f067aa0ba902b7\"")
+    }
+
+    @Test
+    fun `batch export keeps different resources separate`() = runBlocking {
+        var requestBody = ""
+        val engine = MockEngine { request ->
+            requestBody = request.body.toByteArray().decodeToString()
+            respond("{}", HttpStatusCode.OK)
+        }
+        val exporter = OtlpHttpSpanExporter(httpClient = HttpClient(engine))
+
+        exporter.export(
+            listOf(
+                testSpan(),
+                testSpan().copy(resource = TelemetryResource("inventory-service")),
+            ),
+        )
+        exporter.shutdown()
+
+        val resourceSpans = Json.parseToJsonElement(requestBody)
+            .jsonObject.getValue("resourceSpans").jsonArray
+        assertEquals(2, resourceSpans.size)
     }
 }
 

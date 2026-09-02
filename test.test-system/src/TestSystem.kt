@@ -14,6 +14,7 @@ import ifx.subsystem.default
 import ifx.telemetry.otel.BatchSpanProcessor
 import ifx.telemetry.otel.OpenTelemetryInterceptor
 import ifx.telemetry.otel.OtlpHttpSpanExporter
+import ifx.telemetry.otel.TelemetryResource
 import kotlinx.coroutines.runBlocking
 import manager.sales.contract.ISalesManager
 import manager.sales.service.SalesManager
@@ -49,7 +50,12 @@ fun main(): Unit = runBlocking {
     )
     val telemetry = OpenTelemetryInterceptor(
         spanProcessor = telemetryProcessor,
-        serviceName = "test-system",
+        resource = TelemetryResource(
+            serviceName = "test-system",
+            serviceNamespace = "carbide",
+            serviceVersion = "0.1.0",
+            deploymentEnvironmentName = "local",
+        ),
     )
     val system = startTestSystem(
         interceptors = listOf(LoggingInterceptor(), telemetry),

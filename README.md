@@ -506,7 +506,14 @@ val spanProcessor = BatchSpanProcessor(
 )
 val telemetry = OpenTelemetryInterceptor(
     spanProcessor = spanProcessor,
-    serviceName = "sales-manager",
+    resource = TelemetryResource(
+        serviceName = "sales-manager",
+        serviceNamespace = "commerce",
+        serviceVersion = "2.1.0",
+        serviceInstanceId = instanceId,
+        deploymentEnvironmentName = "production",
+        attributes = mapOf("cloud.region" to "eu-west-1"),
+    ),
 )
 val interceptors = listOf(
     LoggingInterceptor(),
@@ -530,7 +537,8 @@ from the application lifecycle to drain the queue and close the HTTP exporter. S
 shutdown are rejected and reported.
 
 Passing a `SpanExporter` directly to `OpenTelemetryInterceptor` remains available for intentionally
-synchronous export.
+synchronous export. The `serviceName` constructor remains as shorthand for a resource containing only
+`service.name`.
 
 Service modules do not generate descriptors or proxies. Modules that declare interfaces
 inheriting `IService` apply the index processor, which generates only a small contract

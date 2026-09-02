@@ -51,22 +51,29 @@ private val OtlpJson = Json {
     explicitNulls = false
 }
 
+private const val TELEMETRY_SDK_VERSION = "0.1.0"
+private const val INSTRUMENTATION_SCOPE_NAME = "ifx.telemetry.otel"
+
 internal fun FinishedSpan.toOtlpJson(): String = listOf(this).toOtlpJson()
 
 internal fun List<FinishedSpan>.toOtlpJson(): String = OtlpJson.encodeToString(
     ExportTraceServiceRequest(
-        resourceSpans = groupBy(FinishedSpan::serviceName).map { (serviceName, spans) ->
+        resourceSpans = groupBy(FinishedSpan::resource).map { (resource, spans) ->
             ResourceSpans(
                 resource = Resource(
-                    attributes = listOf(
-                        KeyValue("service.name", AnyValue(stringValue = serviceName)),
-                        KeyValue("telemetry.sdk.name", AnyValue(stringValue = "ifx.telemetry.otel")),
-                        KeyValue("telemetry.sdk.language", AnyValue(stringValue = "kotlin")),
-                    ),
+                    attributes = buildMap {
+                        putAll(resource.otelAttributes())
+                        put("telemetry.sdk.name", "opentelemetry")
+                        put("telemetry.sdk.language", "kotlin")
+                        put("telemetry.sdk.version", TELEMETRY_SDK_VERSION)
+                    }.map { (key, value) -> KeyValue(key, AnyValue(stringValue = value)) },
                 ),
                 scopeSpans = listOf(
                     ScopeSpans(
-                        scope = InstrumentationScope(name = "ifx.telemetry.otel"),
+                        scope = InstrumentationScope(
+                            name = INSTRUMENTATION_SCOPE_NAME,
+                            version = TELEMETRY_SDK_VERSION,
+                        ),
                         spans = spans.map(FinishedSpan::toOtlpSpan),
                     ),
                 ),
@@ -115,7 +122,7 @@ private data class Resource(val attributes: List<KeyValue>)
 private data class ScopeSpans(val scope: InstrumentationScope, val spans: List<OtlpSpan>)
 
 @Serializable
-private data class InstrumentationScope(val name: String)
+private data class InstrumentationScope(val name: String, val version: String? = null)
 
 @Serializable
 private data class OtlpSpan(

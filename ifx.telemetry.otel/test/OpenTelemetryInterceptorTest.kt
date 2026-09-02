@@ -83,9 +83,36 @@ class OpenTelemetryInterceptorTest {
         assertEquals(span.traceId, traceParent[1])
         assertEquals(span.spanId, traceParent[2])
         assertEquals("sales-client", span.serviceName)
-        assertEquals("ISalesManager.listProducts()", span.name)
+        assertEquals("manager.sales.contract.ISalesManager/listProducts()", span.name)
+        assertEquals(span.attributes["rpc.method"], span.name)
         assertEquals(SpanKind.CLIENT, span.kind)
         assertNull(span.parentSpanId)
+    }
+
+    @Test
+    fun `finished span carries the configured resource`() = runBlocking {
+        val exporter = RecordingExporter()
+        val resource = TelemetryResource(
+            serviceName = "sales-service",
+            serviceNamespace = "commerce",
+            serviceVersion = "2.1.0",
+            serviceInstanceId = "sales-7f9d",
+            deploymentEnvironmentName = "staging",
+            attributes = mapOf("cloud.region" to "eu-west-1"),
+        )
+        val interceptor = OpenTelemetryInterceptor(exporter, resource)
+
+        interceptor.intercept(
+            InterceptorCall(CallDirection.SERVER,
+                service = "manager.sales.contract.ISalesManager",
+                interactionType = InteractionType.REQUEST_RESPONSE,
+                operation = "listProducts()",
+                message = Message("{}", "request"),
+            ),
+            InterceptorChain { flowOf(Message("{}", "response")) },
+        ).toList()
+
+        assertEquals(resource, exporter.spans.single().resource)
     }
 
     @Test

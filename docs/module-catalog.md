@@ -171,7 +171,8 @@ Tracing without a platform-specific OpenTelemetry SDK. `OpenTelemetryInterceptor
 around invocations and propagates W3C `traceparent` / `tracestate`; `OtlpHttpSpanExporter` exports
 OTLP/HTTP JSON through Ktor on both JVM and macOS. `BatchSpanProcessor` provides bounded asynchronous
 batching, export timeout and drop diagnostics, plus explicit flush and suspending shutdown. Export
-failure never fails the RPC.
+failure never fails the RPC. `TelemetryResource` supplies immutable service, deployment, and
+application-defined resource identity shared by every span from an interceptor.
 
 ### `ifx.subsystem`
 The single runtime dependency for an application. It adds one function — `Host.default()` — and

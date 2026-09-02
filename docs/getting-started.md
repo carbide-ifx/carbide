@@ -188,7 +188,13 @@ val spanProcessor = BatchSpanProcessor(
 )
 val telemetry = OpenTelemetryInterceptor(
     spanProcessor = spanProcessor,
-    serviceName = "greeter-system",
+    resource = TelemetryResource(
+        serviceName = "greeter-system",
+        serviceNamespace = "examples",
+        serviceVersion = "1.0.0",
+        serviceInstanceId = instanceId,
+        deploymentEnvironmentName = "development",
+    ),
 )
 val interceptors = listOf(LoggingInterceptor(), telemetry)
 
@@ -199,6 +205,9 @@ val clients = RSocketProxyFactory.forHost(host)
 The application lifecycle must call suspending `spanProcessor.shutdown()` after stopping the host;
 this drains queued spans and closes the exporter. Use `spanProcessor.flush()` when queued spans must
 be exported without stopping telemetry.
+
+`TelemetryResource` also accepts application resource attributes. Its typed identity fields take
+precedence if the same standard key appears in that map.
 
 The default host also registers `IActuator`, browser Service Explorer, and health endpoints on its
 RSocket listener:

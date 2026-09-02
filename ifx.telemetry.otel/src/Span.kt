@@ -15,7 +15,7 @@ data class SpanError(
 )
 
 data class FinishedSpan(
-    val serviceName: String,
+    val resource: TelemetryResource,
     val traceId: String,
     val spanId: String,
     val parentSpanId: String?,
@@ -27,7 +27,37 @@ data class FinishedSpan(
     val endTimeUnixNano: Long,
     val attributes: Map<String, String>,
     val error: SpanError? = null,
-)
+) {
+    constructor(
+        serviceName: String,
+        traceId: String,
+        spanId: String,
+        parentSpanId: String?,
+        traceFlags: String,
+        traceState: String? = null,
+        name: String,
+        kind: SpanKind,
+        startTimeUnixNano: Long,
+        endTimeUnixNano: Long,
+        attributes: Map<String, String>,
+        error: SpanError? = null,
+    ) : this(
+        resource = TelemetryResource(serviceName),
+        traceId = traceId,
+        spanId = spanId,
+        parentSpanId = parentSpanId,
+        traceFlags = traceFlags,
+        traceState = traceState,
+        name = name,
+        kind = kind,
+        startTimeUnixNano = startTimeUnixNano,
+        endTimeUnixNano = endTimeUnixNano,
+        attributes = attributes,
+        error = error,
+    )
+
+    val serviceName: String get() = resource.serviceName
+}
 
 fun interface SpanExporter {
     suspend fun export(span: FinishedSpan)

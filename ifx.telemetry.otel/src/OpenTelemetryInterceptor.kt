@@ -14,20 +14,30 @@ import kotlin.time.Clock
 
 class OpenTelemetryInterceptor(
     private val spanProcessor: SpanProcessor,
-    private val serviceName: String,
+    private val resource: TelemetryResource,
     private val sampled: Boolean = true,
     private val onExportFailure: (Throwable) -> Unit = {},
 ) : IInterceptor {
+    constructor(
+        spanProcessor: SpanProcessor,
+        serviceName: String,
+        sampled: Boolean = true,
+        onExportFailure: (Throwable) -> Unit = {},
+    ) : this(spanProcessor, TelemetryResource(serviceName), sampled, onExportFailure)
+
+    constructor(
+        exporter: SpanExporter,
+        resource: TelemetryResource,
+        sampled: Boolean = true,
+        onExportFailure: (Throwable) -> Unit = {},
+    ) : this(SimpleSpanProcessor(exporter), resource, sampled, onExportFailure)
+
     constructor(
         exporter: SpanExporter,
         serviceName: String,
         sampled: Boolean = true,
         onExportFailure: (Throwable) -> Unit = {},
-    ) : this(SimpleSpanProcessor(exporter), serviceName, sampled, onExportFailure)
-
-    init {
-        require(serviceName.isNotBlank()) { "OpenTelemetry serviceName must not be blank" }
-    }
+    ) : this(SimpleSpanProcessor(exporter), TelemetryResource(serviceName), sampled, onExportFailure)
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
         val parent = when (call.direction) {
@@ -56,7 +66,7 @@ class OpenTelemetryInterceptor(
             throw throwable
         } finally {
             if (activeSpan.traceFlags.isSampled()) {
-                val span = call.finishedSpan(serviceName, activeSpan, parent, startTime, failure)
+                val span = call.finishedSpan(resource, activeSpan, parent, startTime, failure)
                 try {
                     spanProcessor.onEnd(span)
                 } catch (exportFailure: Throwable) {
@@ -79,7 +89,7 @@ private fun RemoteTraceParent.toActiveSpan(): ActiveSpan = ActiveSpan(
 )
 
 private fun InterceptorCall.finishedSpan(
-    serviceName: String,
+    resource: TelemetryResource,
     span: ActiveSpan,
     parent: ActiveSpan?,
     startTime: Long,
@@ -87,13 +97,13 @@ private fun InterceptorCall.finishedSpan(
 ): FinishedSpan {
     val rpcMethod = "$service/$operation"
     return FinishedSpan(
-        serviceName = serviceName,
+        resource = resource,
         traceId = span.traceId,
         spanId = span.spanId,
         parentSpanId = parent?.spanId,
         traceFlags = span.traceFlags,
         traceState = span.traceState,
-        name = "${service.substringAfterLast('.')}.$operation",
+        name = rpcMethod,
         kind = when (direction) {
             CallDirection.CLIENT -> SpanKind.CLIENT
             CallDirection.SERVER -> SpanKind.SERVER
