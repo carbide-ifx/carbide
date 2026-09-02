@@ -12,6 +12,9 @@ import ifx.protocol.contract.withHeader
 import ifx.telemetry.otel.metric.RpcCallMeasurement
 import ifx.telemetry.otel.metric.RpcMetricRecorder
 import ifx.telemetry.otel.trace.FinishedSpan
+import ifx.telemetry.otel.trace.AlwaysOffSampler
+import ifx.telemetry.otel.trace.ParentBasedSampler
+import ifx.telemetry.otel.trace.Sampler
 import ifx.telemetry.otel.trace.SpanExporter
 import ifx.telemetry.otel.trace.SpanKind
 import kotlinx.coroutines.flow.flow
@@ -220,7 +223,7 @@ class OpenTelemetryRpcInterceptorTest {
         val interceptor = OpenTelemetryRpcInterceptor(
             exporter = exporter,
             serviceName = "test-client",
-            sampled = false,
+            sampler = ParentBasedSampler(AlwaysOffSampler),
         )
         var forwardedMessage: Message? = null
         val call = InterceptorCall(CallDirection.CLIENT,
@@ -249,7 +252,7 @@ class OpenTelemetryRpcInterceptorTest {
         val interceptor = OpenTelemetryRpcInterceptor(
             exporter = exporter,
             resource = TelemetryResource("test-client"),
-            sampled = false,
+            sampler = ParentBasedSampler(AlwaysOffSampler),
             metricRecorder = RpcMetricRecorder { measurement = it },
         )
         val call = InterceptorCall(CallDirection.CLIENT,
@@ -270,6 +273,63 @@ class OpenTelemetryRpcInterceptorTest {
         assertEquals("test-client", measurement?.resource?.serviceName)
         assertEquals(null, measurement?.errorType)
         assertEquals(true, requireNotNull(measurement).durationSeconds >= 0.0)
+    }
+
+    @Test
+    fun `parent based sampler preserves sampled upstream decision`() = runBlocking {
+        val exporter = RecordingExporter()
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            serviceName = "test-server",
+            sampler = ParentBasedSampler(AlwaysOffSampler),
+        )
+        val traceId = "4bf92f3577b34da6a3ce929d0e0e4736"
+        val parentSpanId = "00f067aa0ba902b7"
+        val call = InterceptorCall(CallDirection.SERVER,
+            service = "test.Service",
+            interactionType = InteractionType.REQUEST_RESPONSE,
+            operation = "call()",
+            message = Message("{}", "request").withHeader(
+                "traceparent",
+                JsonPrimitive("00-$traceId-$parentSpanId-01"),
+            ),
+        )
+
+        interceptor.intercept(
+            call,
+            InterceptorChain { flowOf(Message("{}", "response")) },
+        ).toList()
+
+        val span = exporter.spans.single()
+        assertEquals(traceId, span.traceId)
+        assertEquals(parentSpanId, span.parentSpanId)
+        assertEquals("01", span.traceFlags)
+    }
+
+    @Test
+    fun `parent based sampler preserves unsampled upstream decision`() = runBlocking {
+        val exporter = RecordingExporter()
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            serviceName = "test-server",
+            sampler = ParentBasedSampler(),
+        )
+        val call = InterceptorCall(CallDirection.SERVER,
+            service = "test.Service",
+            interactionType = InteractionType.REQUEST_RESPONSE,
+            operation = "call()",
+            message = Message("{}", "request").withHeader(
+                "traceparent",
+                JsonPrimitive("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"),
+            ),
+        )
+
+        interceptor.intercept(
+            call,
+            InterceptorChain { flowOf(Message("{}", "response")) },
+        ).toList()
+
+        assertEquals(emptyList(), exporter.spans)
     }
 
     @Test
@@ -297,6 +357,33 @@ class OpenTelemetryRpcInterceptorTest {
 
         assertEquals(listOf("response"), responses.map(Message::body))
         assertEquals("collector unavailable", exportFailure?.message)
+    }
+
+    @Test
+    fun `sampler failures do not fail the RPC`() = runBlocking {
+        val exporter = RecordingExporter()
+        var samplingFailure: Throwable? = null
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            serviceName = "test-client",
+            sampler = Sampler { error("sampler failed") },
+            onExportFailure = { samplingFailure = it },
+        )
+        val call = InterceptorCall(CallDirection.CLIENT,
+            service = "test.Service",
+            interactionType = InteractionType.REQUEST_RESPONSE,
+            operation = "call()",
+            message = Message("{}", "request"),
+        )
+
+        val responses = interceptor.intercept(
+            call,
+            InterceptorChain { flowOf(Message("{}", "response")) },
+        ).toList()
+
+        assertEquals(listOf("response"), responses.map(Message::body))
+        assertEquals(emptyList(), exporter.spans)
+        assertEquals("sampler failed", samplingFailure?.message)
     }
 }
 

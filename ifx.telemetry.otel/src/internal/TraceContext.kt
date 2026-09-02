@@ -12,6 +12,7 @@ internal data class ActiveSpan(
     val spanId: String,
     val traceFlags: String,
     val traceState: String?,
+    val isRemote: Boolean = false,
 ) : CoroutineContext.Element {
     override val key: CoroutineContext.Key<ActiveSpan> get() = Key
 

@@ -206,6 +206,10 @@ val host = Host.default(interceptors = interceptors)
 val clients = RSocketProxyFactory.forHost(host)
 ```
 
+Tracing defaults to `ParentBasedSampler(AlwaysOnSampler)`. Use
+`ParentBasedSampler(ProbabilitySampler(0.1))` to sample ten percent of new traces while retaining
+the sampling decision received from an upstream caller.
+
 The application lifecycle must call suspending `spanProcessor.shutdown()` after stopping the host;
 this drains queued spans and closes the exporter. Use `spanProcessor.flush()` when queued spans must
 be exported without stopping telemetry. Likewise, call `rpcMetrics.shutdown()` to export the final

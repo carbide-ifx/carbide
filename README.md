@@ -534,6 +534,12 @@ host.addInterceptors(interceptors)
 proxyFactory.addInterceptors(interceptors)
 ```
 
+The default sampler is `ParentBasedSampler(AlwaysOnSampler)`: root traces are sampled and child
+spans preserve the upstream sampled flag. To sample ten percent of new traces while preserving
+upstream decisions, configure
+`sampler = ParentBasedSampler(ProbabilitySampler(probability = 0.1))`. `AlwaysOffSampler` is also
+available for disabling root trace export without disabling trace-context propagation.
+
 Place telemetry before interceptors that encode or encrypt message headers. The
 server reverses the list, so the same ordering decrypts `traceparent` before the
 telemetry layer extracts it.
