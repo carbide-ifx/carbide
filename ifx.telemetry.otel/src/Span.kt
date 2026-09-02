@@ -1,5 +1,6 @@
 package ifx.telemetry.otel
 
+import kotlinx.coroutines.sync.Mutex
 import kotlin.coroutines.CoroutineContext
 
 enum class SpanKind(internal val otlpValue: Int) {
@@ -30,6 +31,53 @@ data class FinishedSpan(
 
 fun interface SpanExporter {
     suspend fun export(span: FinishedSpan)
+
+    suspend fun export(spans: List<FinishedSpan>) {
+        spans.forEach { export(it) }
+    }
+
+    suspend fun shutdown() = Unit
+}
+
+interface SpanProcessor {
+    suspend fun onEnd(span: FinishedSpan)
+
+    suspend fun flush()
+
+    suspend fun shutdown()
+}
+
+class SimpleSpanProcessor(
+    private val exporter: SpanExporter,
+) : SpanProcessor {
+    private val mutex = Mutex()
+    private var shutDown = false
+
+    override suspend fun onEnd(span: FinishedSpan) {
+        mutex.lock()
+        try {
+            if (!shutDown) exporter.export(span)
+        } finally {
+            mutex.unlock()
+        }
+    }
+
+    override suspend fun flush() {
+        mutex.lock()
+        mutex.unlock()
+    }
+
+    override suspend fun shutdown() {
+        mutex.lock()
+        try {
+            if (!shutDown) {
+                shutDown = true
+                exporter.shutdown()
+            }
+        } finally {
+            mutex.unlock()
+        }
+    }
 }
 
 internal data class ActiveSpan(

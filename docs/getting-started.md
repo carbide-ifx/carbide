@@ -183,8 +183,11 @@ client-safe interceptors automatically. `Host.default()` always adds context pro
 unhandled-exception reporting itself:
 
 ```kotlin
-val telemetry = OpenTelemetryInterceptor(
+val spanProcessor = BatchSpanProcessor(
     exporter = OtlpHttpSpanExporter("http://localhost:4318/v1/traces"),
+)
+val telemetry = OpenTelemetryInterceptor(
+    spanProcessor = spanProcessor,
     serviceName = "greeter-system",
 )
 val interceptors = listOf(LoggingInterceptor(), telemetry)
@@ -192,6 +195,10 @@ val interceptors = listOf(LoggingInterceptor(), telemetry)
 val host = Host.default(interceptors = interceptors)
 val clients = RSocketProxyFactory.forHost(host)
 ```
+
+The application lifecycle must call suspending `spanProcessor.shutdown()` after stopping the host;
+this drains queued spans and closes the exporter. Use `spanProcessor.flush()` when queued spans must
+be exported without stopping telemetry.
 
 The default host also registers `IActuator`, browser Service Explorer, and health endpoints on its
 RSocket listener:

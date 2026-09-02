@@ -46,6 +46,25 @@ class OtlpHttpSpanExporterTest {
         assertContains(requestBody, "\"kind\":3")
         assertContains(requestBody, "\"startTimeUnixNano\":\"1000000001\"")
     }
+
+    @Test
+    fun `batch export sends one request containing every span`() = runBlocking {
+        var requests = 0
+        var requestBody = ""
+        val engine = MockEngine { request ->
+            requests += 1
+            requestBody = request.body.toByteArray().decodeToString()
+            respond("{}", HttpStatusCode.OK)
+        }
+        val exporter = OtlpHttpSpanExporter(httpClient = HttpClient(engine))
+
+        exporter.export(listOf(testSpan(), testSpan().copy(spanId = "10f067aa0ba902b7")))
+        exporter.shutdown()
+
+        assertEquals(1, requests)
+        assertContains(requestBody, "\"spanId\":\"00f067aa0ba902b7\"")
+        assertContains(requestBody, "\"spanId\":\"10f067aa0ba902b7\"")
+    }
 }
 
 private fun testSpan(): FinishedSpan = FinishedSpan(

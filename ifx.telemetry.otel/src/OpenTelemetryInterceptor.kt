@@ -13,11 +13,18 @@ import kotlinx.coroutines.flow.flowOn
 import kotlin.time.Clock
 
 class OpenTelemetryInterceptor(
-    private val exporter: SpanExporter,
+    private val spanProcessor: SpanProcessor,
     private val serviceName: String,
     private val sampled: Boolean = true,
     private val onExportFailure: (Throwable) -> Unit = {},
 ) : IInterceptor {
+    constructor(
+        exporter: SpanExporter,
+        serviceName: String,
+        sampled: Boolean = true,
+        onExportFailure: (Throwable) -> Unit = {},
+    ) : this(SimpleSpanProcessor(exporter), serviceName, sampled, onExportFailure)
+
     init {
         require(serviceName.isNotBlank()) { "OpenTelemetry serviceName must not be blank" }
     }
@@ -51,7 +58,7 @@ class OpenTelemetryInterceptor(
             if (activeSpan.traceFlags.isSampled()) {
                 val span = call.finishedSpan(serviceName, activeSpan, parent, startTime, failure)
                 try {
-                    exporter.export(span)
+                    spanProcessor.onEnd(span)
                 } catch (exportFailure: Throwable) {
                     try {
                         onExportFailure(exportFailure)

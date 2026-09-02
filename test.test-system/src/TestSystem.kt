@@ -11,6 +11,7 @@ import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.subsystem.default
+import ifx.telemetry.otel.BatchSpanProcessor
 import ifx.telemetry.otel.OpenTelemetryInterceptor
 import ifx.telemetry.otel.OtlpHttpSpanExporter
 import kotlinx.coroutines.runBlocking
@@ -38,12 +39,17 @@ suspend fun startTestSystem(
 
 fun main(): Unit = runBlocking {
     val telemetryExporter = OtlpHttpSpanExporter(endpoint = "http://localhost:4318/v1/traces")
-    val telemetry = OpenTelemetryInterceptor(
+    val telemetryProcessor = BatchSpanProcessor(
         exporter = telemetryExporter,
-        serviceName = "test-system",
-        onExportFailure = { error ->
-            Log("OpenTelemetry").warn { "Failed to export trace: ${error.message}" }
+        onDroppedSpans = { dropped ->
+            Log("OpenTelemetry").warn {
+                "Dropped ${dropped.count} spans (${dropped.reason}): ${dropped.cause?.message}"
+            }
         },
+    )
+    val telemetry = OpenTelemetryInterceptor(
+        spanProcessor = telemetryProcessor,
+        serviceName = "test-system",
     )
     val system = startTestSystem(
         interceptors = listOf(LoggingInterceptor(), telemetry),
@@ -60,6 +66,6 @@ fun main(): Unit = runBlocking {
     } finally {
         proxyFactory.close()
         system.stop()
-        telemetryExporter.close()
+        telemetryProcessor.shutdown()
     }
 }

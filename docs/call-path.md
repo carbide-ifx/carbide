@@ -229,6 +229,8 @@ proxyFactory.addInterceptors(host.interceptors)
 Place `telemetry` **before** any layer that encodes or encrypts headers. The server reverses the list,
 so decryption runs before the telemetry layer tries to extract `traceparent`.
 
-`ifx.telemetry.otel` propagates W3C `traceparent` / `tracestate` and exports OTLP/HTTP JSON. Export
-failures never fail the RPC; supply `onExportFailure` for diagnostics, or implement `SpanExporter` for
-batching and retry.
+`ifx.telemetry.otel` propagates W3C `traceparent` / `tracestate` and exports OTLP/HTTP JSON. Put a
+bounded `BatchSpanProcessor` between the interceptor and exporter so collector I/O stays off the RPC
+path. Its `onDroppedSpans` callback reports queue overflow, shutdown rejection, timeout, and export
+failure without changing the RPC outcome. The processor does not retry; application shutdown must
+call its suspending `shutdown()` to drain queued spans and close the exporter.

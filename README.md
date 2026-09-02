@@ -496,8 +496,16 @@ OTLP/HTTP JSON through Ktor on JVM and macOS.
 val exporter = OtlpHttpSpanExporter(
     endpoint = "http://localhost:4318/v1/traces",
 )
-val telemetry = OpenTelemetryInterceptor(
+val spanProcessor = BatchSpanProcessor(
     exporter = exporter,
+    onDroppedSpans = { dropped ->
+        Log("OpenTelemetry").warn {
+            "Dropped ${dropped.count} spans: ${dropped.reason}"
+        }
+    },
+)
+val telemetry = OpenTelemetryInterceptor(
+    spanProcessor = spanProcessor,
     serviceName = "sales-manager",
 )
 val interceptors = listOf(
@@ -514,10 +522,15 @@ Place telemetry before interceptors that encode or encrypt message headers. The
 server reverses the list, so the same ordering decrypts `traceparent` before the
 telemetry layer extracts it.
 
-The HTTP exporter sends each completed span immediately and never fails the RPC
-when export fails. Supply `onExportFailure` to the interceptor for diagnostics,
-or implement `SpanExporter` to add batching and retry policy. Call
-`OtlpHttpSpanExporter.close()` when the application shuts down.
+`BatchSpanProcessor` places completed spans on a bounded queue, exports full or scheduled batches,
+and keeps collector latency out of the RPC path. Queue overflow, shutdown rejection, export timeout,
+and export failure are reported through `onDroppedSpans`; the processor never retries inside the
+application. Call `flush()` to export queued spans without stopping, and call suspending `shutdown()`
+from the application lifecycle to drain the queue and close the HTTP exporter. Spans completed after
+shutdown are rejected and reported.
+
+Passing a `SpanExporter` directly to `OpenTelemetryInterceptor` remains available for intentionally
+synchronous export.
 
 Service modules do not generate descriptors or proxies. Modules that declare interfaces
 inheriting `IService` apply the index processor, which generates only a small contract

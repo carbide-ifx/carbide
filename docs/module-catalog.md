@@ -169,7 +169,9 @@ An optional `developmentDirectory` delegates to `WebApp` instead.
 ### `ifx.telemetry.otel`
 Tracing without a platform-specific OpenTelemetry SDK. `OpenTelemetryInterceptor` creates spans
 around invocations and propagates W3C `traceparent` / `tracestate`; `OtlpHttpSpanExporter` exports
-OTLP/HTTP JSON through Ktor on both JVM and macOS. Export failure never fails the RPC.
+OTLP/HTTP JSON through Ktor on both JVM and macOS. `BatchSpanProcessor` provides bounded asynchronous
+batching, export timeout and drop diagnostics, plus explicit flush and suspending shutdown. Export
+failure never fails the RPC.
 
 ### `ifx.subsystem`
 The single runtime dependency for an application. It adds one function — `Host.default()` — and

@@ -19,10 +19,15 @@ class OtlpHttpSpanExporter(
     private val httpClient: HttpClient = HttpClient(),
 ) : SpanExporter {
     override suspend fun export(span: FinishedSpan) {
+        export(listOf(span))
+    }
+
+    override suspend fun export(spans: List<FinishedSpan>) {
+        if (spans.isEmpty()) return
         val response = httpClient.post(endpoint) {
             contentType(ContentType.Application.Json)
             this@OtlpHttpSpanExporter.headers.forEach { (name, value) -> header(name, value) }
-            setBody(span.toOtlpJson())
+            setBody(spans.toOtlpJson())
         }
         if (!response.status.isSuccess()) {
             throw OtlpExportException(response.status, response.body<String>())
@@ -32,6 +37,8 @@ class OtlpHttpSpanExporter(
     fun close() {
         httpClient.close()
     }
+
+    override suspend fun shutdown() = close()
 }
 
 class OtlpExportException(
@@ -44,9 +51,11 @@ private val OtlpJson = Json {
     explicitNulls = false
 }
 
-internal fun FinishedSpan.toOtlpJson(): String = OtlpJson.encodeToString(
+internal fun FinishedSpan.toOtlpJson(): String = listOf(this).toOtlpJson()
+
+internal fun List<FinishedSpan>.toOtlpJson(): String = OtlpJson.encodeToString(
     ExportTraceServiceRequest(
-        resourceSpans = listOf(
+        resourceSpans = groupBy(FinishedSpan::serviceName).map { (serviceName, spans) ->
             ResourceSpans(
                 resource = Resource(
                     attributes = listOf(
@@ -58,11 +67,11 @@ internal fun FinishedSpan.toOtlpJson(): String = OtlpJson.encodeToString(
                 scopeSpans = listOf(
                     ScopeSpans(
                         scope = InstrumentationScope(name = "ifx.telemetry.otel"),
-                        spans = listOf(toOtlpSpan()),
+                        spans = spans.map(FinishedSpan::toOtlpSpan),
                     ),
                 ),
-            ),
-        ),
+            )
+        },
     ),
 )
 
