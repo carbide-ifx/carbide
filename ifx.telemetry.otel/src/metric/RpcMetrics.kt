@@ -62,7 +62,7 @@ class RpcMetrics(
     private val exportInterval: Duration = 60.seconds,
     private val exportTimeout: Duration = 30.seconds,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    private val onExportFailure: (Throwable) -> Unit = {},
+    private val onExportFailure: suspend (Throwable) -> Unit = {},
 ) : RpcMetricRecorder {
     private data class HistogramKey(
         val resource: TelemetryResource,
@@ -205,7 +205,7 @@ class RpcMetrics(
         }
     }
 
-    private fun reportFailure(failure: Throwable) {
+    private suspend fun reportFailure(failure: Throwable) {
         try {
             onExportFailure(failure)
         } catch (_: Throwable) {

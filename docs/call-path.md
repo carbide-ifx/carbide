@@ -222,7 +222,7 @@ stateDiagram-v2
 Interceptors are how observability enters the pipeline, which is why ordering matters:
 
 ```kotlin
-host.addInterceptors(listOf(LoggingInterceptor(), telemetry, Encryption))
+host.addInterceptors(listOf(telemetry, Encryption))
 proxyFactory.addInterceptors(host.interceptors)
 ```
 
@@ -238,3 +238,6 @@ call its suspending `shutdown()` to drain queued spans and close the exporter.
 An optional `RpcMetrics` recorder measures client and server call duration independently of trace
 sampling. It aggregates low-cardinality method, interaction, and error series in memory and exports
 cumulative OTLP histograms periodically rather than performing collector I/O in the RPC path.
+
+Set `logRpcCalls = true` on the telemetry interceptor to emit request and response logs carrying
+`trace_id`, `span_id`, and `trace_flags` in their structured tags.

@@ -11,11 +11,11 @@ class LogTailWriter internal constructor(
     constructor(store: LogTailStore) : this(store::append)
 
     override fun isLoggable(tag: String, severity: Severity): Boolean =
-        LogTagCodec.decodeOrNull(tag)?.serviceInterface != null
+        LogTagCodec.decodeOrNull(tag)?.let { it.retained && it.serviceInterface != null } == true
 
     override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
         val structuredTag = LogTagCodec.decodeOrNull(tag) ?: return
-        if (structuredTag.serviceInterface == null) return
+        if (!structuredTag.retained || structuredTag.serviceInterface == null) return
         append(structuredTag, severity, message, throwable)
     }
 }

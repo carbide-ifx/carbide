@@ -3,8 +3,6 @@ package access.product.service
 import access.product.contract.IProductAccess
 import access.product.contract.Product
 import access.product.contract.ProductCriteria
-import ifx.logging.Log
-import ifx.protocol.contract.forService
 import ifx.stdlib.filterKeysIfPresent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -13,8 +11,6 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 class ProductAccessEmulator(val db: MutableMap<String, Product> = mutableMapOf()) : IProductAccess {
-    private val repositoryLog = Log.forService<IProductAccess>(this).withTag("Repository")
-
     override suspend fun store(product: Product) = db.set(product.id, product)
     override suspend fun notifyProductViewed(productId: String) = Unit
 
@@ -22,7 +18,7 @@ class ProductAccessEmulator(val db: MutableMap<String, Product> = mutableMapOf()
         .filterKeysIfPresent(criteria.ids) { key, ids -> key in ids }
         .values
         .toList()
-        .also { products -> repositoryLog.info { "Found ${products.size} products" } }
+        .also { products -> log.info { "Found ${products.size} products" } }
 
     override fun generateRandowProduct(): Flow<Product> = flow {
         repeat(50) { index ->

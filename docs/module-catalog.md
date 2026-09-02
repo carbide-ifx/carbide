@@ -24,9 +24,10 @@ dependencies**; it is the bottom of the graph together with `ifx.logging`.
 ### `ifx.logging`
 Structured logging vocabulary over Kermit.
 
-Owns `Log`, `LogTag` (which carries `serviceInterface`, `serviceClassName`, and a tag path), and the
-generic writer installation point `installLogWriter`. `Log.forService<T>(instance)` — defined in `ifx.protocol.contract`, since it needs the service address —
-attaches the service identity while keeping a readable console tag such as
+Owns `Log`, `LogTag` (the emitted structured record identity), `ServiceLogScope` (the ambient identity
+of the service currently executing), and the generic writer installation point `installLogWriter`.
+The host supplies the authoritative registered service identity; the inherited service logger and
+`withTag` add logger-specific paths while keeping a readable console tag such as
 `AwesomeServiceImpl.Repository`.
 
 Does not own retention or the log tail — those belong to `ifx.actuator`.
@@ -61,10 +62,9 @@ Owns:
 - `IInterceptor`, `InterceptorCall` (carrying a `CallDirection`), `InterceptorChain`, and the single
   `InterceptorPipeline` that serves both sides of the transport.
 - Built-in interceptors: `ContextInterceptor` (mandatory), `UnhandledExceptionInterceptor`
-  (mandatory), `LoggingInterceptor`, `Rot13Interceptor` (a worked example of a symmetric layer).
+  (mandatory), and `Rot13Interceptor` (a worked example of a symmetric layer). Correlated RPC
+  logging is an option on `OpenTelemetryRpcInterceptor`.
 - `IClientProtocol`, `Endpoint`, `ServiceEndpoint`, `ProtocolException`, `RpcFormat`.
-- `Log.Companion.forService<T>(instance, vararg path)` — the service-identity logging helper. It lives
-  here rather than in `ifx.logging` because it needs `serviceAddressOf<T>()`.
 
 ### `ifx.host.contract`
 The hosting contract. Exports `ktor-server-core` because `IServerProtocol.install` receives a Ktor

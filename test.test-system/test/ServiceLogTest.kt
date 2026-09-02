@@ -6,10 +6,7 @@ import access.product.service.ProductAccessEmulator
 import ifx.actuator.LogTail
 import ifx.actuator.LogTailSeverity
 import ifx.host.Host
-import ifx.logging.Log
 import ifx.protocol.contract.ProtocolException
-import ifx.protocol.contract.forService
-import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.proxy.factory.create
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
@@ -24,26 +21,32 @@ import kotlin.test.assertNotNull
 
 class ServiceLogTest {
     @Test
-    fun `service logger derives its identity from the descriptor and implementation`() {
+    fun `service logger derives its identity from the descriptor and implementation`() = runBlocking {
         val service = ProductAccessEmulator()
-        val log = Log.forService<IProductAccess>(service).withTag("Repository")
-        val message = "service-scoped log-tail entry"
+        val host = Host(JsonRpcServerProtocol())
 
         LogTail.install()
-        log.info { message }
+        host.registerService(IProductAccessDescriptor, service).start()
+        val proxyFactory = JsonRpcProxyFactory.forHost(host)
+        try {
+            proxyFactory.create<IProductAccess>().filter(ProductCriteria())
 
-        val entry = assertNotNull(
-            LogTail.logs(IProductAccessDescriptor.address).lastOrNull { it.message == message }
-        )
-        assertEquals(ProductAccessEmulator::class.qualifiedName, entry.serviceClassName)
-        assertEquals(listOf("Repository"), entry.path)
+            val entry = assertNotNull(
+                LogTail.logs(IProductAccessDescriptor.address).lastOrNull { it.message == "Found 0 products" }
+            )
+            assertEquals(ProductAccessEmulator::class.qualifiedName, entry.serviceClassName)
+            assertEquals(emptyList(), entry.path)
+        } finally {
+            proxyFactory.close()
+            host.stop()
+        }
     }
 
     @Test
     fun `host logs an unhandled service exception and preserves its json rpc message`() = runBlocking {
         val failureMessage = "inventory database unavailable"
         val service = FailingProductAccess(failureMessage)
-        val host = Host(JsonRpcServerProtocol()).addInterceptors(LoggingInterceptor())
+        val host = Host(JsonRpcServerProtocol())
 
         LogTail.install()
         host.registerService(IProductAccessDescriptor, service).start()

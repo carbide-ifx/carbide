@@ -37,11 +37,11 @@ private class KermitSlf4jLogger(tag: String) : LegacyAbstractLogger() {
     ) {
         val message = MessageFormatter.basicArrayFormat(messagePattern ?: "null", arguments)
         when (level) {
-            Level.ERROR -> delegate.error(throwable) { message }
-            Level.WARN -> delegate.warn(throwable) { message }
-            Level.INFO -> delegate.info(throwable) { message }
-            Level.DEBUG -> delegate.debug(throwable) { message }
-            Level.TRACE -> delegate.trace(throwable) { message }
+            Level.ERROR -> delegate.synchronous.error(throwable) { message }
+            Level.WARN -> delegate.synchronous.warn(throwable) { message }
+            Level.INFO -> delegate.synchronous.info(throwable) { message }
+            Level.DEBUG -> delegate.synchronous.debug(throwable) { message }
+            Level.TRACE -> delegate.synchronous.trace(throwable) { message }
         }
     }
 }

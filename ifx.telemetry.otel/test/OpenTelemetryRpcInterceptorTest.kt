@@ -1,5 +1,10 @@
 package ifx.telemetry.otel
 
+import co.touchlab.kermit.LogWriter
+import co.touchlab.kermit.Severity
+import ifx.logging.Log
+import ifx.logging.LogTag
+import ifx.logging.LogTagCodec
 import ifx.protocol.contract.CallDirection
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.InteractionType
@@ -9,6 +14,9 @@ import ifx.protocol.contract.Message
 import ifx.protocol.contract.InterceptorPipeline
 import ifx.protocol.contract.headers
 import ifx.protocol.contract.withHeader
+import ifx.logging.LogCorrelation
+import ifx.logging.ServiceLogScope
+import ifx.logging.installLogWriter
 import ifx.telemetry.otel.metric.RpcCallMeasurement
 import ifx.telemetry.otel.metric.RpcMetricRecorder
 import ifx.telemetry.otel.trace.FinishedSpan
@@ -22,6 +30,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -338,7 +347,7 @@ class OpenTelemetryRpcInterceptorTest {
         val interceptor = OpenTelemetryRpcInterceptor(
             exporter = SpanExporter { error("collector unavailable") },
             serviceName = "test-client",
-            onExportFailure = {
+            onObservabilityFailure = {
                 exportFailure = it
                 error("diagnostic callback failed")
             },
@@ -367,7 +376,7 @@ class OpenTelemetryRpcInterceptorTest {
             exporter = exporter,
             serviceName = "test-client",
             sampler = Sampler { error("sampler failed") },
-            onExportFailure = { samplingFailure = it },
+            onObservabilityFailure = { samplingFailure = it },
         )
         val call = InterceptorCall(CallDirection.CLIENT,
             service = "test.Service",
@@ -385,6 +394,83 @@ class OpenTelemetryRpcInterceptorTest {
         assertEquals(emptyList(), exporter.spans)
         assertEquals("sampler failed", samplingFailure?.message)
     }
+
+    @Test
+    fun `RPC logs use the active span correlation`() = runBlocking {
+        val exporter = RecordingExporter()
+        val logWriter = CorrelationLogWriter()
+        installLogWriter(logWriter)
+        var downstreamCorrelation: LogCorrelation? = null
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = exporter,
+            serviceName = "test-client",
+            logRpcCalls = true,
+        )
+        val call = InterceptorCall(CallDirection.CLIENT,
+            service = "test.Service",
+            interactionType = InteractionType.REQUEST_RESPONSE,
+            operation = "call()",
+            message = Message("{}", "request"),
+        )
+
+        withContext(
+            ServiceLogScope(
+                serviceInterface = "engine.pricing.contract.IPricingEngine",
+                serviceClassName = "engine.pricing.service.PricingEngine",
+            ),
+        ) {
+            interceptor.intercept(
+                call,
+                InterceptorChain {
+                    flow {
+                        downstreamCorrelation = LogCorrelation.currentOrNull()
+                        Log("Application").info { "Loading products" }
+                        emit(Message("{}", "response"))
+                    }
+                },
+            ).toList()
+        }
+
+        val span = exporter.spans.single()
+        val expected = LogCorrelation(span.traceId, span.spanId, span.traceFlags)
+        assertEquals(expected, downstreamCorrelation)
+        assertEquals(listOf(expected, expected, expected), logWriter.entries.map { it.correlation })
+        assertEquals(true, logWriter.entries[0].message.startsWith("IPricingEngine -> Service.call(): "))
+        assertEquals(true, logWriter.entries[0].message.contains("traceparent"))
+        assertEquals(false, logWriter.entries[0].display)
+        assertEquals(false, logWriter.entries[0].retained)
+        assertEquals("Loading products", logWriter.entries[1].message)
+        assertEquals(true, logWriter.entries[1].retained)
+        assertEquals(true, logWriter.entries[2].message.startsWith("IPricingEngine <- Service.call(): "))
+    }
+
+    @Test
+    fun `server RPC logs distinguish receive from send`() = runBlocking {
+        val logWriter = CorrelationLogWriter()
+        installLogWriter(logWriter)
+        val interceptor = OpenTelemetryRpcInterceptor(
+            exporter = RecordingExporter(),
+            serviceName = "test-server",
+            logRpcCalls = true,
+        )
+        val call = InterceptorCall(CallDirection.SERVER,
+            service = "test.Service",
+            interactionType = InteractionType.REQUEST_RESPONSE,
+            operation = "call()",
+            message = Message(
+                """{"traceparent":"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"}""",
+                "request",
+            ),
+        )
+
+        interceptor.intercept(
+            call,
+            InterceptorChain { flowOf(Message("{}", "response")) },
+        ).toList()
+
+        assertEquals(true, logWriter.entries[0].message.startsWith("-> Service.call(): "))
+        assertEquals(true, logWriter.entries[1].message.startsWith("Service.call() -> Message"))
+    }
 }
 
 private class RecordingExporter : SpanExporter {
@@ -394,3 +480,33 @@ private class RecordingExporter : SpanExporter {
         spans += span
     }
 }
+
+private class CorrelationLogWriter : LogWriter() {
+    val entries = mutableListOf<CorrelatedLogEntry>()
+
+    override fun isLoggable(tag: String, severity: Severity): Boolean =
+        LogTagCodec.decodeOrNull(tag)?.traceId != null
+
+    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
+        val structuredTag = requireNotNull(LogTagCodec.decodeOrNull(tag))
+        entries += CorrelatedLogEntry(
+            correlation = structuredTag.toCorrelation(),
+            message = message,
+            display = structuredTag.display,
+            retained = structuredTag.retained,
+        )
+    }
+}
+
+private data class CorrelatedLogEntry(
+    val correlation: LogCorrelation,
+    val message: String,
+    val display: Boolean,
+    val retained: Boolean,
+)
+
+private fun LogTag.toCorrelation(): LogCorrelation = LogCorrelation(
+    traceId = requireNotNull(traceId),
+    spanId = requireNotNull(spanId),
+    traceFlags = requireNotNull(traceFlags),
+)

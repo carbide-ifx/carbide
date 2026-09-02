@@ -41,7 +41,7 @@ class BatchSpanProcessor(
     private val maxExportBatchSize: Int = 512,
     private val exportTimeout: Duration = 30.seconds,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    private val onDroppedSpans: (DroppedSpans) -> Unit = {},
+    private val onDroppedSpans: suspend (DroppedSpans) -> Unit = {},
 ) : SpanProcessor {
     private sealed interface Command {
         data class Span(val value: FinishedSpan) : Command
@@ -171,7 +171,7 @@ class BatchSpanProcessor(
         }
     }
 
-    private fun reportDrop(droppedSpans: DroppedSpans) {
+    private suspend fun reportDrop(droppedSpans: DroppedSpans) {
         try {
             onDroppedSpans(droppedSpans)
         } catch (_: Throwable) {

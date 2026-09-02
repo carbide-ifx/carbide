@@ -7,7 +7,6 @@ import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
 import ifx.protocol.contract.IInterceptor
-import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.subsystem.default
@@ -22,7 +21,7 @@ import manager.sales.contract.ISalesManager
 import manager.sales.service.SalesManager
 
 suspend fun startTestSystem(
-    interceptors: List<IInterceptor> = listOf(LoggingInterceptor()),
+    interceptors: List<IInterceptor> = emptyList(),
 ): IHost {
     val host = Host.default(
         name = "Test System",
@@ -65,15 +64,16 @@ fun main(): Unit = runBlocking {
             deploymentEnvironmentName = "local",
         ),
         metricRecorder = rpcMetrics,
+        logRpcCalls = true,
     )
     val system = startTestSystem(
-        interceptors = listOf(LoggingInterceptor(), telemetry),
+        interceptors = listOf(telemetry),
     )
     val proxyFactory = RSocketProxyFactory.forHost(system)
 
     try {
         proxyFactory.create<ISalesManager>().listProducts().collect {
-            Log("in main").info { it }
+            Log.info { it }
         }
 
         Log.info { "press any key to close" }

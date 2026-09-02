@@ -202,7 +202,7 @@ builder — nothing in `Host.default()` is privileged.
 | Transport choice | Listener per protocol; same services on all of them | `ifx.protocol.*` |
 | Ambient call context | Mandatory `ContextInterceptor`, serialized into a reserved header | `ifx.context` |
 | Cross-cutting behaviour | `IInterceptor` onion around the whole invocation | `ifx.protocol.contract` |
-| Structured logging | `Log` and `LogTag`; `Log.forService<T>()` carries service identity in the tag | `ifx.logging` + `ifx.protocol.contract` |
+| Structured logging | `Log` and `LogTag`; the host supplies the current registered service identity through `ServiceLogScope` | `ifx.logging` + `ifx.host` |
 | Diagnostics | `IActuator` catalog, per-service health, streaming log tail | `ifx.actuator` |
 | Interactive exploration | Browser Service Explorer driven by the runtime wire schema | `ifx.service-explorer` |
 | Distributed tracing | W3C traceparent propagation, OTLP/HTTP export | `ifx.telemetry.otel` |

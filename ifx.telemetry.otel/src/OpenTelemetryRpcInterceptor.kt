@@ -1,5 +1,9 @@
 package ifx.telemetry.otel
 
+import ifx.logging.Log
+import ifx.logging.LogCorrelation
+import ifx.logging.LogTag
+import ifx.logging.ServiceLogScope
 import ifx.protocol.contract.CallDirection
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.InterceptorCall
@@ -28,7 +32,7 @@ import ifx.telemetry.otel.trace.SpanKind
 import ifx.telemetry.otel.trace.SpanProcessor
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlin.time.TimeSource
@@ -37,40 +41,66 @@ class OpenTelemetryRpcInterceptor(
     private val spanProcessor: SpanProcessor,
     private val resource: TelemetryResource,
     private val sampler: Sampler = ParentBasedSampler(),
-    private val onExportFailure: (Throwable) -> Unit = {},
+    private val onObservabilityFailure: suspend (Throwable) -> Unit = {},
     private val metricRecorder: RpcMetricRecorder? = null,
+    private val logRpcCalls: Boolean = false,
 ) : IInterceptor {
+    private val rpcLog = Log(LogTag(display = false, retained = false))
+
     constructor(
         spanProcessor: SpanProcessor,
         serviceName: String,
         sampler: Sampler = ParentBasedSampler(),
-        onExportFailure: (Throwable) -> Unit = {},
+        onObservabilityFailure: suspend (Throwable) -> Unit = {},
         metricRecorder: RpcMetricRecorder? = null,
-    ) : this(spanProcessor, TelemetryResource(serviceName), sampler, onExportFailure, metricRecorder)
+        logRpcCalls: Boolean = false,
+    ) : this(
+        spanProcessor,
+        TelemetryResource(serviceName),
+        sampler,
+        onObservabilityFailure,
+        metricRecorder,
+        logRpcCalls,
+    )
 
     constructor(
         exporter: SpanExporter,
         resource: TelemetryResource,
         sampler: Sampler = ParentBasedSampler(),
-        onExportFailure: (Throwable) -> Unit = {},
+        onObservabilityFailure: suspend (Throwable) -> Unit = {},
         metricRecorder: RpcMetricRecorder? = null,
-    ) : this(SimpleSpanProcessor(exporter), resource, sampler, onExportFailure, metricRecorder)
+        logRpcCalls: Boolean = false,
+    ) : this(
+        SimpleSpanProcessor(exporter),
+        resource,
+        sampler,
+        onObservabilityFailure,
+        metricRecorder,
+        logRpcCalls,
+    )
 
     constructor(
         exporter: SpanExporter,
         serviceName: String,
         sampler: Sampler = ParentBasedSampler(),
-        onExportFailure: (Throwable) -> Unit = {},
+        onObservabilityFailure: suspend (Throwable) -> Unit = {},
         metricRecorder: RpcMetricRecorder? = null,
+        logRpcCalls: Boolean = false,
     ) : this(
         SimpleSpanProcessor(exporter),
         TelemetryResource(serviceName),
         sampler,
-        onExportFailure,
+        onObservabilityFailure,
         metricRecorder,
+        logRpcCalls,
     )
 
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
+        val callingService = if (call.direction == CallDirection.CLIENT) {
+            ServiceLogScope.currentOrNull()?.serviceInterface
+        } else {
+            null
+        }
         val parent = when (call.direction) {
             CallDirection.CLIENT -> currentCoroutineContext()[ActiveSpan]
                 ?: call.message.traceParentOrNull()?.toActiveSpan()
@@ -98,7 +128,7 @@ class OpenTelemetryRpcInterceptor(
         val samplingDecision = try {
             sampler.shouldSample(samplingContext)
         } catch (samplingFailure: Throwable) {
-            reportTelemetryFailure(samplingFailure)
+            reportObservabilityFailure(samplingFailure)
             samplingContext.parent.inheritedDecision()
         }
         val activeSpan = ActiveSpan(
@@ -106,6 +136,11 @@ class OpenTelemetryRpcInterceptor(
             spanId = newSpanId(),
             traceFlags = parent?.traceFlags.withSamplingDecision(samplingDecision),
             traceState = parent?.traceState,
+        )
+        val logCorrelation = LogCorrelation(
+            traceId = activeSpan.traceId,
+            spanId = activeSpan.spanId,
+            traceFlags = activeSpan.traceFlags,
         )
         val request = when (call.direction) {
             CallDirection.CLIENT -> call.message.withTraceParent(activeSpan)
@@ -116,7 +151,13 @@ class OpenTelemetryRpcInterceptor(
         var failure: Throwable? = null
 
         try {
-            emitAll(next(call.copy(message = request)).flowOn(activeSpan))
+            logRequest(call, callingService, request, logCorrelation)
+            next(call.copy(message = request))
+                .flowOn(activeSpan + logCorrelation)
+                .collect { response ->
+                    logResponse(call, callingService, response, logCorrelation)
+                    emit(response)
+                }
         } catch (throwable: Throwable) {
             failure = throwable
             throw throwable
@@ -135,7 +176,7 @@ class OpenTelemetryRpcInterceptor(
                     ),
                 )
             } catch (metricFailure: Throwable) {
-                reportTelemetryFailure(metricFailure)
+                reportObservabilityFailure(metricFailure)
             }
             if (activeSpan.traceFlags.isSampled()) {
                 val span = call.finishedSpan(
@@ -153,20 +194,61 @@ class OpenTelemetryRpcInterceptor(
                 try {
                     spanProcessor.onEnd(span)
                 } catch (exportFailure: Throwable) {
-                    reportTelemetryFailure(exportFailure)
+                    reportObservabilityFailure(exportFailure)
                 }
             }
         }
     }
 
-    private fun reportTelemetryFailure(failure: Throwable) {
+    private suspend fun reportObservabilityFailure(failure: Throwable) {
         try {
-            onExportFailure(failure)
+            onObservabilityFailure(failure)
         } catch (_: Throwable) {
             // Telemetry must not alter the outcome of the instrumented RPC.
         }
     }
+
+    private suspend fun logRequest(
+        call: InterceptorCall,
+        callingService: String?,
+        request: Message,
+        correlation: LogCorrelation,
+    ) {
+        val direction = when (call.direction) {
+            CallDirection.CLIENT -> callingService
+                ?.let { "${it.substringAfterLast('.')} ->" }
+                ?: "Client ->"
+            CallDirection.SERVER -> "->"
+        }
+        logRpcCall(correlation) { "$direction ${call.callName()}: $request" }
+    }
+
+    private suspend fun logResponse(
+        call: InterceptorCall,
+        callingService: String?,
+        response: Message,
+        correlation: LogCorrelation,
+    ) {
+        val message = when (call.direction) {
+            CallDirection.CLIENT -> callingService
+                ?.let { "${it.substringAfterLast('.')} <- ${call.callName()}: $response" }
+                ?: "Client <- ${call.callName()}: $response"
+            CallDirection.SERVER -> "${call.callName()} -> $response"
+        }
+        logRpcCall(correlation) { message }
+    }
+
+    private suspend fun logRpcCall(correlation: LogCorrelation, message: () -> String) {
+        if (!logRpcCalls) return
+        try {
+            rpcLog.withCorrelation(correlation).info(message = message)
+        } catch (loggingFailure: Throwable) {
+            reportObservabilityFailure(loggingFailure)
+        }
+    }
 }
+
+private fun InterceptorCall.callName(): String = "${service.substringAfterLast('.')}.${operation}"
 
 private fun RemoteTraceParent.toActiveSpan(): ActiveSpan = ActiveSpan(
     traceId = traceId,

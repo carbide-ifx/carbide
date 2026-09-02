@@ -199,8 +199,9 @@ val telemetry = OpenTelemetryRpcInterceptor(
         deploymentEnvironmentName = "development",
     ),
     metricRecorder = rpcMetrics,
+    logRpcCalls = true,
 )
-val interceptors = listOf(LoggingInterceptor(), telemetry)
+val interceptors = listOf(telemetry)
 
 val host = Host.default(interceptors = interceptors)
 val clients = RSocketProxyFactory.forHost(host)
@@ -209,6 +210,11 @@ val clients = RSocketProxyFactory.forHost(host)
 Tracing defaults to `ParentBasedSampler(AlwaysOnSampler)`. Use
 `ParentBasedSampler(ProbabilitySampler(0.1))` to sample ten percent of new traces while retaining
 the sampling decision received from an upstream caller.
+
+With `logRpcCalls = true`, the same interceptor emits request and response logs whose structured
+tags include `trace_id`, `span_id`, and `trace_flags`. The suspending `Log` severity methods attach
+the active RPC correlation to ordinary application calls such as `log.info { "Loading products" }`.
+RPC diagnostics remain console-only; actuator log tails retain service application logs.
 
 The application lifecycle must call suspending `spanProcessor.shutdown()` after stopping the host;
 this drains queued spans and closes the exporter. Use `spanProcessor.flush()` when queued spans must

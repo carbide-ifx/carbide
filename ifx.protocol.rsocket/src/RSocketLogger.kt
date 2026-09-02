@@ -24,11 +24,11 @@ private class KermitRSocketLogger(
 
         val text = message.toString()
         when (level) {
-            LoggingLevel.ERROR -> delegate.error(throwable) { text }
-            LoggingLevel.WARN -> delegate.warn(throwable) { text }
-            LoggingLevel.INFO -> delegate.info(throwable) { text }
-            LoggingLevel.DEBUG -> delegate.debug(throwable) { text }
-            LoggingLevel.TRACE -> delegate.trace(throwable) { text }
+            LoggingLevel.ERROR -> delegate.synchronous.error(throwable) { text }
+            LoggingLevel.WARN -> delegate.synchronous.warn(throwable) { text }
+            LoggingLevel.INFO -> delegate.synchronous.info(throwable) { text }
+            LoggingLevel.DEBUG -> delegate.synchronous.debug(throwable) { text }
+            LoggingLevel.TRACE -> delegate.synchronous.trace(throwable) { text }
         }
     }
 }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 
@@ -29,6 +30,9 @@ data class LogTailEntry(
     val severity: LogTailSeverity,
     val message: String,
     val throwable: String?,
+    @SerialName("trace_id") val traceId: String?,
+    @SerialName("span_id") val spanId: String?,
+    @SerialName("trace_flags") val traceFlags: String?,
 )
 
 @Serializable
@@ -136,6 +140,9 @@ private class ServiceLogBuffer(
             severity = severity,
             message = message,
             throwable = throwable,
+            traceId = tag.traceId,
+            spanId = tag.spanId,
+            traceFlags = tag.traceFlags,
         )
         val index = ((nextSequence - 1L) % entries.size).toInt()
         entries.updateAt(index) { current ->

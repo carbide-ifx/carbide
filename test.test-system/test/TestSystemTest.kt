@@ -12,8 +12,8 @@ import ifx.host.HostHealth
 import ifx.host.HostState
 import ifx.host.ProtocolListener
 import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.interceptors.ContextInterceptor
-import ifx.protocol.contract.interceptors.LoggingInterceptor
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.protocol.rsocket.EXTERNAL_KEEP_ALIVE
@@ -115,7 +115,7 @@ class TestSystemTest {
 
     @Test
     fun `host keeps context mandatory when additional interceptors are supplied`() {
-        val additional = LoggingInterceptor()
+        val additional = IInterceptor { call, next -> next(call) }
         val host = Host {
             listen(RSocketServerProtocol())
         }.addInterceptors(additional)

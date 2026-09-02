@@ -297,7 +297,7 @@ installed before the actuator and subsequent business services:
 
 ```kotlin
 val host = Host.default(
-    interceptors = listOf(LoggingInterceptor(), telemetry),
+    interceptors = listOf(telemetry),
 )
 ```
 
@@ -396,11 +396,11 @@ class TimingInterceptor : IInterceptor {
 ```
 
 Client interceptors run in registration order around the transport. Server
-interceptors run in reverse order, so using `[logging, encryption]` on both sides
+interceptors run in reverse order, so using `[telemetry, encryption]` on both sides
 produces a symmetric onion:
 
 ```text
-client logging -> client encryption -> transport -> server encryption -> server logging -> service
+client telemetry -> client encryption -> transport -> server encryption -> server telemetry -> service
 ```
 
 `Context` is an immutable ambient container with no predefined application
@@ -417,7 +417,6 @@ data class Caller(val subject: String)
 data class RequestMetadata(val requestId: String)
 
 val interceptors = listOf(
-    LoggingInterceptor(),
     Encryption,
 )
 
@@ -446,7 +445,6 @@ Kermit's string tag while retaining a readable console tag:
 
 ```kotlin
 class AwesomeServiceImpl : AwesomeService {
-    private val log = Log.forService<AwesomeService>(this)
     private val repositoryLog = log.withTag("Repository")
 
     override suspend fun awesome(request: AwesomeRequest): AwesomeResponse {
@@ -456,7 +454,8 @@ class AwesomeServiceImpl : AwesomeService {
 }
 ```
 
-The standard writer renders this as `AwesomeServiceImpl.Repository`. The log-tail
+While the host executes a service, it supplies the registered interface and implementation identity
+to the inherited logger. The standard writer renders this as `AwesomeServiceImpl.Repository`. The log-tail
 writer retains the structured contract address, implementation class, tag path,
 severity, message, and throwable. Plain framework log tags continue to reach the
 standard writer but are not retained. `LogTail.logs(address)` returns the latest
@@ -523,9 +522,9 @@ val telemetry = OpenTelemetryRpcInterceptor(
         attributes = mapOf("cloud.region" to "eu-west-1"),
     ),
     metricRecorder = rpcMetrics,
+    logRpcCalls = true,
 )
 val interceptors = listOf(
-    LoggingInterceptor(),
     telemetry,
     Encryption,
 )
@@ -539,6 +538,15 @@ spans preserve the upstream sampled flag. To sample ten percent of new traces wh
 upstream decisions, configure
 `sampler = ParentBasedSampler(ProbabilitySampler(probability = 0.1))`. `AlwaysOffSampler` is also
 available for disabling root trace export without disabling trace-context propagation.
+
+Set `logRpcCalls = true` to emit correlated RPC request and response logs from the telemetry
+interceptor. Their structured tags carry `trace_id`, `span_id`, and `trace_flags`; do not add a
+separate RPC logging interceptor. RPC diagnostics are written to the console but are not retained in
+actuator log tails, which contain service application logs only.
+
+The `Log` severity methods are suspending, so application logs emitted inside an instrumented RPC
+automatically receive the same correlation: `log.info { "Loading products" }`. Third-party logging
+interfaces that cannot suspend use the isolated `log.synchronous` escape hatch.
 
 Place telemetry before interceptors that encode or encrypt message headers. The
 server reverses the list, so the same ordering decrypts `traceparent` before the

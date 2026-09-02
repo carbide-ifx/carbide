@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.flow
 
 /** Reports exceptions that escape an RPC invocation, then preserves the original failure. */
 class UnhandledExceptionInterceptor(
-    private val onException: (InterceptorCall, Throwable) -> Unit,
+    private val onException: suspend (InterceptorCall, Throwable) -> Unit,
 ) : IInterceptor {
     override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> = flow {
         try {

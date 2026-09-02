@@ -2,11 +2,15 @@ package ifx.host
 
 import ifx.logging.Log
 import ifx.logging.LogTag
+import ifx.logging.ServiceLogScope
 import ifx.protocol.contract.Endpoint
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.contract.CallDirection
+import ifx.protocol.contract.InterceptorCall
+import ifx.protocol.contract.InterceptorChain
 import ifx.protocol.contract.InterceptorPipeline
+import ifx.protocol.contract.Message
 import ifx.protocol.contract.ProtocolListenerDescription
 import ifx.protocol.contract.ServiceCatalog
 import ifx.protocol.contract.ServiceDescriptor
@@ -26,6 +30,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -126,6 +132,10 @@ class Host(
     ): IHost = apply {
         check(state == HostState.NEW) { "Services can only be registered before the host starts" }
         val serviceBinding = descriptor.bind(instance)
+        val serviceLogScope = ServiceLogScope(
+            serviceInterface = descriptor.address,
+            serviceClassName = instance::class.qualifiedName ?: instance::class.simpleName ?: descriptor.address,
+        )
         val exceptionLog = Log(
             LogTag(
                 serviceInterface = descriptor.address,
@@ -133,6 +143,7 @@ class Host(
             ),
         )
         val mandatoryInterceptors = MandatoryInterceptors(
+            serviceLogScope = ServiceLogScopeInterceptor(serviceLogScope),
             context = contextInterceptor,
             exception = UnhandledExceptionInterceptor { call, exception ->
                 exceptionLog.error(exception, tag = call.operation) {
@@ -385,15 +396,23 @@ internal data class HostConfiguration(
 )
 
 /**
- * Mandatory server interceptors straddle caller-supplied interceptors so that context is decoded
- * closest to the service, exceptions are reported outside caller interceptors, and lifecycle
- * admission and in-flight tracking wrap the complete invocation.
+ * Mandatory server interceptors straddle caller-supplied interceptors so that propagated and
+ * service-log context are installed closest to the service, exceptions are reported outside caller
+ * interceptors, and lifecycle admission and in-flight tracking wrap the complete invocation.
  */
 private data class MandatoryInterceptors(
+    val serviceLogScope: IInterceptor,
     val context: IInterceptor,
     val exception: IInterceptor,
     val lifecycle: IInterceptor,
 ) {
     fun withAdditional(additional: List<IInterceptor>): List<IInterceptor> =
-        listOf(context) + additional + exception + lifecycle
+        listOf(context) + additional + exception + lifecycle + serviceLogScope
+}
+
+private class ServiceLogScopeInterceptor(
+    private val scope: ServiceLogScope,
+) : IInterceptor {
+    override fun intercept(call: InterceptorCall, next: InterceptorChain): Flow<Message> =
+        next(call).flowOn(scope)
 }

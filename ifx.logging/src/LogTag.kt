@@ -1,5 +1,6 @@
 package ifx.logging
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -9,8 +10,15 @@ data class LogTag(
     val serviceInterface: String? = null,
     val serviceClassName: String? = null,
     val path: List<String> = emptyList(),
+    /** Whether human-oriented writers should render a tag prefix for this entry. */
+    val display: Boolean = true,
+    @SerialName("trace_id") val traceId: String? = null,
+    @SerialName("span_id") val spanId: String? = null,
+    @SerialName("trace_flags") val traceFlags: String? = null,
+    /** Whether retention-oriented writers should store this entry. */
+    val retained: Boolean = true,
 ) {
-    internal fun displayTag(): String = buildList {
+    internal fun displayTag(): String = if (!display) "" else buildList {
         serviceClassName
             ?.substringAfterLast('.')
             ?.takeIf(String::isNotBlank)

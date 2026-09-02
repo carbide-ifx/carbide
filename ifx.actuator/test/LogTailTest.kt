@@ -29,6 +29,9 @@ class LogTailTest {
                 serviceInterface = PRICING_INTERFACE,
                 serviceClassName = "engine.pricing.service.PricingEngine",
                 path = listOf("Repository"),
+                traceId = "4bf92f3577b34da6a3ce929d0e0e4736",
+                spanId = "00f067aa0ba902b7",
+                traceFlags = "01",
             ),
             console,
             store,
@@ -44,6 +47,9 @@ class LogTailTest {
         assertEquals(listOf("Repository"), entry.path)
         assertEquals(LogTailSeverity.Info, entry.severity)
         assertEquals("Price loaded", entry.message)
+        assertEquals("4bf92f3577b34da6a3ce929d0e0e4736", entry.traceId)
+        assertEquals("00f067aa0ba902b7", entry.spanId)
+        assertEquals("01", entry.traceFlags)
         assertNull(entry.throwable)
     }
 
@@ -53,6 +59,23 @@ class LogTailTest {
         val logger = Logger(loggerConfigInit(LogTailWriter(store)), "Ktor")
 
         logger.w { "Framework warning" }
+
+        assertTrue(store.serviceInterfaces().isEmpty())
+    }
+
+    @Test
+    fun `structured diagnostics marked as non-retained are not retained by actuators`() {
+        val store = LogTailStore()
+        val writer = LogTailWriter(store)
+        val encodedTag = LogTagCodec.encode(
+            LogTag(
+                serviceInterface = PRICING_INTERFACE,
+                retained = false,
+            ),
+        )
+
+        assertEquals(false, writer.isLoggable(encodedTag, Severity.Info))
+        writer.log(Severity.Info, "RPC response", encodedTag, null)
 
         assertTrue(store.serviceInterfaces().isEmpty())
     }

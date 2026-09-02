@@ -1,23 +1,28 @@
 import access.product.contract.IProductAccess
+import access.product.contract.ProductCriteria
 import access.product.service.ProductAccessEmulator
 import ifx.actuator.IActuator
+import ifx.actuator.LogTail
 import ifx.actuator.logTail
 import ifx.host.HostHealth
 import ifx.host.HostState
 import ifx.host.ServiceHealthSnapshot
-import ifx.logging.Log
 import ifx.protocol.contract.ServiceKind
-import ifx.protocol.contract.forService
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
+import ifx.telemetry.otel.OpenTelemetryRpcInterceptor
+import ifx.telemetry.otel.trace.SpanExporter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class ActuatorServiceTest {
@@ -99,14 +104,12 @@ class ActuatorServiceTest {
     }
 
     @Test
-    fun `actuator streams retained and future log-tail entries through IFX`() = runBlocking {
-        val system = startTestSystem(emptyList())
+    fun `actuator streams retained service log entries through IFX`() = runBlocking {
+        val system = startTestSystem(listOf(rpcLoggingInterceptor()))
         val proxyFactory = RSocketProxyFactory.forHost(system)
-        val message = "streamed log-tail entry"
         try {
-            Log.forService<IProductAccess>(ProductAccessEmulator())
-                .withTag("Repository")
-                .info { message }
+            val products = proxyFactory.create<IProductAccess>().filter(ProductCriteria())
+            val message = "Found ${products.size} products"
 
             val entry = withTimeout(10.seconds) {
                 proxyFactory
@@ -117,11 +120,39 @@ class ActuatorServiceTest {
 
             assertEquals("access.product.contract.IProductAccess", entry.serviceInterface)
             assertEquals(ProductAccessEmulator::class.qualifiedName, entry.serviceClassName)
-            assertEquals(listOf("Repository"), entry.path)
+            assertEquals(emptyList(), entry.path)
             assertEquals(message, entry.message)
         } finally {
             proxyFactory.close()
             system.stop()
         }
     }
+
+    @Test
+    fun `actuator log tail does not retain its own RPC traffic`() = runBlocking {
+        val system = startTestSystem(listOf(rpcLoggingInterceptor()))
+        val proxyFactory = RSocketProxyFactory.forHost(system)
+        val actuatorInterface = "ifx.actuator.IActuator"
+        try {
+            val previousSequence = LogTail.logs(actuatorInterface).lastOrNull()?.sequence ?: 0L
+
+            val selfGeneratedEntry = withTimeoutOrNull(500.milliseconds) {
+                proxyFactory
+                    .create<IActuator>()
+                    .logTail(actuatorInterface)
+                    .first { it.sequence > previousSequence }
+            }
+
+            assertNull(selfGeneratedEntry)
+        } finally {
+            proxyFactory.close()
+            system.stop()
+        }
+    }
+
+    private fun rpcLoggingInterceptor() = OpenTelemetryRpcInterceptor(
+        exporter = SpanExporter {},
+        serviceName = "test-system",
+        logRpcCalls = true,
+    )
 }

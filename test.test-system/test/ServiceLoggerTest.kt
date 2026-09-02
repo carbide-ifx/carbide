@@ -10,9 +10,9 @@ import kotlin.test.assertEquals
 
 class ServiceLoggerTest {
     @Test
-    fun `service implementation logger uses its qualified class name as tag`() {
+    fun `service implementation logger uses its readable class name as tag`() {
         assertEquals(
-            "access.product.service.ProductAccessEmulator",
+            "ProductAccessEmulator",
             ProductAccessEmulator().log.tag,
         )
     }
