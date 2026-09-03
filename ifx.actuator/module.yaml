@@ -13,8 +13,8 @@ settings:
         - ../ifx.contract.ksp
 
 dependencies:
-  - co.touchlab:kermit:2.1.0
-  - ../ifx.host.contract
+  - co.touchlab:kermit:2.1.0: exported
+  - ../ifx.host.contract: exported
   - ../ifx.logging: exported
   - ../ifx.protocol.contract: exported
   - ../ifx.service: exported

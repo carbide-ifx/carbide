@@ -6,6 +6,6 @@ product:
   platforms: [ jvm, macosArm64 ]
 
 dependencies:
-  - ../ifx.service
-  - ../ifx.context
+  - ../ifx.service: exported
+  - ../ifx.context: exported
   - ../ifx.logging

@@ -7,7 +7,7 @@ product:
 
 dependencies:
   - ../ifx.protocol.contract: exported
-  - ../ifx.host.contract
+  - ../ifx.host.contract: exported
   - io.ktor:ktor-client-core:3.1.1: exported
   - io.ktor:ktor-server-core:3.1.1: exported
 

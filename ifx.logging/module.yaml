@@ -7,4 +7,4 @@ product:
 
 
 dependencies:
-  - co.touchlab:kermit:2.1.0
+  - co.touchlab:kermit:2.1.0: exported

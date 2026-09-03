@@ -7,8 +7,8 @@ product:
 
 dependencies:
   - ../ifx.host.contract: exported
-  - ../ifx.protocol.contract
-  - ../ifx.service
+  - ../ifx.protocol.contract: exported
+  - ../ifx.service: exported
   - ../ifx.logging
   - io.ktor:ktor-server-cio:3.1.1: exported
 

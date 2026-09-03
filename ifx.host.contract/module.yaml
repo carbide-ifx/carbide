@@ -6,7 +6,7 @@ product:
   platforms: [jvm, macosArm64]
 
 dependencies:
-  - ../ifx.protocol.contract
-  - ../ifx.service
-  - ../ifx.context
+  - ../ifx.protocol.contract: exported
+  - ../ifx.service: exported
+  - ../ifx.context: exported
   - io.ktor:ktor-server-core:3.1.1: exported

@@ -6,8 +6,8 @@ product:
   platforms: [jvm, macosArm64]
 
 dependencies:
-  - ../ifx.host.contract
-  - io.ktor:ktor-server-core:3.1.1
+  - ../ifx.host.contract: exported
+  - io.ktor:ktor-server-core:3.1.1: exported
 
 test-dependencies@jvm:
   - ../ifx.protocol.contract

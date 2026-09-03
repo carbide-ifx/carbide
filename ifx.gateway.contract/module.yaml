@@ -8,4 +8,4 @@ product:
 
 dependencies:
   - ../ifx.protocol.contract: exported
-  - ../ifx.service
+  - ../ifx.service: exported

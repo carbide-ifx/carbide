@@ -7,9 +7,9 @@ product:
 
 
 dependencies:
-  - ../ifx.context
+  - ../ifx.context: exported
   - ../ifx.protocol.contract: exported
-  - ../ifx.host.contract
+  - ../ifx.host.contract: exported
   - ../ifx.logging
   - io.rsocket.kotlin:ktor-server-rsocket:0.20.0: exported
   - io.rsocket.kotlin:ktor-client-rsocket:0.20.0: exported

@@ -7,8 +7,8 @@ product:
 
 dependencies:
   - ../ifx.host
-  - ../ifx.host.contract
-  - ../ifx.host.webapp
+  - ../ifx.host.contract: exported
+  - ../ifx.host.webapp: exported
   - ../ifx.protocol.contract
-  - ../ifx.protocol.rsocket
-  - io.ktor:ktor-server-core:3.1.1
+  - ../ifx.protocol.rsocket: exported
+  - io.ktor:ktor-server-core:3.1.1: exported

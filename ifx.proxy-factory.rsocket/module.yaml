@@ -6,7 +6,7 @@ product:
   platforms: [ jvm, macosArm64 ]
 
 dependencies:
-  - ../ifx.host.contract
+  - ../ifx.host.contract: exported
   - ../ifx.proxy-factory: exported
   - ../ifx.protocol.rsocket: exported
   - ../ifx.protocol.contract: exported

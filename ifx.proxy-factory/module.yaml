@@ -7,5 +7,5 @@ product:
   platforms: [ jvm, macosArm64 ]
 
 dependencies:
-  - ../ifx.service
+  - ../ifx.service: exported
   - ../ifx.protocol.contract: exported

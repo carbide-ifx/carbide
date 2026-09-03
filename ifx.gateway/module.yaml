@@ -8,6 +8,6 @@ product:
 
 dependencies:
   - ../ifx.gateway.contract: exported
-  - ../ifx.host.contract
-  - ../ifx.protocol.contract
-  - ../ifx.service
+  - ../ifx.host.contract: exported
+  - ../ifx.protocol.contract: exported
+  - ../ifx.service: exported

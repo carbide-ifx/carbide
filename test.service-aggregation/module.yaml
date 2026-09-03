@@ -22,6 +22,3 @@ settings:
 dependencies:
   - ../test.service-contracts
   - ../ifx.subsystem
-  - ../ifx.protocol.contract
-  - ../ifx.logging
-  - ../ifx.service

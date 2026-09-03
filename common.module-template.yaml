@@ -2,7 +2,7 @@ settings:
   kotlin:
     serialization: enabled
 dependencies:
-  - $kotlin.serialization.json
+  - $kotlin.serialization.json: exported
   - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2: exported
 test-dependencies:
   - ./ifx.testing: exported
