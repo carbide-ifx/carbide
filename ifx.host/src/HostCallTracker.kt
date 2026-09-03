@@ -27,6 +27,13 @@ internal class HostCallTracker {
         }
     }
 
+    suspend fun stopAccepting() {
+        mutex.withLock {
+            acceptingCalls = false
+            draining = false
+        }
+    }
+
     suspend fun beginDrain() {
         mutex.withLock {
             acceptingCalls = false

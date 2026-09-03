@@ -17,6 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 class ServiceLogTest {
@@ -43,7 +44,7 @@ class ServiceLogTest {
     }
 
     @Test
-    fun `host logs an unhandled service exception and preserves its json rpc message`() = runBlocking {
+    fun `host logs an unhandled service exception without exposing it over json rpc`() = runBlocking {
         val failureMessage = "inventory database unavailable"
         val service = FailingProductAccess(failureMessage)
         val host = Host(JsonRpcServerProtocol())
@@ -58,7 +59,8 @@ class ServiceLogTest {
                 productAccess.filter(ProductCriteria())
             }
 
-            assertContains(exception.message.orEmpty(), failureMessage)
+            assertContains(exception.message.orEmpty(), "Internal error")
+            assertFalse(exception.message.orEmpty().contains(failureMessage))
             val entry = assertNotNull(
                 LogTail.logs(IProductAccessDescriptor.address)
                     .lastOrNull { it.throwable?.contains(failureMessage) == true }

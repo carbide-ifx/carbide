@@ -1,5 +1,8 @@
 package ifx.host
 
+import co.touchlab.kermit.LogWriter
+import co.touchlab.kermit.Severity
+import ifx.logging.installLogWriter
 import ifx.protocol.contract.IBinding
 import ifx.protocol.contract.Message
 import ifx.protocol.contract.ServiceDescription
@@ -23,6 +26,18 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class HostLifecycleTest {
+    @Test
+    fun `a service address can only be registered once`() = runBlocking {
+        val host = Host(EmptyServerProtocol)
+
+        host.registerService(RecordingServiceDescriptor, RecordingService())
+
+        assertFailsWith<IllegalArgumentException> {
+            host.registerService(RecordingServiceDescriptor, RecordingService())
+        }
+        Unit
+    }
+
     @Test
     fun `host exposes its lifecycle state`() = runBlocking {
         val host = Host(EmptyServerProtocol)
@@ -139,6 +154,20 @@ class HostLifecycleTest {
     }
 
     @Test
+    fun `a startup failure after binding listeners closes them and restores requested addresses`() = runBlocking {
+        val writer = FailNextHostLogWriter()
+        installLogWriter(writer)
+        val host = Host(EmptyServerProtocol)
+
+        assertFailsWith<IllegalStateException> { host.start() }
+
+        assertEquals(HostState.FAILED, host.state)
+        assertEquals(0, host.boundListeners.single().port)
+        host.stop()
+        Unit
+    }
+
+    @Test
     fun `a shutdown failure does not prevent remaining services from stopping`() = runBlocking {
         val events = mutableListOf<String>()
         val first = RecordingService("first", events)
@@ -152,6 +181,17 @@ class HostLifecycleTest {
         assertFailsWith<IllegalStateException> { host.stop() }
 
         assertEquals(listOf("stop:second", "stop:first"), events)
+    }
+}
+
+private class FailNextHostLogWriter : LogWriter() {
+    private var armed = true
+
+    override fun isLoggable(tag: String, severity: Severity): Boolean = armed && tag == "Host"
+
+    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
+        armed = false
+        error("Host startup log failed")
     }
 }
 
@@ -205,6 +245,7 @@ private object SecondRecordingServiceDescriptor : ServiceDescriptor<IRecordingSe
         name = "ISecondRecordingService",
         address = "test.ISecondRecordingService",
     )
+    override val address: String get() = description.address
 }
 
 private object EmptyServiceBinding : IBinding {

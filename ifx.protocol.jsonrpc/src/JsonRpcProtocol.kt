@@ -23,6 +23,7 @@ import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.JsonElement
@@ -55,6 +56,8 @@ class JsonRpcServerProtocol : IServerProtocol {
     private suspend fun ApplicationCall.handleJsonRpc(endpoint: Endpoint) {
         val request = try {
             parseRequest(receiveText())
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (exception: Throwable) {
             respondError(JsonNull, -32700, "Parse error")
             return
@@ -85,6 +88,8 @@ class JsonRpcServerProtocol : IServerProtocol {
                 header = request.headers[IFX_HEADERS]?.let(::decodeHeaders) ?: "{}",
                 body = request.params?.toString().orEmpty(),
             )
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (exception: Throwable) {
             if (request.hasId) respondError(request.id ?: JsonNull, -32600, "Invalid message headers")
             else respondText("", status = HttpStatusCode.NoContent)
@@ -114,8 +119,10 @@ class JsonRpcServerProtocol : IServerProtocol {
 
                 InteractionType.REQUEST_STREAM -> error("Handled above")
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (exception: Throwable) {
-            if (request.hasId) respondError(request.id ?: JsonNull, -32603, exception.message ?: "Internal error")
+            if (request.hasId) respondError(request.id ?: JsonNull, -32603, "Internal error")
             else respondText("", status = HttpStatusCode.NoContent)
         }
     }
@@ -167,6 +174,8 @@ private class JsonRpcClient(
         }
         val body = try {
             RpcFormat.parseToJsonElement(response.bodyAsText()).jsonObject
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (exception: Throwable) {
             throw ProtocolException(exception) { "Invalid JSON-RPC response from $url" }
         }

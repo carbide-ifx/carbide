@@ -131,6 +131,9 @@ class Host(
         instance: T,
     ): IHost = apply {
         check(state == HostState.NEW) { "Services can only be registered before the host starts" }
+        require(registeredServices.none { it.address == descriptor.address }) {
+            "A service address may only be registered once per host: ${descriptor.address}"
+        }
         val serviceBinding = descriptor.bind(instance)
         val serviceLogScope = ServiceLogScope(
             serviceInterface = descriptor.address,
@@ -194,10 +197,18 @@ class Host(
             state = HostState.READY
             Log("Host").info { serviceCatalog().renderStartupDiagram() }
         } catch (failure: Throwable) {
-            startedServiceLifecycles.asReversed().forEach { lifecycle ->
-                runCatching { lifecycle.stop() }.exceptionOrNull()?.let(failure::addSuppressed)
+            withContext(NonCancellable) {
+                callTracker.stopAccepting()
+                runningServers.asReversed().forEach { server ->
+                    runCatching { server.stop() }.exceptionOrNull()?.let(failure::addSuppressed)
+                }
+                runningServers.clear()
+                boundListeners = requestedListeners()
+                startedServiceLifecycles.asReversed().forEach { lifecycle ->
+                    runCatching { lifecycle.stop() }.exceptionOrNull()?.let(failure::addSuppressed)
+                }
+                startedServiceLifecycles.clear()
             }
-            startedServiceLifecycles.clear()
             state = HostState.FAILED
             throw failure
         }
