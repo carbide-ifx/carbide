@@ -1,6 +1,7 @@
 package ifx.telemetry.otel.internal
 
 import ifx.protocol.contract.Message
+import ifx.telemetry.otel.trace.SpanContext
 import ifx.protocol.contract.headers
 import ifx.protocol.contract.withHeader
 import kotlinx.serialization.json.JsonPrimitive
@@ -42,6 +43,10 @@ internal fun Message.traceParentOrNull(): RemoteTraceParent? {
 
 internal fun Message.withTraceParent(span: ActiveSpan): Message =
     withHeader(TRACEPARENT_HEADER, JsonPrimitive("00-${span.traceId}-${span.spanId}-${span.traceFlags}"))
+        .withHeader(TRACESTATE_HEADER, span.traceState?.let(::JsonPrimitive))
+
+internal fun Message.withTraceParent(span: SpanContext): Message =
+    withHeader(TRACEPARENT_HEADER, JsonPrimitive(span.traceParent))
         .withHeader(TRACESTATE_HEADER, span.traceState?.let(::JsonPrimitive))
 
 internal fun newTraceId(): String = randomHex(byteCount = 16)

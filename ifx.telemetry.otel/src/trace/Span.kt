@@ -4,8 +4,11 @@ import ifx.telemetry.otel.TelemetryResource
 import kotlinx.coroutines.sync.Mutex
 
 enum class SpanKind(internal val otlpValue: Int) {
+    INTERNAL(1),
     SERVER(2),
     CLIENT(3),
+    PRODUCER(4),
+    CONSUMER(5),
 }
 
 data class SpanError(

@@ -189,7 +189,7 @@ val spanProcessor = BatchSpanProcessor(
 val rpcMetrics = RpcMetrics(
     exporter = OtlpHttpMetricExporter("http://localhost:4318/v1/metrics"),
 )
-val telemetry = OpenTelemetryRpcInterceptor(
+val telemetry = TelemetryRuntime(
     spanProcessor = spanProcessor,
     resource = TelemetryResource(
         serviceName = "greeter-system",
@@ -198,10 +198,9 @@ val telemetry = OpenTelemetryRpcInterceptor(
         serviceInstanceId = instanceId,
         deploymentEnvironmentName = "development",
     ),
-    metricRecorder = rpcMetrics,
-    logRpcCalls = true,
+    rpcMetrics = rpcMetrics,
 )
-val interceptors = listOf(telemetry)
+val interceptors = listOf(telemetry.rpcInterceptor(logRpcCalls = true))
 
 val host = Host.default(interceptors = interceptors)
 val clients = RSocketProxyFactory.forHost(host)
@@ -216,10 +215,23 @@ tags include `trace_id`, `span_id`, and `trace_flags`. The suspending `Log` seve
 the active RPC correlation to ordinary application calls such as `log.info { "Loading products" }`.
 RPC diagnostics remain console-only; actuator log tails retain service application logs.
 
-The application lifecycle must call suspending `spanProcessor.shutdown()` after stopping the host;
-this drains queued spans and closes the exporter. Use `spanProcessor.flush()` when queued spans must
-be exported without stopping telemetry. Likewise, call `rpcMetrics.shutdown()` to export the final
-cumulative RPC histograms and close the metric exporter.
+Manual work uses the same tracer and therefore becomes a child of the current RPC span:
+
+```kotlin
+telemetry.tracer.span("load-products") {
+    repository.loadProducts()
+}
+```
+
+Use `flow.inSpan(telemetry.tracer, "stream-products")` for lazy flows. The application lifecycle must
+call suspending `telemetry.shutdown()` after stopping the host; this drains queued spans, exports the
+final cumulative RPC histograms, and closes both exporters. Use `telemetry.flush()` when current
+telemetry must be exported without stopping.
+
+For ordinary HTTP clients, add `ifx.telemetry.otel.ktor-client` and install
+`OpenTelemetryClientPlugin` with `tracer = telemetry.tracer`. The plugin creates client spans and
+injects `traceparent` / `tracestate`; keep it off the OTLP exporter's own client. Its spans end after
+response headers are received and do not include later response-body consumption.
 
 `TelemetryResource` also accepts application resource attributes. Its typed identity fields take
 precedence if the same standard key appears in that map.

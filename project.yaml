@@ -25,6 +25,7 @@ modules:
   - ifx.subsystem
   - ifx.subsystem.ksp
   - ifx.telemetry.otel
+  - ifx.telemetry.otel.ktor-client
   - ifx.testing
   - terpal.compiler-plugin
   - test.gateway

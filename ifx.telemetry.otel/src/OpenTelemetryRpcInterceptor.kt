@@ -1,7 +1,6 @@
 package ifx.telemetry.otel
 
 import ifx.logging.Log
-import ifx.logging.LogCorrelation
 import ifx.logging.LogTag
 import ifx.logging.ServiceLogScope
 import ifx.protocol.contract.CallDirection
@@ -11,41 +10,44 @@ import ifx.protocol.contract.InterceptorChain
 import ifx.protocol.contract.Message
 import ifx.telemetry.otel.internal.ActiveSpan
 import ifx.telemetry.otel.internal.RemoteTraceParent
-import ifx.telemetry.otel.internal.isSampled
-import ifx.telemetry.otel.internal.newSpanId
-import ifx.telemetry.otel.internal.newTraceId
 import ifx.telemetry.otel.internal.traceParentOrNull
-import ifx.telemetry.otel.internal.unixTimeNanos
 import ifx.telemetry.otel.internal.withTraceParent
 import ifx.telemetry.otel.metric.RpcCallMeasurement
 import ifx.telemetry.otel.metric.RpcMetricRecorder
-import ifx.telemetry.otel.trace.FinishedSpan
 import ifx.telemetry.otel.trace.ParentBasedSampler
 import ifx.telemetry.otel.trace.Sampler
-import ifx.telemetry.otel.trace.SamplingContext
-import ifx.telemetry.otel.trace.SamplingDecision
-import ifx.telemetry.otel.trace.SamplingParent
 import ifx.telemetry.otel.trace.SimpleSpanProcessor
-import ifx.telemetry.otel.trace.SpanError
 import ifx.telemetry.otel.trace.SpanExporter
 import ifx.telemetry.otel.trace.SpanKind
 import ifx.telemetry.otel.trace.SpanProcessor
+import ifx.telemetry.otel.trace.Tracer
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlin.time.TimeSource
 
 class OpenTelemetryRpcInterceptor(
-    private val spanProcessor: SpanProcessor,
+    private val tracer: Tracer,
     private val resource: TelemetryResource,
-    private val sampler: Sampler = ParentBasedSampler(),
-    private val onObservabilityFailure: suspend (Throwable) -> Unit = {},
     private val metricRecorder: RpcMetricRecorder? = null,
     private val logRpcCalls: Boolean = false,
 ) : IInterceptor {
     private val rpcLog = Log(LogTag(display = false, retained = false))
+
+    constructor(
+        spanProcessor: SpanProcessor,
+        resource: TelemetryResource,
+        sampler: Sampler = ParentBasedSampler(),
+        onObservabilityFailure: suspend (Throwable) -> Unit = {},
+        metricRecorder: RpcMetricRecorder? = null,
+        logRpcCalls: Boolean = false,
+    ) : this(
+        Tracer(spanProcessor, resource, sampler, onObservabilityFailure),
+        resource,
+        metricRecorder,
+        logRpcCalls,
+    )
 
     constructor(
         spanProcessor: SpanProcessor,
@@ -107,7 +109,6 @@ class OpenTelemetryRpcInterceptor(
 
             CallDirection.SERVER -> call.message.traceParentOrNull()?.toActiveSpan()
         }
-        val traceId = parent?.traceId ?: newTraceId()
         val rpcMethod = "${call.service}/${call.operation}"
         val spanKind = when (call.direction) {
             CallDirection.CLIENT -> SpanKind.CLIENT
@@ -118,52 +119,32 @@ class OpenTelemetryRpcInterceptor(
             "rpc.method" to rpcMethod,
             "ifx.interaction.type" to call.interactionType.name.lowercase(),
         )
-        val samplingContext = SamplingContext(
-            parent = parent?.toSamplingParent(),
-            traceId = traceId,
-            name = rpcMethod,
-            kind = spanKind,
-            attributes = attributes,
-        )
-        val samplingDecision = try {
-            sampler.shouldSample(samplingContext)
-        } catch (samplingFailure: Throwable) {
-            reportObservabilityFailure(samplingFailure)
-            samplingContext.parent.inheritedDecision()
-        }
-        val activeSpan = ActiveSpan(
-            traceId = traceId,
-            spanId = newSpanId(),
-            traceFlags = parent?.traceFlags.withSamplingDecision(samplingDecision),
-            traceState = parent?.traceState,
-        )
-        val logCorrelation = LogCorrelation(
-            traceId = activeSpan.traceId,
-            spanId = activeSpan.spanId,
-            traceFlags = activeSpan.traceFlags,
-        )
-        val request = when (call.direction) {
-            CallDirection.CLIENT -> call.message.withTraceParent(activeSpan)
-            CallDirection.SERVER -> call.message
-        }
-        val startTime = unixTimeNanos()
         val startMark = TimeSource.Monotonic.markNow()
         var failure: Throwable? = null
 
         try {
-            logRequest(call, callingService, request, logCorrelation)
-            next(call.copy(message = request))
-                .flowOn(activeSpan + logCorrelation)
-                .collect { response ->
-                    logResponse(call, callingService, response, logCorrelation)
-                    emit(response)
+            tracer.spanFlow(
+                name = rpcMethod,
+                kind = spanKind,
+                attributes = attributes,
+                parent = parent,
+            ) {
+                val request = when (call.direction) {
+                    CallDirection.CLIENT -> call.message.withTraceParent(context)
+                    CallDirection.SERVER -> call.message
                 }
+                flow {
+                    logRequest(call, callingService, request)
+                    next(call.copy(message = request)).collect { response ->
+                        logResponse(call, callingService, response)
+                        emit(response)
+                    }
+                }
+            }.collect { emit(it) }
         } catch (throwable: Throwable) {
             failure = throwable
             throw throwable
         } finally {
-            val durationNanos = startMark.elapsedNow().inWholeNanoseconds
-            val errorType = failure?.errorType()
             try {
                 metricRecorder?.record(
                     RpcCallMeasurement(
@@ -171,79 +152,42 @@ class OpenTelemetryRpcInterceptor(
                         direction = call.direction,
                         rpcMethod = rpcMethod,
                         interactionType = call.interactionType,
-                        durationSeconds = durationNanos / 1_000_000_000.0,
-                        errorType = errorType,
+                        durationSeconds = startMark.elapsedNow().inWholeNanoseconds / 1_000_000_000.0,
+                        errorType = failure?.errorType(),
                     ),
                 )
             } catch (metricFailure: Throwable) {
-                reportObservabilityFailure(metricFailure)
-            }
-            if (activeSpan.traceFlags.isSampled()) {
-                val span = call.finishedSpan(
-                    resource,
-                    activeSpan,
-                    parent,
-                    startTime,
-                    startTime + durationNanos,
-                    rpcMethod,
-                    spanKind,
-                    attributes,
-                    errorType,
-                    failure,
-                )
-                try {
-                    spanProcessor.onEnd(span)
-                } catch (exportFailure: Throwable) {
-                    reportObservabilityFailure(exportFailure)
-                }
+                tracer.reportFailure(metricFailure)
             }
         }
     }
 
-    private suspend fun reportObservabilityFailure(failure: Throwable) {
-        try {
-            onObservabilityFailure(failure)
-        } catch (_: Throwable) {
-            // Telemetry must not alter the outcome of the instrumented RPC.
-        }
-    }
-
-    private suspend fun logRequest(
-        call: InterceptorCall,
-        callingService: String?,
-        request: Message,
-        correlation: LogCorrelation,
-    ) {
+    private suspend fun logRequest(call: InterceptorCall, callingService: String?, request: Message) {
         val direction = when (call.direction) {
             CallDirection.CLIENT -> callingService
                 ?.let { "${it.substringAfterLast('.')} ->" }
                 ?: "Client ->"
             CallDirection.SERVER -> "->"
         }
-        logRpcCall(correlation) { "$direction ${call.callName()}: $request" }
+        logRpcCall { "$direction ${call.callName()}: $request" }
     }
 
-    private suspend fun logResponse(
-        call: InterceptorCall,
-        callingService: String?,
-        response: Message,
-        correlation: LogCorrelation,
-    ) {
+    private suspend fun logResponse(call: InterceptorCall, callingService: String?, response: Message) {
         val message = when (call.direction) {
             CallDirection.CLIENT -> callingService
                 ?.let { "${it.substringAfterLast('.')} <- ${call.callName()}: $response" }
                 ?: "Client <- ${call.callName()}: $response"
             CallDirection.SERVER -> "${call.callName()} -> $response"
         }
-        logRpcCall(correlation) { message }
+        logRpcCall { message }
     }
 
-    private suspend fun logRpcCall(correlation: LogCorrelation, message: () -> String) {
+    private suspend fun logRpcCall(message: () -> String) {
         if (!logRpcCalls) return
         try {
-            rpcLog.withCorrelation(correlation).info(message = message)
+            rpcLog.info(message = message)
         } catch (loggingFailure: Throwable) {
-            reportObservabilityFailure(loggingFailure)
+            tracer.reportFailure(loggingFailure)
         }
     }
 }
@@ -257,65 +201,5 @@ private fun RemoteTraceParent.toActiveSpan(): ActiveSpan = ActiveSpan(
     traceState = traceState,
     isRemote = true,
 )
-
-private fun ActiveSpan.toSamplingParent(): SamplingParent = SamplingParent(
-    traceId = traceId,
-    spanId = spanId,
-    traceFlags = traceFlags,
-    traceState = traceState,
-    isRemote = isRemote,
-)
-
-private fun SamplingParent?.inheritedDecision(): SamplingDecision = when {
-    this == null -> SamplingDecision.DROP
-    isSampled -> SamplingDecision.RECORD_AND_SAMPLE
-    else -> SamplingDecision.DROP
-}
-
-private fun String?.withSamplingDecision(decision: SamplingDecision): String {
-    val inheritedFlags = this?.toIntOrNull(16) ?: 0
-    val flags = when (decision) {
-        SamplingDecision.DROP -> inheritedFlags and 0xfe
-        SamplingDecision.RECORD_AND_SAMPLE -> inheritedFlags or 0x01
-    }
-    return flags.toString(16).padStart(2, '0')
-}
-
-private fun InterceptorCall.finishedSpan(
-    resource: TelemetryResource,
-    span: ActiveSpan,
-    parent: ActiveSpan?,
-    startTime: Long,
-    endTime: Long,
-    rpcMethod: String,
-    spanKind: SpanKind,
-    initialAttributes: Map<String, String>,
-    errorType: String?,
-    failure: Throwable?,
-): FinishedSpan {
-    return FinishedSpan(
-        resource = resource,
-        traceId = span.traceId,
-        spanId = span.spanId,
-        parentSpanId = parent?.spanId,
-        traceFlags = span.traceFlags,
-        traceState = span.traceState,
-        name = rpcMethod,
-        kind = spanKind,
-        startTimeUnixNano = startTime,
-        endTimeUnixNano = endTime,
-        attributes = buildMap {
-            putAll(initialAttributes)
-            errorType?.let { put("error.type", it) }
-        },
-        error = failure?.let {
-            SpanError(
-                type = requireNotNull(errorType),
-                message = it.message,
-                stackTrace = it.stackTraceToString(),
-            )
-        },
-    )
-}
 
 private fun Throwable.errorType(): String = this::class.qualifiedName ?: this::class.simpleName ?: "Throwable"

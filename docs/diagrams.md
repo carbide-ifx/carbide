@@ -53,7 +53,7 @@ public goes through a projection; everything internal is a typed proxy over the 
 
 ## 2. Module dependency graph
 
-The **transitive reduction** of the real `ifx.*` production graph: 29 of the 66 declared
+The **transitive reduction** of the real `ifx.*` production graph: 30 of the 67 declared
 `ifx.* → ifx.*` dependencies. The other 37 are implied transitively — a module naming a grandparent
 explicitly, which Amper modules do routinely — and are omitted for legibility. Generated from the
 `module.yaml` files, not from memory.
@@ -89,6 +89,7 @@ flowchart BT
         ifx_host_webapp["ifx.host.webapp"]
         ifx_service_explorer["ifx.service-explorer"]
         ifx_telemetry_otel["ifx.telemetry.otel"]
+        ifx_telemetry_otel_ktor_client["ifx.telemetry.otel.ktor-client"]
         ifx_testing["ifx.testing"]
     end
 
@@ -117,6 +118,7 @@ flowchart BT
     ifx_service_explorer --> ifx_host_webapp
     ifx_service_explorer --> ifx_protocol_rsocket
     ifx_telemetry_otel --> ifx_protocol_contract
+    ifx_telemetry_otel_ktor_client --> ifx_telemetry_otel
     ifx_testing --> ifx_service
     ifx_subsystem --> ifx_actuator
     ifx_subsystem --> ifx_service_explorer

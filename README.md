@@ -511,7 +511,7 @@ val rpcMetrics = RpcMetrics(
         Log("OpenTelemetry").warn(error) { "Failed to export RPC metrics" }
     },
 )
-val telemetry = OpenTelemetryRpcInterceptor(
+val telemetry = TelemetryRuntime(
     spanProcessor = spanProcessor,
     resource = TelemetryResource(
         serviceName = "sales-manager",
@@ -521,17 +521,45 @@ val telemetry = OpenTelemetryRpcInterceptor(
         deploymentEnvironmentName = "production",
         attributes = mapOf("cloud.region" to "eu-west-1"),
     ),
-    metricRecorder = rpcMetrics,
-    logRpcCalls = true,
+    rpcMetrics = rpcMetrics,
 )
 val interceptors = listOf(
-    telemetry,
+    telemetry.rpcInterceptor(logRpcCalls = true),
     Encryption,
 )
 
 host.addInterceptors(interceptors)
 proxyFactory.addInterceptors(interceptors)
 ```
+
+The same runtime exposes the tracer used by RPC instrumentation. Manual spans inherit the active
+RPC span and automatically update log correlation:
+
+```kotlin
+telemetry.tracer.span("load-products") {
+    setAttribute("product.count", products.size)
+    repository.loadProducts()
+}
+
+repository.products()
+    .inSpan(telemetry.tracer, "stream-products")
+    .collect { product -> consume(product) }
+```
+
+Install the optional `ifx.telemetry.otel.ktor-client` plugin on application HTTP clients to create
+client spans and inject W3C trace context automatically:
+
+```kotlin
+val httpClient = HttpClient {
+    install(OpenTelemetryClientPlugin) {
+        tracer = telemetry.tracer
+    }
+}
+```
+
+Do not install the plugin on the OTLP exporter's own client. `shouldInstrument` can exclude collector,
+health-check, or other requests that should not be traced. HTTP spans end after response headers are
+received; later response-body consumption is not included.
 
 The default sampler is `ParentBasedSampler(AlwaysOnSampler)`: root traces are sampled and child
 spans preserve the upstream sampled flag. To sample ten percent of new traces while preserving
@@ -556,8 +584,9 @@ telemetry layer extracts it.
 and keeps collector latency out of the RPC path. Queue overflow, shutdown rejection, export timeout,
 and export failure are reported through `onDroppedSpans`; the processor never retries inside the
 application. Call `flush()` to export queued spans without stopping, and call suspending `shutdown()`
-from the application lifecycle to drain the queue and close the HTTP exporter. Spans completed after
-shutdown are rejected and reported.
+from the application lifecycle to drain the queue and close the HTTP exporter. `TelemetryRuntime`
+combines span and RPC metric flush/shutdown when both are configured. Spans completed after shutdown
+are rejected and reported.
 
 Passing a `SpanExporter` directly to `OpenTelemetryRpcInterceptor` remains available for intentionally
 synchronous export. The `serviceName` constructor remains as shorthand for a resource containing only
@@ -565,7 +594,7 @@ synchronous export. The `serviceName` constructor remains as shorthand for a res
 
 `RpcMetrics` records `rpc.client.call.duration` and `rpc.server.call.duration` as cumulative
 histograms in seconds. Recording only updates an in-process aggregate; `OtlpHttpMetricExporter` sends
-it periodically, on `flush()`, and during suspending `shutdown()`. Call `rpcMetrics.shutdown()` from
+it periodically, on `flush()`, and during suspending `shutdown()`. Call `telemetry.shutdown()` from
 the application lifecycle after stopping RPC traffic.
 
 Service modules do not generate descriptors or proxies. Modules that declare interfaces

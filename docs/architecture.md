@@ -45,7 +45,7 @@ flowchart TB
         host["ifx.host<br/>Host, listeners, lifecycle"]
         protos["ifx.protocol.rsocket<br/>ifx.protocol.jsonrpc"]
         proxies["ifx.proxy-factory/.rsocket/.jsonrpc"]
-        tools["ifx.actuator, ifx.service-explorer<br/>ifx.telemetry.otel, ifx.host.webapp"]
+        tools["ifx.actuator, ifx.service-explorer<br/>ifx.telemetry.otel*, ifx.host.webapp"]
         gw["ifx.gateway, .ktor, .typescript"]
     end
 
@@ -77,7 +77,7 @@ flowchart TB
     L3["<b>ifx.host.contract</b> · <b>ifx.proxy-factory</b> · <b>ifx.gateway.contract</b>"]
     L4["<b>ifx.host</b> · <b>ifx.gateway</b>"]
     L5["<b>ifx.protocol.rsocket</b> · <b>ifx.protocol.jsonrpc</b><br/><b>ifx.proxy-factory.rsocket</b> · <b>ifx.proxy-factory.jsonrpc</b><br/><b>ifx.gateway.ktor</b> · <b>ifx.gateway.typescript</b>"]
-    L6["<b>ifx.actuator</b> · <b>ifx.host.webapp</b> · <b>ifx.service-explorer</b> · <b>ifx.telemetry.otel</b>"]
+    L6["<b>ifx.actuator</b> · <b>ifx.host.webapp</b> · <b>ifx.service-explorer</b> · <b>ifx.telemetry.otel*</b>"]
     L7["<b>ifx.subsystem</b> — the single aggregate dependency"]
 
     L0 --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
