@@ -6,6 +6,15 @@ import kotlin.test.assertEquals
 
 class TypeScriptRendererTest {
     @Test
+    fun `reports a stable diagnostic for overloads`() {
+        assertEquals("lookup", firstOverloadedOperationName(listOf("find", "lookup", "lookup")))
+        assertEquals(
+            "Service operation overloads are not supported: lookup. Use distinct operation names.",
+            overloadDiagnostic("lookup"),
+        )
+    }
+
+    @Test
     fun `renders operations and reachable wire types`() {
         val model = ServiceModel(
             name = "CatalogService",

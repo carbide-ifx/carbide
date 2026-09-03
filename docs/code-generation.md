@@ -167,6 +167,9 @@ val client = proxyFactory.create(IProductAccessDescriptor)
 Optional, applied alongside `ifx.subsystem.ksp`. For each contract it emits a TypeScript service
 interface, request/response type aliases, all reachable serializable types, a `{Service}Description`
 value carrying the same runtime wire schema, and a concrete protocol-neutral `{Service}Sdk`.
+Service method overloads are rejected with a compile-time diagnostic. Although Kotlin can route them
+by parameter signature, they do not have a stable, portable public identity in generated TypeScript
+SDKs and gateway projections; use distinct operation names instead.
 
 Request and response types must be `@Serializable`. Custom and contextual serializers are **rejected**,
 because their wire shape cannot be inferred from KSP symbols — the generator refuses rather than

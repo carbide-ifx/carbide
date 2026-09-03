@@ -23,15 +23,13 @@ internal class ServiceModelBuilder {
         declarations.clear()
         collecting.clear()
         val functions = contract.getAllFunctions().filterNot(::isAnyMethod).toList()
-        val overloadCounts = functions.groupingBy { it.simpleName.asString() }.eachCount()
-        val overloadIndexes = mutableMapOf<String, Int>()
+        val functionNames = functions.map { it.simpleName.asString() }
+        firstOverloadedOperationName(functionNames)?.let { overload ->
+            fail(overloadDiagnostic(overload), functions.first { it.simpleName.asString() == overload })
+        }
         val operations = functions.map { function ->
             val name = function.simpleName.asString()
-            val overloadIndex = overloadIndexes.merge(name, 1, Int::plus)!!
-            operation(
-                function,
-                if (overloadCounts.getValue(name) == 1) name.upperCamelCase() else name.upperCamelCase() + overloadIndex,
-            )
+            operation(function, name.upperCamelCase())
         }
         return ServiceModel(
             name = contract.simpleName.asString(),
@@ -391,5 +389,11 @@ internal class ServiceModelBuilder {
         )
     }
 }
+
+internal fun firstOverloadedOperationName(names: List<String>): String? =
+    names.groupingBy { it }.eachCount().entries.firstOrNull { it.value > 1 }?.key
+
+internal fun overloadDiagnostic(name: String): String =
+    "Service operation overloads are not supported: $name. Use distinct operation names."
 
 internal class ModelException(message: String, val node: KSNode) : RuntimeException(message)

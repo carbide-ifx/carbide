@@ -51,7 +51,7 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
             .distinctBy { it.qualifiedName?.asString() }
             .sortedBy { it.qualifiedName?.asString() }
             .toList()
-        if (contracts.any { !it.validate(resolver) }) return contracts
+        if (contracts.any { !it.validateContract() }) return contracts
         contracts
             .filter { contract ->
                 resolver.getClassDeclarationByName(
@@ -140,24 +140,26 @@ internal object $anchorName
                 }
             }
 
-    private fun KSClassDeclaration.validate(resolver: Resolver): Boolean =
-        getAllFunctions().filterNot(::isAnyMethod).all { function ->
+    private fun KSClassDeclaration.validateContract(): Boolean {
+        val functions = getAllFunctions().filterNot(::isAnyMethod).toList()
+        if (functions.any { !it.validate() }) return false
+        val diagnostics = validateServiceMethods(functions.map { function ->
             val returnDeclaration = function.returnType?.resolve()?.declaration?.qualifiedName?.asString()
-            val isFlow = returnDeclaration == "kotlinx.coroutines.flow.Flow"
-            val validShape = function.typeParameters.isEmpty() && function.parameters.size <= 1 &&
-                ((isFlow && !function.modifiers.contains(Modifier.SUSPEND)) || (!isFlow && function.modifiers.contains(Modifier.SUSPEND)))
-            if (!validShape) logger.error(
-                "IFX service method ${function.simpleName.asString()} must be a suspend unary/Unit method or a non-suspending Flow method, with at most one parameter and no type parameters.",
-                function
+            ServiceMethodShape(
+                name = function.simpleName.asString(),
+                parameterCount = function.parameters.size,
+                hasTypeParameters = function.typeParameters.isNotEmpty(),
+                isSuspending = Modifier.SUSPEND in function.modifiers,
+                returnsFlow = returnDeclaration == "kotlinx.coroutines.flow.Flow",
+                returnsUnit = returnDeclaration == "kotlin.Unit",
+                isFireAndForget = function.isFireAndForget(),
             )
-            val validFireAndForget = !function.isFireAndForget() ||
-                (returnDeclaration == "kotlin.Unit" && function.modifiers.contains(Modifier.SUSPEND))
-            if (!validFireAndForget) logger.error(
-                "@FireAndForget may only be used on suspending IFX service methods returning Unit.",
-                function,
-            )
-            validShape && validFireAndForget
+        })
+        diagnostics.forEach { diagnostic ->
+            logger.error(diagnostic.message, functions[diagnostic.methodIndex])
         }
+        return diagnostics.isEmpty()
+    }
 
     private fun generate(contract: KSClassDeclaration, dependencies: Dependencies) {
         val packageName = contract.packageName.asString()
@@ -222,17 +224,11 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
     private fun operationProperties(
         functions: List<KSFunctionDeclaration>,
     ): List<Pair<KSFunctionDeclaration, String>> {
-        val counts = functions.groupingBy { it.simpleName.asString() }.eachCount()
-        val indexes = mutableMapOf<String, Int>()
-        val allocated = DESCRIPTOR_MEMBERS.toMutableSet()
-        return functions.map { function ->
-            val name = function.simpleName.asString()
-            val index = indexes.merge(name, 1, Int::plus)!!
-            val uniqueName = if (counts.getValue(name) == 1) name else "$name$index"
-            var propertyName = uniqueName
-            while (!allocated.add(propertyName)) propertyName += "Operation"
-            function to propertyName
-        }
+        val propertyNames = operationPropertyNames(
+            functions.map { it.simpleName.asString() },
+            DESCRIPTOR_MEMBERS,
+        )
+        return functions.zip(propertyNames)
     }
 
     private fun operationProperty(
