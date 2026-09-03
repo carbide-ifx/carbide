@@ -86,7 +86,7 @@ import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
-import ifx.subsystem.default
+import ifx.subsystem.development
 import kotlinx.coroutines.runBlocking
 
 class Greeter : IGreeter {
@@ -95,7 +95,7 @@ class Greeter : IGreeter {
 }
 
 fun main(): Unit = runBlocking {
-    val host = Host.default(
+    val host = Host.development(
         name = "Greeter System",
         rsocketPort = 7000,
         jsonRpcPort = 7001,
@@ -114,8 +114,10 @@ fun main(): Unit = runBlocking {
 }
 ```
 
-`Host.default()` returns an unstarted host. Register all interceptors and services before `start()`.
+`Host.development()` returns an unstarted host. Register all interceptors and services before `start()`.
 The example fixes the ports for clarity; passing `0` asks the operating system for a free port.
+The development host exposes unauthenticated protocols, actuator logs, and Service Explorer.
+For production, construct `Host` directly and install only the listeners and utilities you intend to expose.
 
 The compiler plugin supplies the generated descriptor to `registerService<IGreeter>()` and
 `create<IGreeter>()`. Code built without the plugin can call the low-level overloads with the
@@ -179,7 +181,7 @@ Keep endpoint selection in the composition root when deployment topology is stat
 ## 6. Add policies and observability
 
 Add application interceptors to the host. `RSocketProxyFactory.forHost(host)` mirrors the host's
-client-safe interceptors automatically. `Host.default()` always adds context propagation and
+client-safe interceptors automatically. `Host.development()` always adds context propagation and
 unhandled-exception reporting itself:
 
 ```kotlin
@@ -202,7 +204,7 @@ val telemetry = TelemetryRuntime(
 )
 val interceptors = listOf(telemetry.rpcInterceptor(logRpcCalls = true))
 
-val host = Host.default(interceptors = interceptors)
+val host = Host.development(interceptors = interceptors)
 val clients = RSocketProxyFactory.forHost(host)
 ```
 
@@ -253,7 +255,7 @@ response headers are received and do not include later response-body consumption
 `TelemetryResource` also accepts application resource attributes. Its typed identity fields take
 precedence if the same standard key appears in that map.
 
-The default host also registers `IActuator`, browser Service Explorer, and health endpoints on its
+The development host also registers `IActuator`, browser Service Explorer, and health endpoints on its
 RSocket listener:
 
 ```text

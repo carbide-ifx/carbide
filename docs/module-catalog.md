@@ -189,9 +189,10 @@ export clients can remain uninstrumented and avoid recursive telemetry. Spans en
 headers are received rather than asynchronously following response-body consumption.
 
 ### `ifx.subsystem`
-The single runtime dependency for an application. It adds one function — `Host.default()` — and
-re-exports the standard runtime set. Being a suspending factory (it registers the actuator), it must
-be called from a coroutine.
+The single runtime dependency for an application. It adds one development convenience —
+`Host.development()` — and re-exports the standard runtime set. The convenience host is unauthenticated
+and includes the actuator and Service Explorer; production applications compose `Host` explicitly.
+Being a suspending factory (it registers the actuator), it must be called from a coroutine.
 
 ### `ifx.testing`
 Shared test scaffolding: TestBalloon framework plus Kotest assertions, and Carbide-specific assertions.

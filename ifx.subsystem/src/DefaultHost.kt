@@ -14,11 +14,11 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Creates the standard subsystem host with RSocket, JSON-RPC,
+ * Creates a development host with unauthenticated RSocket and JSON-RPC listeners,
  * the actuator service, Kubernetes health endpoints, and the bundled browser-based service
  * explorer. The returned host is not started.
  */
-suspend fun Host.Companion.default(
+suspend fun Host.Companion.development(
     name: String = "Service Host",
     rsocketPort: Int = 0,
     jsonRpcPort: Int = 0,
@@ -46,5 +46,5 @@ suspend fun Host.Companion.default(
 }
 
 private fun missingActuatorDescriptor(): Nothing = error(
-    "Host.default() requires the ifx.rpc.compiler plugin or an explicit IActuator descriptor",
+    "Host.development() requires the ifx.rpc.compiler plugin or an explicit IActuator descriptor",
 )

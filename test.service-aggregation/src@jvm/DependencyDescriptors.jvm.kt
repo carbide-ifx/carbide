@@ -6,7 +6,7 @@ import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.proxy.factory.IProxyFactory
 import ifx.proxy.factory.create
-import ifx.subsystem.default
+import ifx.subsystem.development
 
 /** Compile-time proof that dependency indexes produce descriptors in the JVM subsystem. */
 val dependencyServiceDescriptor = IProductAccessDescriptor
@@ -16,8 +16,8 @@ val dependencyFilterOperation = IProductAccessDescriptor.filter
 val dependencyStreamOperation = IProductAccessDescriptor.generateRandowProduct
 val dependencyFireAndForgetOperation = IProductAccessDescriptor.notifyProductViewed
 
-/** Compile-time proof that the standard default host is available for JVM. */
-suspend fun defaultSubsystemHost(): Host = Host.default()
+/** Compile-time proof that the standard development host is available for JVM. */
+suspend fun developmentSubsystemHost(): Host = Host.development()
 
 /** Compile-time proof that the compiler plugin links typed service registration on JVM. */
 suspend fun registerDependencyService(host: Host, service: IProductAccess) =

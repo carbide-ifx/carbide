@@ -28,7 +28,7 @@ import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
 import ifx.service.explorer.ServiceExplorer
-import ifx.subsystem.default
+import ifx.subsystem.development
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -83,8 +83,8 @@ class TestSystemTest {
     }
 
     @Test
-    fun `default host publishes Kubernetes health endpoints`() = runBlocking {
-        val host = Host.default().start()
+    fun `development host publishes Kubernetes health endpoints`() = runBlocking {
+        val host = Host.development().start()
         val client = HttpClient()
         try {
             val baseUrl = "http://localhost:${host.port(RSOCKET_PROTOCOL_ID)}/ifx/health"
@@ -104,9 +104,9 @@ class TestSystemTest {
     }
 
     @Test
-    fun `default host binds both standard protocols and bundled service explorer`() = runBlocking {
+    fun `development host binds both standard protocols and bundled service explorer`() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
-        val host = Host.default(rsocketPort = port).start()
+        val host = Host.development(rsocketPort = port).start()
         val client = HttpClient()
         try {
             assertEquals(port, host.port(RSOCKET_PROTOCOL_ID))
@@ -121,8 +121,8 @@ class TestSystemTest {
     }
 
     @Test
-    fun `default host resolves port zero to an available port`() = runBlocking {
-        val host = Host.default().start()
+    fun `development host resolves port zero to an available port`() = runBlocking {
+        val host = Host.development().start()
         try {
             assertNotEquals(0, host.port(RSOCKET_PROTOCOL_ID))
             assertNotEquals(0, host.port(JSON_RPC_PROTOCOL_ID))

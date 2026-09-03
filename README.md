@@ -65,9 +65,9 @@ dependencies:
 
 It exports the host, RSocket and JSON-RPC protocols and proxy factories,
 interceptor contracts, context and logging support, OpenTelemetry, the actuator,
-and host tooling such as `ServiceExplorer`. `Host.default()` provides the
-standard dual-protocol host with actuator inspection enabled. Applications can
-construct `Host` directly when they need a different composition.
+and host tooling such as `ServiceExplorer`. `Host.development()` provides an
+unauthenticated dual-protocol host with actuator inspection enabled. Production applications
+should construct `Host` directly and install only the listeners and utilities they intend to expose.
 
 Generated service bindings still require the subsystem/application KSP and compiler-plugin
 setup described below. Those are build-time tools rather than runtime dependencies.
@@ -138,9 +138,9 @@ them with an immutable projection. Protocol implementations only install their
 routes and wire handling into the listener provided by the host.
 
 ```kotlin
-import ifx.subsystem.default
+import ifx.subsystem.development
 
-val host = Host.default(
+val host = Host.development(
     name = "Example System",
     rsocketPort = 7000,
     jsonRpcPort = 7001,
@@ -280,16 +280,16 @@ shapes. Use it with either `@ifx/rpc-sdk-rsocket` or the separate
 `@ifx/rpc-sdk-http` binding. The latter accepts ordinary Fetch request headers
 for browser authentication and decodes NDJSON incrementally.
 
-The `ifx.subsystem` bundle provides an opinionated default host with RSocket,
+The `ifx.subsystem` bundle provides an opinionated development host with RSocket,
 JSON-RPC, `IActuator`, and the browser Service Explorer. Passing `0` for either
 port selects an available port. Because registering the actuator is suspending,
-`Host.default()` must be called from a coroutine:
+`Host.development()` must be called from a coroutine:
 
 ```kotlin
-import ifx.subsystem.default
+import ifx.subsystem.development
 
-val host = Host.default(rsocketPort = 8080, jsonRpcPort = 8081)
-val testHost = Host.default()
+val host = Host.development(rsocketPort = 8080, jsonRpcPort = 8081)
+val testHost = Host.development()
 ```
 
 Every `Host` installs context propagation and unhandled-exception reporting as
@@ -298,12 +298,14 @@ it cannot replace the mandatory interceptors. Additional interceptors are
 installed before the actuator and subsequent business services:
 
 ```kotlin
-val host = Host.default(
+val host = Host.development(
     interceptors = listOf(telemetry),
 )
 ```
 
 For a custom protocol or tooling composition, construct `Host` directly.
+This explicit composition is the production path: `Host.development()` exposes unauthenticated
+RSocket and JSON-RPC listeners, actuator logs, and Service Explorer.
 
 ### Proxy factory lifetime
 
@@ -654,22 +656,22 @@ Adding or removing a service-module dependency changes the generated descriptors
 second service list or annotation. Apply the index processor only to modules that declare
 service contracts; subsystem and unrelated infrastructure modules do not need it.
 
-`Host.default` is the standard application factory from `ifx.subsystem`. The compiler
+`Host.development` is the standard application factory from `ifx.subsystem`. The compiler
 plugin supplies its generated `IActuator` descriptor and rewrites typed `registerService<T>` and
 `IProxyFactory.create<T>` calls to pass the matching generated `ServiceDescriptor<T>`
 directly. Proxy factories created with `forHost` obtain only the host address and
 interceptors; descriptor selection remains compile-time:
 
 ```kotlin
-import ifx.subsystem.default
+import ifx.subsystem.development
 
-val host = Host.default(name = "Test System")
+val host = Host.development(name = "Test System")
 
 host.registerService<IProductAccess> { ProductAccessEmulator() }
 ```
 
 Reusable helpers can accept a defaulted `ServiceDescriptor<T>` parameter. The compiler
-plugin fills that argument in the consuming subsystem, which is how `Host.default()` and
+plugin fills that argument in the consuming subsystem, which is how `Host.development()` and
 `registerActuator()` remain usable while actuator itself continues to generate only a
 contract index.
 
@@ -714,7 +716,7 @@ val host = Host(name = "Example") {
 
 The `ifx.service-explorer` module bundles the Service Explorer's npm build. The
 explorer targets an RSocket listener because its browser client invokes services
-and streams logs through RSocket. `Host.default()` always installs it; callers do
+and streams logs through RSocket. `Host.development()` always installs it; callers do
 not configure or package a frontend directory. Custom hosts can install
 `ServiceExplorer` directly. The landing page obtains the host catalog and
 per-service health from the registered `IActuator` utility service; no separate
@@ -723,7 +725,7 @@ generates request controls from the serialized wire types, and displays
 request/response, fire-and-forget, and streaming results. The standard host also
 publishes Kubernetes-compatible JSON probes at `/ifx/health/ready`,
 `/ifx/health/live`, and `/ifx/health` on its RSocket HTTP listener.
-Set `drainDelay` on `Host.default()` to the deployment's endpoint-propagation window; it defaults
+Set `drainDelay` on `Host.development()` to the deployment's endpoint-propagation window; it defaults
 to zero so local shutdown is immediate. `requestDrainTimeout` bounds how long shutdown waits for
 accepted calls and streams before stopping services and listeners.
 
@@ -732,7 +734,7 @@ For example, a host resolved to port `8080` exposes the UI at
 ordinary generated service SDK.
 
 ```kotlin
-val host = Host.default(
+val host = Host.development(
     name = "Test System",
     rsocketPort = 8080,
 )

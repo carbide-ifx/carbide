@@ -179,19 +179,20 @@ call.
 
 ## Composition root
 
-An application assembles Carbide in one place. `Host.default()` from `ifx.subsystem` is the opinionated
-standard assembly:
+An application assembles Carbide in one place. `Host.development()` from `ifx.subsystem` is the opinionated
+development assembly:
 
 ```kotlin
-val host = Host.default(name = "Sales", rsocketPort = 8080, jsonRpcPort = 8081)
+val host = Host.development(name = "Sales", rsocketPort = 8080, jsonRpcPort = 8081)
 host.registerService<ISalesManager> { SalesManagerImpl(proxyFactory) }
 host.start()
 ```
 
 That single call composes: an RSocket listener, a JSON-RPC listener, the `IActuator` utility service,
 Kubernetes probes at `/ifx/health`, `/ifx/health/ready`, `/ifx/health/live`, and the browser Service
-Explorer at `/`. Applications that need a different composition construct `Host` directly with the
-builder — nothing in `Host.default()` is privileged.
+Explorer at `/`. It is deliberately unauthenticated. Production applications construct `Host`
+directly with the builder and expose only their intended protocols and utilities; nothing in
+`Host.development()` is privileged.
 
 ## What Carbide gives a service author for free
 

@@ -7,7 +7,7 @@ import ifx.protocol.contract.Message
 import ifx.protocol.contract.headers
 import ifx.service.IService
 import ifx.stdlib.TimeSpan
-import ifx.subsystem.default
+import ifx.subsystem.development
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonElement
 import kotlin.test.Test
@@ -29,8 +29,8 @@ class SubsystemHostTest {
     }
 
     @Test
-    fun `default host includes the standard subsystem tooling`() = runBlocking {
-        val host = Host.default()
+    fun `development host includes the standard subsystem tooling`() = runBlocking {
+        val host = Host.development()
 
         assertTrue(dependencyServiceDescriptor.address.isNotBlank())
         assertEquals("Service Host", host.name)

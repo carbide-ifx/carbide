@@ -10,7 +10,7 @@ import ifx.protocol.contract.IInterceptor
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
-import ifx.subsystem.default
+import ifx.subsystem.development
 import ifx.telemetry.otel.TelemetryResource
 import ifx.telemetry.otel.TelemetryRuntime
 import ifx.telemetry.otel.export.otlp.OtlpHttpMetricExporter
@@ -24,7 +24,7 @@ import manager.sales.service.SalesManager
 suspend fun startTestSystem(
     interceptors: List<IInterceptor> = emptyList(),
 ): IHost {
-    val host = Host.default(
+    val host = Host.development(
         name = "Test System",
         interceptors = interceptors,
     )

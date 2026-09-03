@@ -168,7 +168,7 @@ composition root imports — never a contract, never the base, never a service.
 
 ## 4. Anatomy of a subsystem process
 
-What `Host.default(rsocketPort = 8080, jsonRpcPort = 8081)` actually produces.
+What `Host.development(rsocketPort = 8080, jsonRpcPort = 8081)` actually produces.
 
 ```mermaid
 flowchart TB
@@ -321,7 +321,7 @@ sequenceDiagram
     participant L as Listeners (Ktor)
     participant S as IServiceLifecycle
 
-    Main->>Sub: Host.default(name, rsocketPort, jsonRpcPort)
+    Main->>Sub: Host.development(name, rsocketPort, jsonRpcPort)
     Sub->>H: Host builder — listen(RSocket) { install(ServiceExplorer, HealthEndpoints) }, listen(JsonRpc)
     Sub->>H: registerActuator(descriptor)
     Note over H: state = NEW

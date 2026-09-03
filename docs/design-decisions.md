@@ -278,7 +278,7 @@ speaks HTTP and nothing else.
 **Decision.** `ifx.service-explorer` ships the built UI: ordinary JAR resources on JVM, a generated
 compressed asset projection on Native.
 
-**Why.** `Host.default()` should give a working explorer with no frontend configuration. Native library
+**Why.** `Host.development()` should give a working explorer with no frontend configuration. Native library
 resources require application-level packaging, so the assets are generated into Kotlin source.
 
 **Cost.** The generated Native projection is a build output committed alongside the module and must be
@@ -330,13 +330,13 @@ This is a workaround with a known expiry, not a design position.
 ## `ifx.subsystem` is a curated bundle, not a framework entry point
 
 **Decision.** One dependency re-exporting the standard runtime set, adding exactly one function
-(`Host.default()`).
+(`Host.development()`).
 
 **Why.** Applications should not assemble a dependency list to get started, but nothing in the default
 composition should be privileged. Constructing `Host` directly must remain a first-class path.
 
 **Cost.** The export list is hand-maintained and deliberately explicit — see the comment in
-`ifx.subsystem/module.yaml`. `Host.default()` is suspending because registering the actuator is, which
+`ifx.subsystem/module.yaml`. `Host.development()` is suspending because registering the actuator is, which
 surprises callers who expect a plain factory.
 
 ---

@@ -150,7 +150,7 @@ a message naming the contract and telling you to apply `ifx.subsystem.ksp` to th
 
 The plugin does a second job: **filling defaulted `ServiceDescriptor<T>` parameters**. Any function
 with a `descriptor: ServiceDescriptor<T> = …` parameter gets its generated descriptor injected at the
-call site. This is why `Host.default()` and `registerActuator()` work in application code while
+call site. This is why `Host.development()` and `registerActuator()` work in application code while
 `ifx.actuator` itself still generates only a contract index — the framework cannot know the
 application's descriptors, so the application's compiler supplies them. Reusable helpers can use the
 same pattern.
