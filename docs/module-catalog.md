@@ -168,7 +168,8 @@ An optional `developmentDirectory` delegates to `WebApp` instead.
 
 ### `ifx.telemetry.otel`
 Tracing without a platform-specific OpenTelemetry SDK. `Tracer` is the shared primitive for manual,
-flow, RPC, and library instrumentation; `TelemetryRuntime` owns shared configuration and lifecycle.
+flow, RPC, and library instrumentation. It supports bounded span links for asynchronous, fan-out, and
+fan-in causality; `TelemetryRuntime` owns shared configuration and lifecycle.
 `OpenTelemetryRpcInterceptor` creates spans around invocations and propagates W3C `traceparent` /
 `tracestate`; `OtlpHttpSpanExporter` exports
 OTLP/HTTP JSON through Ktor on both JVM and macOS. `BatchSpanProcessor` provides bounded asynchronous

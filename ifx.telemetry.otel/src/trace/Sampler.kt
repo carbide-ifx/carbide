@@ -6,6 +6,7 @@ data class SamplingContext(
     val name: String,
     val kind: SpanKind,
     val attributes: Map<String, String>,
+    val links: List<SpanLink> = emptyList(),
 )
 
 data class SamplingParent(

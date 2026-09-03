@@ -13,12 +13,14 @@ class TelemetryRuntime(
     sampler: Sampler = ParentBasedSampler(),
     private val rpcMetrics: RpcMetrics? = null,
     onObservabilityFailure: suspend (Throwable) -> Unit = {},
+    maxLinksPerSpan: Int = 128,
 ) {
     val tracer: Tracer = Tracer(
         spanProcessor = spanProcessor,
         resource = resource,
         sampler = sampler,
         onObservabilityFailure = onObservabilityFailure,
+        maxLinksPerSpan = maxLinksPerSpan,
     )
 
     fun rpcInterceptor(logRpcCalls: Boolean = false): OpenTelemetryRpcInterceptor =

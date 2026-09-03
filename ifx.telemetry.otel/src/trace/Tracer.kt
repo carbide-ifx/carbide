@@ -29,16 +29,20 @@ data class SpanContext(
 class Span internal constructor(
     val context: SpanContext,
     initialAttributes: Map<String, String>,
+    initialLinks: List<SpanLink>,
+    private val maxLinks: Int,
 ) {
-    private val attributesMutex = Mutex()
+    private val stateMutex = Mutex()
     private val attributes = initialAttributes.toMutableMap()
+    private val links = initialLinks.take(maxLinks).mapTo(mutableListOf()) { it.snapshot() }
+    private var droppedLinksCount = (initialLinks.size - maxLinks).coerceAtLeast(0)
 
     suspend fun setAttribute(name: String, value: String) {
-        attributesMutex.lock()
+        stateMutex.lock()
         try {
             attributes[name] = value
         } finally {
-            attributesMutex.unlock()
+            stateMutex.unlock()
         }
     }
 
@@ -46,12 +50,29 @@ class Span internal constructor(
 
     suspend fun setAttribute(name: String, value: Boolean) = setAttribute(name, value.toString())
 
-    internal suspend fun attributes(): Map<String, String> {
-        attributesMutex.lock()
+    suspend fun addLink(context: SpanContext, attributes: Map<String, String> = emptyMap()) {
+        addLink(SpanLink(context, attributes))
+    }
+
+    suspend fun addLink(link: SpanLink) {
+        stateMutex.lock()
         try {
-            return attributes.toMap()
+            if (links.size < maxLinks) {
+                links += link.snapshot()
+            } else {
+                droppedLinksCount += 1
+            }
         } finally {
-            attributesMutex.unlock()
+            stateMutex.unlock()
+        }
+    }
+
+    internal suspend fun snapshot(): SpanSnapshot {
+        stateMutex.lock()
+        try {
+            return SpanSnapshot(attributes.toMap(), links.toList(), droppedLinksCount)
+        } finally {
+            stateMutex.unlock()
         }
     }
 }
@@ -61,22 +82,29 @@ class Tracer(
     private val resource: TelemetryResource,
     private val sampler: Sampler = ParentBasedSampler(),
     private val onObservabilityFailure: suspend (Throwable) -> Unit = {},
+    private val maxLinksPerSpan: Int = 128,
 ) {
+    init {
+        require(maxLinksPerSpan >= 0) { "maxLinksPerSpan must not be negative" }
+    }
+
     suspend fun <T> span(
         name: String,
         kind: SpanKind = SpanKind.INTERNAL,
         attributes: Map<String, String> = emptyMap(),
+        links: List<SpanLink> = emptyList(),
         block: suspend Span.() -> T,
-    ): T = span(name, kind, attributes, parent = currentCoroutineContext()[ActiveSpan], block)
+    ): T = span(name, kind, attributes, links, parent = currentCoroutineContext()[ActiveSpan], block)
 
     internal suspend fun <T> span(
         name: String,
         kind: SpanKind,
         attributes: Map<String, String>,
+        links: List<SpanLink> = emptyList(),
         parent: ActiveSpan?,
         block: suspend Span.() -> T,
     ): T {
-        val started = start(name, kind, attributes, parent)
+        val started = start(name, kind, attributes, links, parent)
         var failure: Throwable? = null
         try {
             return withContext(started.coroutineContext) { started.span.block() }
@@ -92,12 +120,13 @@ class Tracer(
         name: String,
         kind: SpanKind,
         attributes: Map<String, String>,
+        links: List<SpanLink> = emptyList(),
         parent: ActiveSpan? = null,
         inheritCurrentParent: Boolean = false,
         flow: Span.() -> Flow<T>,
     ): Flow<T> = flow {
         val resolvedParent = if (inheritCurrentParent) currentCoroutineContext()[ActiveSpan] else parent
-        val started = start(name, kind, attributes, resolvedParent)
+        val started = start(name, kind, attributes, links, resolvedParent)
         var failure: Throwable? = null
         try {
             started.span.flow()
@@ -127,9 +156,11 @@ class Tracer(
         name: String,
         kind: SpanKind,
         attributes: Map<String, String>,
+        links: List<SpanLink>,
         parent: ActiveSpan?,
     ): StartedSpan {
         require(name.isNotBlank()) { "span name must not be blank" }
+        val initialLinks = links.map { it.snapshot() }
         val traceId = parent?.traceId ?: newTraceId()
         val samplingContext = SamplingContext(
             parent = parent?.toSamplingParent(),
@@ -137,6 +168,7 @@ class Tracer(
             name = name,
             kind = kind,
             attributes = attributes,
+            links = initialLinks,
         )
         val decision = try {
             sampler.shouldSample(samplingContext)
@@ -157,7 +189,7 @@ class Tracer(
             traceState = activeSpan.traceState,
         )
         return StartedSpan(
-            span = Span(context, attributes),
+            span = Span(context, attributes, initialLinks, maxLinksPerSpan),
             activeSpan = activeSpan,
             parent = parent,
             name = name,
@@ -175,6 +207,7 @@ class Tracer(
     private suspend fun finish(started: StartedSpan, failure: Throwable?) {
         if (!started.activeSpan.traceFlags.isSampled()) return
         val errorType = failure?.errorType()
+        val snapshot = started.span.snapshot()
         val span = FinishedSpan(
             resource = resource,
             traceId = started.activeSpan.traceId,
@@ -187,9 +220,11 @@ class Tracer(
             startTimeUnixNano = started.startTimeUnixNano,
             endTimeUnixNano = started.startTimeUnixNano + started.startMark.elapsedNow().inWholeNanoseconds,
             attributes = buildMap {
-                putAll(started.span.attributes())
+                putAll(snapshot.attributes)
                 errorType?.let { put("error.type", it) }
             },
+            links = snapshot.links,
+            droppedLinksCount = snapshot.droppedLinksCount,
             error = failure?.let {
                 SpanError(
                     type = requireNotNull(errorType),
@@ -211,12 +246,22 @@ fun <T> Flow<T>.inSpan(
     name: String,
     kind: SpanKind = SpanKind.INTERNAL,
     attributes: Map<String, String> = emptyMap(),
+    links: List<SpanLink> = emptyList(),
 ): Flow<T> = tracer.spanFlow(
     name = name,
     kind = kind,
     attributes = attributes,
+    links = links,
     inheritCurrentParent = true,
 ) { this@inSpan }
+
+internal data class SpanSnapshot(
+    val attributes: Map<String, String>,
+    val links: List<SpanLink>,
+    val droppedLinksCount: Int,
+)
+
+private fun SpanLink.snapshot(): SpanLink = copy(attributes = attributes.toMap())
 
 private data class StartedSpan(
     val span: Span,

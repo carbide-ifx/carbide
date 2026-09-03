@@ -17,6 +17,11 @@ data class SpanError(
     val stackTrace: String,
 )
 
+data class SpanLink(
+    val context: SpanContext,
+    val attributes: Map<String, String> = emptyMap(),
+)
+
 data class FinishedSpan(
     val resource: TelemetryResource,
     val traceId: String,
@@ -29,6 +34,8 @@ data class FinishedSpan(
     val startTimeUnixNano: Long,
     val endTimeUnixNano: Long,
     val attributes: Map<String, String>,
+    val links: List<SpanLink> = emptyList(),
+    val droppedLinksCount: Int = 0,
     val error: SpanError? = null,
 ) {
     constructor(
@@ -43,6 +50,8 @@ data class FinishedSpan(
         startTimeUnixNano: Long,
         endTimeUnixNano: Long,
         attributes: Map<String, String>,
+        links: List<SpanLink> = emptyList(),
+        droppedLinksCount: Int = 0,
         error: SpanError? = null,
     ) : this(
         resource = TelemetryResource(serviceName),
@@ -56,6 +65,8 @@ data class FinishedSpan(
         startTimeUnixNano = startTimeUnixNano,
         endTimeUnixNano = endTimeUnixNano,
         attributes = attributes,
+        links = links,
+        droppedLinksCount = droppedLinksCount,
         error = error,
     )
 

@@ -2,7 +2,9 @@ package ifx.telemetry.otel.export.otlp
 
 import ifx.telemetry.otel.TelemetryResource
 import ifx.telemetry.otel.trace.FinishedSpan
+import ifx.telemetry.otel.trace.SpanContext
 import ifx.telemetry.otel.trace.SpanKind
+import ifx.telemetry.otel.trace.SpanLink
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -133,6 +135,37 @@ class OtlpHttpSpanExporterTest {
         val resourceSpans = Json.parseToJsonElement(requestBody)
             .jsonObject.getValue("resourceSpans").jsonArray
         assertEquals(2, resourceSpans.size)
+    }
+
+    @Test
+    fun `exporter emits span links and dropped link count`() = runBlocking {
+        var requestBody = ""
+        val engine = MockEngine { request ->
+            requestBody = request.body.toByteArray().decodeToString()
+            respond("{}", HttpStatusCode.OK)
+        }
+        val exporter = OtlpHttpSpanExporter(httpClient = HttpClient(engine))
+        val linkedContext = SpanContext(
+            traceId = "5bf92f3577b34da6a3ce929d0e0e4736",
+            spanId = "10f067aa0ba902b7",
+            traceFlags = "01",
+            traceState = "vendor=linked",
+        )
+
+        exporter.export(
+            testSpan().copy(
+                links = listOf(SpanLink(linkedContext, mapOf("messaging.operation.name" to "publish"))),
+                droppedLinksCount = 2,
+            ),
+        )
+        exporter.shutdown()
+
+        assertContains(requestBody, "\"links\":[{\"traceId\":\"5bf92f3577b34da6a3ce929d0e0e4736\"")
+        assertContains(requestBody, "\"spanId\":\"10f067aa0ba902b7\"")
+        assertContains(requestBody, "\"traceState\":\"vendor=linked\"")
+        assertContains(requestBody, "\"key\":\"messaging.operation.name\"")
+        assertContains(requestBody, "\"flags\":1")
+        assertContains(requestBody, "\"droppedLinksCount\":2")
     }
 }
 

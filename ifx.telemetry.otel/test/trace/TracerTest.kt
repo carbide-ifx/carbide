@@ -73,7 +73,63 @@ class TracerTest {
         assertEquals(span.spanId, assertNotNull(collectionCorrelation).spanId)
         assertNull(LogCorrelation.currentOrNull())
     }
+
+    @Test
+    fun `span records creation and runtime links within configured limit`() = runBlocking {
+        val processor = RecordingProcessor()
+        var samplingContext: SamplingContext? = null
+        val tracer = Tracer(
+            spanProcessor = processor,
+            resource = TelemetryResource("test-service"),
+            sampler = Sampler {
+                samplingContext = it
+                SamplingDecision.RECORD_AND_SAMPLE
+            },
+            maxLinksPerSpan = 2,
+        )
+        val creationAttributes = mutableMapOf("messaging.operation.name" to "publish")
+        val creationLink = SpanLink(context(1), creationAttributes)
+
+        tracer.span("process batch", links = listOf(creationLink)) {
+            creationAttributes["messaging.operation.name"] = "changed"
+            addLink(context(2), mapOf("messaging.operation.name" to "publish"))
+            addLink(context(3))
+        }
+
+        assertEquals("publish", assertNotNull(samplingContext).links.single().attributes["messaging.operation.name"])
+        val span = processor.spans.single()
+        assertEquals(listOf(context(1), context(2)), span.links.map(SpanLink::context))
+        assertEquals("publish", span.links.first().attributes["messaging.operation.name"])
+        assertEquals(1, span.droppedLinksCount)
+    }
+
+    @Test
+    fun `flow span records links`() = runBlocking {
+        val processor = RecordingProcessor()
+        val tracer = Tracer(processor, TelemetryResource("test-service"))
+        val link = SpanLink(context(1))
+
+        flow { emit(1) }
+            .inSpan(tracer, "process message", links = listOf(link))
+            .toList()
+
+        assertEquals(listOf(link), processor.spans.single().links)
+    }
+
+    @Test
+    fun `negative link limit is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            Tracer(RecordingProcessor(), TelemetryResource("test-service"), maxLinksPerSpan = -1)
+        }
+    }
 }
+
+private fun context(index: Int) = SpanContext(
+    traceId = index.toString(16).padStart(32, '0'),
+    spanId = index.toString(16).padStart(16, '0'),
+    traceFlags = "01",
+    traceState = "vendor=value$index",
+)
 
 private class RecordingProcessor : SpanProcessor {
     val spans = mutableListOf<FinishedSpan>()

@@ -546,6 +546,23 @@ repository.products()
     .collect { product -> consume(product) }
 ```
 
+Use links for asynchronous or many-to-many causality where parent/child nesting would be misleading:
+
+```kotlin
+telemetry.tracer.span(
+    name = "process orders",
+    kind = SpanKind.CONSUMER,
+    links = listOf(SpanLink(messageCreationContext)),
+) {
+    process(messages)
+}
+```
+
+Links supplied at creation are visible to the sampler. A recording span can also call `addLink(...)`
+when a relationship is discovered later. Each tracer retains at most 128 links per span by default;
+configure `TelemetryRuntime(maxLinksPerSpan = ...)` to change the bound. Additional links are reported
+through the OTLP `droppedLinksCount` field.
+
 Install the optional `ifx.telemetry.otel.ktor-client` plugin on application HTTP clients to create
 client spans and inject W3C trace context automatically:
 

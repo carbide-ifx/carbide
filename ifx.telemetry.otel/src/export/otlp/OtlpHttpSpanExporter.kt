@@ -95,6 +95,16 @@ private fun FinishedSpan.toOtlpSpan(): OtlpSpan = OtlpSpan(
     startTimeUnixNano = startTimeUnixNano.toString(),
     endTimeUnixNano = endTimeUnixNano.toString(),
     attributes = attributes.map { (key, value) -> KeyValue(key, AnyValue(stringValue = value)) },
+    links = links.map { link ->
+        OtlpLink(
+            traceId = link.context.traceId,
+            spanId = link.context.spanId,
+            traceState = link.context.traceState,
+            attributes = link.attributes.map { (key, value) -> KeyValue(key, AnyValue(stringValue = value)) },
+            flags = if (link.context.traceFlags.isSampled()) 1 else 0,
+        )
+    },
+    droppedLinksCount = droppedLinksCount,
     events = error?.let {
         listOf(
             SpanEvent(
@@ -138,8 +148,19 @@ private data class OtlpSpan(
     val startTimeUnixNano: String,
     val endTimeUnixNano: String,
     val attributes: List<KeyValue>,
+    val links: List<OtlpLink> = emptyList(),
+    val droppedLinksCount: Int = 0,
     val events: List<SpanEvent> = emptyList(),
     val status: SpanStatus? = null,
+)
+
+@Serializable
+private data class OtlpLink(
+    val traceId: String,
+    val spanId: String,
+    val traceState: String? = null,
+    val attributes: List<KeyValue> = emptyList(),
+    val flags: Int,
 )
 
 @Serializable

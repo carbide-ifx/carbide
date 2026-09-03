@@ -223,6 +223,23 @@ telemetry.tracer.span("load-products") {
 }
 ```
 
+For asynchronous or many-to-many causality, link the new span to the contexts that caused it:
+
+```kotlin
+telemetry.tracer.span(
+    name = "process orders",
+    kind = SpanKind.CONSUMER,
+    links = listOf(SpanLink(messageCreationContext)),
+) {
+    process(messages)
+}
+```
+
+Creation-time links are visible to the sampler. Use `addLink(...)` when a relationship is only
+discovered after the span starts. The default limit is 128 retained links per span; configure
+`TelemetryRuntime(maxLinksPerSpan = ...)` to change it. Excess links are reported as dropped rather
+than retained without bound.
+
 Use `flow.inSpan(telemetry.tracer, "stream-products")` for lazy flows. The application lifecycle must
 call suspending `telemetry.shutdown()` after stopping the host; this drains queued spans, exports the
 final cumulative RPC histograms, and closes both exporters. Use `telemetry.flush()` when current

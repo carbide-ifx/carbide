@@ -1,6 +1,7 @@
 package ifx.telemetry.otel
 
 import ifx.telemetry.otel.trace.FinishedSpan
+import ifx.telemetry.otel.trace.SpanContext
 import ifx.telemetry.otel.trace.SpanProcessor
 import ifx.protocol.contract.CallDirection
 import ifx.protocol.contract.InteractionType
@@ -43,6 +44,30 @@ class TelemetryRuntimeTest {
         assertEquals(manual.spanId, rpc.parentSpanId)
         assertEquals(1, processor.flushes)
         assertEquals(1, processor.shutdowns)
+    }
+
+    @Test
+    fun `runtime configures the tracer link limit`() = runBlocking {
+        val processor = LifecycleProcessor()
+        val runtime = TelemetryRuntime(
+            resource = TelemetryResource("test-service"),
+            spanProcessor = processor,
+            maxLinksPerSpan = 0,
+        )
+
+        runtime.tracer.span("manual") {
+            addLink(
+                SpanContext(
+                    traceId = "1".padStart(32, '0'),
+                    spanId = "1".padStart(16, '0'),
+                    traceFlags = "01",
+                ),
+            )
+        }
+
+        val span = processor.spans.single()
+        assertEquals(emptyList(), span.links)
+        assertEquals(1, span.droppedLinksCount)
     }
 }
 
