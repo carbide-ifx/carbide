@@ -26,6 +26,9 @@ dependencies:
   - ../ifx.subsystem
   - ../utility.stdlib
 
+test-dependencies:
+  - co.touchlab:kermit:2.1.0
+
 plugins:
   ifx.jib:
     enabled: true

@@ -7,6 +7,7 @@ import ifx.host.IHost
 import ifx.host.IHost.Companion.registerService
 import ifx.logging.Log
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.subsystem.default
@@ -35,6 +36,10 @@ suspend fun startTestSystem(
         .registerService<IPricingEngine> { PricingEngine(proxyFactory) }
         .registerService<ISalesManager> { SalesManager(proxyFactory) }
         .start()
+
+    Log("Host").info {
+        "Service Explorer: http://localhost:${host.port(RSOCKET_PROTOCOL_ID)}/"
+    }
 
     return host
 }

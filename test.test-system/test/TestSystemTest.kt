@@ -2,6 +2,8 @@ import access.product.contract.IProductAccess
 import access.product.contract.IProductAccessDescriptor
 import access.product.contract.ProductCriteria
 import access.product.service.ProductAccessEmulator
+import co.touchlab.kermit.LogWriter
+import co.touchlab.kermit.Severity
 import engine.pricing.contract.IPricingEngine
 import engine.pricing.contract.IPricingEngineDescriptor
 import engine.pricing.service.PricingEngine
@@ -11,8 +13,10 @@ import ifx.host.Host
 import ifx.host.HostHealth
 import ifx.host.HostState
 import ifx.host.ProtocolListener
-import ifx.protocol.contract.ProtocolException
+import ifx.logging.installLogWriter
 import ifx.protocol.contract.IInterceptor
+import ifx.protocol.contract.ProtocolException
+import ifx.protocol.contract.ServiceEndpoint
 import ifx.protocol.contract.interceptors.ContextInterceptor
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
@@ -20,7 +24,6 @@ import ifx.protocol.rsocket.EXTERNAL_KEEP_ALIVE
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
 import ifx.protocol.rsocket.RSocketServerProtocol
-import ifx.protocol.contract.ServiceEndpoint
 import ifx.proxy.factory.create
 import ifx.proxy.factory.RSocketProxyFactory
 import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
@@ -47,6 +50,7 @@ import manager.sales.contract.Product
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -63,6 +67,21 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class TestSystemTest {
+    @Test
+    fun `test system logs its service explorer address on startup`() = runBlocking {
+        val logWriter = HostLogWriter()
+        installLogWriter(logWriter)
+        val system = startTestSystem(emptyList())
+        try {
+            assertContains(
+                logWriter.messages,
+                "Service Explorer: http://localhost:${system.port(RSOCKET_PROTOCOL_ID)}/",
+            )
+        } finally {
+            system.stop()
+        }
+    }
+
     @Test
     fun `default host publishes Kubernetes health endpoints`() = runBlocking {
         val host = Host.default().start()
@@ -593,6 +612,16 @@ class TestSystemTest {
                 system.stop()
             }
         }
+}
+
+private class HostLogWriter : LogWriter() {
+    val messages = CopyOnWriteArrayList<String>()
+
+    override fun isLoggable(tag: String, severity: Severity): Boolean = tag == "Host"
+
+    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
+        messages += message
+    }
 }
 
 private class TcpProxy(

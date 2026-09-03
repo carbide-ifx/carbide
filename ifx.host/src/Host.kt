@@ -192,6 +192,7 @@ class Host(
             openListeners()
             callTracker.startAccepting()
             state = HostState.READY
+            Log("Host").info { serviceCatalog().renderStartupDiagram() }
         } catch (failure: Throwable) {
             startedServiceLifecycles.asReversed().forEach { lifecycle ->
                 runCatching { lifecycle.stop() }.exceptionOrNull()?.let(failure::addSuppressed)
