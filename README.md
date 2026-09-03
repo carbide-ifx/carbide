@@ -47,9 +47,11 @@ host.registerService<AwesomeService> {
 val client = proxyFactory.create<AwesomeService>()
 ```
 
-`IService` is only the RPC-contract marker. An implementation that owns resources may also
-implement `IServiceLifecycle`; the host calls its suspending `start`, `health`, and `stop` methods
-locally. Lifecycle methods are never generated as remotely callable service operations.
+`IService` is the common service programming surface. It supplies a stable logger per implementation
+class and brings Carbide context, logging, and standard-library utilities into contract modules. An
+implementation that owns resources may also implement `IServiceLifecycle`; the host calls its
+suspending `start`, `health`, and `stop` methods locally. Lifecycle methods are never generated as
+remotely callable service operations.
 
 ## Subsystem dependency
 
@@ -645,8 +647,9 @@ settings:
         dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
 ```
 
-The subsystem dependency graph is the contract manifest. Contract modules depend only
-on `ifx.service` at runtime; they do not generate RPC bindings or depend on protocol code.
+The subsystem dependency graph is the contract manifest. Contract modules depend only on
+`ifx.service` at runtime; that dependency exports the common context, logging, and standard-library
+facilities, while contract modules do not generate RPC bindings or depend on protocol code.
 Adding or removing a service-module dependency changes the generated descriptors without a
 second service list or annotation. Apply the index processor only to modules that declare
 service contracts; subsystem and unrelated infrastructure modules do not need it.

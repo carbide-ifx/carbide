@@ -54,8 +54,8 @@ flowchart TB
 ```
 
 **Contract plane** modules contain interfaces and serializable data only. They pull in no transport,
-no server, and no generated code. A service module depends on `ifx.service` and nothing else from
-Carbide.
+no server, and no generated code. A service module depends on `ifx.service`, which supplies and
+exports the common context, logging, and standard-library facilities.
 
 **Runtime plane** modules implement those contracts. They are chosen at the application's composition
 root, not by the service author. Swapping RSocket for JSON-RPC changes one line in the host builder

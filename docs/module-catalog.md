@@ -33,10 +33,12 @@ The host supplies the authoritative registered service identity; the inherited s
 Does not own retention or the log tail — those belong to `ifx.actuator`.
 
 ### `ifx.service`
-The service programming model. This is the only Carbide module a pure contract module depends on.
+The service programming model. This is the only Carbide module a pure contract module depends on; it
+exports the common context, logging, and standard-library facilities.
 
 Owns:
-- `IService` — the RPC-contract marker, and `IUtility` for infrastructure services.
+- `IService` — the common service surface, including a stable logger per implementation class, and
+  `IUtility` for infrastructure services.
 - `IServiceLifecycle` — `start`, `stop`, `health`, driven **locally** by the host and never generated
   as remote operations.
 - `ServiceHealth` — `ready` / `live` / `detail`.

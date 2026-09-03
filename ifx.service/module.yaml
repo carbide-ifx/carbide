@@ -9,3 +9,4 @@ product:
 dependencies:
   - ../ifx.context: exported
   - ../ifx.logging: exported
+  - ../utility.stdlib: exported
