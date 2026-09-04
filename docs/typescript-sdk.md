@@ -78,7 +78,7 @@ URLs, envelopes, error shapes, fire-and-forget responses, and streaming all diff
 It accepts ordinary Fetch request headers for browser authentication and decodes NDJSON incrementally,
 so a stream renders as it arrives.
 
-### `ifx-test-ui`
+### `service-explorer`
 
 The Service Explorer frontend. An ordinary npm application whose build writes `dist/`, then
 synchronizes JVM resources and regenerates the compressed Native asset projection inside

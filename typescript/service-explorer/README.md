@@ -28,7 +28,7 @@ import ifx.service.explorer.ServiceExplorer
 install(
     ServiceExplorer(
         listener = rsocket,
-        developmentDirectory = "typescript/ifx-test-ui/dist",
+        developmentDirectory = "typescript/service-explorer/dist",
     ),
 )
 ```

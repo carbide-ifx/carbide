@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/carbide-ifx/carbide.git",
-    "directory": "typescript/ifx-rpc-sdk"
+    "directory": "typescript/rpc-sdk"
   },
   "publishConfig": {
     "access": "public"

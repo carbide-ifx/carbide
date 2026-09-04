@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "ifx-rpc-sdk",
-    "ifx-rpc-sdk-http",
-    "ifx-rpc-sdk-rsocket",
-    "ifx-rpc-sdk-jsonrpc",
-    "ifx-test-ui"
+    "rpc-sdk",
+    "rpc-sdk-http",
+    "rpc-sdk-rsocket",
+    "rpc-sdk-jsonrpc",
+    "service-explorer"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",

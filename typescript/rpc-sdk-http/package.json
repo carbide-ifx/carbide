@@ -1,13 +1,13 @@
 {
-  "name": "@carbide-ifx/rpc-sdk-rsocket",
+  "name": "@carbide-ifx/rpc-sdk-http",
   "version": "0.1.0",
-  "description": "RSocket transport for the Carbide TypeScript SDK",
+  "description": "Conventional HTTP transport for Carbide gateway SDKs",
   "license": "Apache-2.0",
   "homepage": "https://github.com/carbide-ifx/carbide",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/carbide-ifx/carbide.git",
-    "directory": "typescript/ifx-rpc-sdk-rsocket"
+    "directory": "typescript/rpc-sdk-http"
   },
   "publishConfig": {
     "access": "public"
@@ -22,11 +22,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@carbide-ifx/rpc-sdk": "0.1.0",
-    "buffer": "6.0.3",
-    "rsocket-composite-metadata": "1.0.0-alpha.3",
-    "rsocket-core": "1.0.0-alpha.3",
-    "rsocket-websocket-client": "1.0.0-alpha.3"
+    "@carbide-ifx/rpc-sdk": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

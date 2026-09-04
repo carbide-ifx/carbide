@@ -249,4 +249,4 @@ An npm workspace under `typescript/`. See [TypeScript SDK](typescript-sdk.md).
 | `@carbide-ifx/rpc-sdk-rsocket` | RSocket over WebSocket. All three interaction types |
 | `@carbide-ifx/rpc-sdk-jsonrpc` | JSON-RPC 2.0 over Fetch. Notifications and request/response; streams fail explicitly |
 | `@carbide-ifx/rpc-sdk-http` | Conventional HTTP binding for a **gateway projection**. Separate from JSON-RPC because URLs, envelopes, errors, and streaming differ |
-| `ifx-test-ui` | The Service Explorer frontend, bundled into `ifx.service.explorer` |
+| `service-explorer` | The Service Explorer frontend, bundled into `ifx.service.explorer` |

@@ -9,13 +9,13 @@
     "noEmit": true,
     "paths": {
       "@carbide-ifx/rpc-sdk": [
-        "./ifx-rpc-sdk/src/index.ts"
+        "./rpc-sdk/src/index.ts"
       ],
       "@carbide-ifx/rpc-sdk-jsonrpc": [
-        "./ifx-rpc-sdk-jsonrpc/src/index.ts"
+        "./rpc-sdk-jsonrpc/src/index.ts"
       ],
       "@carbide-ifx/rpc-sdk-rsocket": [
-        "./ifx-rpc-sdk-rsocket/src/index.ts"
+        "./rpc-sdk-rsocket/src/index.ts"
       ]
     },
     "strict": true,
