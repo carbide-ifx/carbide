@@ -333,7 +333,7 @@ these remain unaddressed or partial:
 
 | Area | Status |
 | --- | --- |
-| Message bus / queuing / pub-sub | `utility.event` is legacy Gradle code outside the Amper build |
+| Message bus / queuing / pub-sub | Not provided; durable messaging requires application-specific delivery and transaction semantics |
 | gRPC protocol | Not implemented; the `IServerProtocol` / `IClientProtocol` seams exist for it |
 | Service discovery | Endpoints are static configuration (`ServiceEndpoint`) resolved at the composition root |
 | Distributed transactions, propagation, voting | Not implemented |

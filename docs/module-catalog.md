@@ -224,12 +224,6 @@ produce. See [Code generation pipeline](code-generation.md).
 Small cross-project helpers with no Carbide dependency: `IdGenerator`, `TimeSpan`, `DbConfig`,
 `CriteriaExtensions`. Multiplatform.
 
-### `utility.event`
-**Not part of the Amper build.** A legacy Gradle module (in-memory and Azure Service Bus event bus)
-left in the tree; it is absent from `project.yaml` and still references the old `njord.kotlin-library`
-plugin and a `:utility:context` project. Treat it as unmaintained reference material until it is
-either ported or removed.
-
 ---
 
 ## Reference and test systems

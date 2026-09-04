@@ -25,7 +25,6 @@ The public Maven surface is:
 - `ifx.gateway.artifacts` and `ifx.jib` are Kotlin Toolchain plugins rather than Maven library
   modules. Their distribution needs a separate plugin publication path.
 - TypeScript packages under `typescript/` use npm publication and are versioned separately.
-- The legacy `utility.event` directory is not part of the Kotlin Toolchain project.
 
 ## Release command
 
