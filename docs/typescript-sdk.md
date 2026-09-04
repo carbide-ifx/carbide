@@ -82,7 +82,7 @@ so a stream renders as it arrives.
 
 The Service Explorer frontend. An ordinary npm application whose build writes `dist/`, then
 synchronizes JVM resources and regenerates the compressed Native asset projection inside
-`ifx.service-explorer`. It reads the catalog from `IActuator.catalog()` over RSocket — there is no
+`ifx.service.explorer`. It reads the catalog from `IActuator.catalog()` over RSocket — there is no
 separate HTTP catalog endpoint.
 
 ## Connecting

@@ -1,36 +1,36 @@
 modules:
   - ifx.actuator
+  - ifx.build.gateway
+  - ifx.build.jib
   - ifx.context
   - ifx.contract.ksp
   - ifx.gateway
-  - ifx.gateway.artifacts
   - ifx.gateway.contract
   - ifx.gateway.ktor
   - ifx.gateway.typescript
   - ifx.host
   - ifx.host.contract
   - ifx.host.webapp
-  - ifx.jib
   - ifx.logging
   - ifx.protocol.contract
   - ifx.protocol.jsonrpc
   - ifx.protocol.rsocket
-  - ifx.proxy-factory
-  - ifx.rpc.compiler-plugin
+  - ifx.proxy.factory
+  - ifx.rpc.compiler
   - ifx.rpc.schema.ksp
   - ifx.rpc.typescript.ksp
   - ifx.service
-  - ifx.service-explorer
+  - ifx.service.explorer
+  - ifx.stdlib
   - ifx.subsystem
   - ifx.subsystem.ksp
   - ifx.telemetry.otel
-  - ifx.testing
+  - ifx.test
   - test.gateway
   - test.service-aggregation
   - test.service-contracts
   - test.test-system
-  - utility.stdlib
 
 plugins:
-  - ifx.gateway.artifacts
-  - ifx.jib
+  - ifx.build.gateway
+  - ifx.build.jib

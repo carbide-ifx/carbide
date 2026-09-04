@@ -29,9 +29,9 @@ flowchart TB
         idx["ifx.contract.ksp<br/>contract index"]
         schema["ifx.rpc.schema.ksp<br/>canonical service schema"]
         desc["ifx.subsystem.ksp<br/>descriptors + proxies"]
-        ir["ifx.rpc.compiler-plugin<br/>descriptor linking"]
+        ir["ifx.rpc.compiler<br/>descriptor linking"]
         ts["ifx.rpc.typescript.ksp<br/>TypeScript contracts"]
-        art["ifx.gateway.artifacts / ifx.jib<br/>Amper build plugins"]
+        art["ifx.build.gateway / ifx.build.jib<br/>Amper build plugins"]
         idx --> schema
         schema --> desc
         schema --> ts
@@ -41,15 +41,15 @@ flowchart TB
         svc["ifx.service<br/>IService, IServiceLifecycle"]
         proto["ifx.protocol.contract<br/>IBinding, Message, ServiceDescriptor"]
         hostc["ifx.host.contract<br/>IHost, IServerProtocol"]
-        proxyc["ifx.proxy-factory<br/>IProxyFactory"]
+        proxyc["ifx.proxy.factory<br/>IProxyFactory"]
         gwc["ifx.gateway.contract<br/>GatewayProjection"]
     end
 
     subgraph runtime["Runtime plane — implementations"]
         host["ifx.host<br/>Host, listeners, lifecycle"]
         protos["ifx.protocol.rsocket<br/>ifx.protocol.jsonrpc"]
-        proxies["ifx.proxy-factory/.rsocket/.jsonrpc"]
-        tools["ifx.actuator, ifx.service-explorer<br/>ifx.telemetry.otel*, ifx.host.webapp"]
+        proxies["ifx.proxy.factory<br/>factories in protocol modules"]
+        tools["ifx.actuator, ifx.service.explorer<br/>ifx.telemetry.otel*, ifx.host.webapp"]
         gw["ifx.gateway, .ktor, .typescript"]
     end
 
@@ -78,10 +78,10 @@ flowchart TB
     L0["<b>ifx.context</b> — ambient serializable call context<br/><b>ifx.logging</b> — structured log tags"]
     L1["<b>ifx.service</b> — IService, IServiceLifecycle, ServiceHealth, Response"]
     L2["<b>ifx.protocol.contract</b> — IBinding, Message, interceptors, ServiceDescriptor"]
-    L3["<b>ifx.host.contract</b> · <b>ifx.proxy-factory</b> · <b>ifx.gateway.contract</b>"]
+    L3["<b>ifx.host.contract</b> · <b>ifx.proxy.factory</b> · <b>ifx.gateway.contract</b>"]
     L4["<b>ifx.host</b> · <b>ifx.gateway</b>"]
     L5["<b>ifx.protocol.rsocket</b> · <b>ifx.protocol.jsonrpc</b><br/><b>ifx.gateway.ktor</b> · <b>ifx.gateway.typescript</b>"]
-    L6["<b>ifx.actuator</b> · <b>ifx.host.webapp</b> · <b>ifx.service-explorer</b> · <b>ifx.telemetry.otel*</b>"]
+    L6["<b>ifx.actuator</b> · <b>ifx.host.webapp</b> · <b>ifx.service.explorer</b> · <b>ifx.telemetry.otel*</b>"]
     L7["<b>ifx.subsystem</b> — the single aggregate dependency"]
 
     L0 --> L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7
@@ -209,10 +209,10 @@ directly with the builder and expose only their intended protocols and utilities
 | Cross-cutting behaviour | `IInterceptor` onion around the whole invocation | `ifx.protocol.contract` |
 | Structured logging | `Log` and `LogTag`; the host supplies the current registered service identity through `ServiceLogScope` | `ifx.logging` + `ifx.host` |
 | Diagnostics | `IActuator` catalog, per-service health, streaming log tail | `ifx.actuator` |
-| Interactive exploration | Browser Service Explorer driven by the runtime wire schema | `ifx.service-explorer` |
+| Interactive exploration | Browser Service Explorer driven by the runtime wire schema | `ifx.service.explorer` |
 | Distributed tracing | W3C traceparent propagation, OTLP/HTTP export | `ifx.telemetry.otel` |
 | Public API surface | Gateway projection → RSocket, HTTP, OpenAPI, TS SDK | `ifx.gateway.*` |
-| Container image | Jib build plugin, distroless base | `ifx.jib` |
+| Container image | Jib build plugin, distroless base | `ifx.build.jib` |
 
 ## Reference architecture roles
 

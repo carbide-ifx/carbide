@@ -5,9 +5,5 @@ description: Kotlin compiler plugin that connects Carbide service calls to gener
 product: jvm/lib
 layout: maven-like
 
-settings:
-  publishing:
-    artifactId: ifx-rpc-compiler-plugin
-
 dependencies:
   - org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10: compile-only

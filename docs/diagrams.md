@@ -74,7 +74,7 @@ flowchart BT
 
     subgraph impl["implementations"]
         ifx_host["ifx.host"]
-        ifx_proxy_factory["ifx.proxy-factory"]
+        ifx_proxy_factory["ifx.proxy.factory"]
         ifx_gateway["ifx.gateway"]
         ifx_protocol_rsocket["ifx.protocol.rsocket"]
         ifx_protocol_jsonrpc["ifx.protocol.jsonrpc"]
@@ -85,9 +85,9 @@ flowchart BT
     subgraph tooling["tooling and extensions"]
         ifx_actuator["ifx.actuator"]
         ifx_host_webapp["ifx.host.webapp"]
-        ifx_service_explorer["ifx.service-explorer"]
+        ifx_service_explorer["ifx.service.explorer"]
         ifx_telemetry_otel["ifx.telemetry.otel"]
-        ifx_testing["ifx.testing"]
+        ifx_testing["ifx.test"]
     end
 
     ifx_subsystem["<b>ifx.subsystem</b><br/><i>the single app dependency</i>"]
@@ -130,7 +130,7 @@ flowchart BT
   per-technology modules, and never depend on each other's implementations.
 - `ifx.subsystem` is a leaf that only aggregates. Removing it would cost applications a longer
   dependency list and nothing else.
-- `ifx.gateway.artifacts` and `ifx.jib` are omitted: they are Amper build plugins, not runtime nodes.
+- `ifx.build.gateway` and `ifx.build.jib` are omitted: they are Amper build plugins, not runtime nodes.
 
 ---
 
@@ -149,7 +149,7 @@ flowchart LR
 | Concern | Contract | Base | Technologies |
 | --- | --- | --- | --- |
 | Serving | `ifx.host.contract`<br/>`IHost`, `IServerProtocol` | `ifx.host`<br/>`Host` | `ifx.protocol.rsocket`, `ifx.protocol.jsonrpc`, `ifx.gateway.ktor` |
-| Calling | `ifx.proxy-factory`<br/>`IProxyFactory` + binding cache | — | `ifx.protocol.rsocket`, `ifx.protocol.jsonrpc` |
+| Calling | `ifx.proxy.factory`<br/>`IProxyFactory` + binding cache | — | `ifx.protocol.rsocket`, `ifx.protocol.jsonrpc` |
 | Wire | `ifx.protocol.contract`<br/>`IBinding`, `Message` | — | any `IBinding` implementation |
 | Public API | `ifx.gateway.contract`<br/>`GatewayProjection` | `ifx.gateway`<br/>`GatewayBinding` | `ifx.gateway.ktor`, `ifx.gateway.typescript` |
 
@@ -294,8 +294,8 @@ flowchart TB
     a2 -->|"read from dependency artifacts"| bs
     a1 --> bs
     b4 --> o1
-    b2 -->|"ifx.gateway.artifacts · gatewayArtifacts"| o2
-    o1 -->|"ifx.jib · jibTar / jibDocker / jibPush"| o3
+    b2 -->|"ifx.build.gateway · gatewayArtifacts"| o2
+    o1 -->|"ifx.build.jib · jibTar / jibDocker / jibPush"| o3
 ```
 
 **Read:** the only hand-written files are the two white boxes. The arrow crossing the module boundary

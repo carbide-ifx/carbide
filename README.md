@@ -68,7 +68,7 @@ multiplatform metadata.
 
 ## Container images
 
-Runnable JVM subsystem modules can enable the local `ifx.jib` Amper plugin:
+Runnable JVM subsystem modules can enable the local `ifx.build.jib` Amper plugin:
 
 ```yaml
 product:
@@ -79,7 +79,7 @@ settings:
     mainClass: com.example.CustomerSubsystemKt
 
 plugins:
-  ifx.jib:
+  ifx.build.jib:
     enabled: true
     image: example/customer-subsystem:dev
     ports: [ 8080, 8081 ]
@@ -100,7 +100,7 @@ and can be copied into the image as their own layer:
 
 ```yaml
 plugins:
-  ifx.jib:
+  ifx.build.jib:
     enabled: true
     image: example/customer-subsystem:dev
     extraDirectories:
@@ -117,7 +117,7 @@ passwords in module configuration. Pin `baseImage` by digest when builds must
 remain reproducible across base-image updates.
 
 Kotlin Toolchain currently supports only local custom plugin modules. Downstream
-repositories must therefore vendor this small `ifx.jib` module until external
+repositories must therefore vendor this small `ifx.build.jib` module until external
 plugin publication is supported.
 
 ## Multi-protocol hosting
@@ -222,7 +222,7 @@ module that declares the projections (the module must already run
 
 ```yaml
 plugins:
-  ifx.gateway.artifacts:
+  ifx.build.gateway:
     enabled: true
 ```
 
@@ -643,7 +643,7 @@ settings:
         - io.carbide-ifx:ifx.rpc.typescript.ksp:0.1.0
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
+        dependency: io.carbide-ifx:ifx.rpc.compiler:0.1.0
 ```
 
 The subsystem dependency graph is the contract manifest. Contract modules depend only on
@@ -713,7 +713,7 @@ val host = Host(name = "Example") {
 }
 ```
 
-The `ifx.service-explorer` module bundles the Service Explorer's npm build. The
+The `ifx.service.explorer` module bundles the Service Explorer's npm build. The
 explorer targets an RSocket listener because its browser client invokes services
 and streams logs through RSocket. `Host.development()` always installs it; callers do
 not configure or package a frontend directory. Custom hosts can install
@@ -739,7 +739,7 @@ val host = Host.development(
 )
 ```
 
-The frontend build is published inside `ifx.service-explorer` for JVM and Native.
+The frontend build is published inside `ifx.service.explorer` for JVM and Native.
 JVM uses ordinary JAR resources; Native uses a generated compressed asset
 projection because Native library resources require application-level packaging.
 Running the frontend build updates these projections and its local `dist/`

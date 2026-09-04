@@ -8,11 +8,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const outputDirectory = resolve(here, "dist");
 const bundledDirectory = resolve(
   here,
-  "../../ifx.service-explorer/resources/ifx/service/explorer",
+  "../../ifx.service.explorer/resources/ifx/service/explorer",
 );
 const nativeAssetsFile = resolve(
   here,
-  "../../ifx.service-explorer/src@native/BundledServiceExplorerAssets.native.kt",
+  "../../ifx.service.explorer/src@native/BundledServiceExplorerAssets.native.kt",
 );
 const outputJavaScript = resolve(outputDirectory, "test-ui.js");
 

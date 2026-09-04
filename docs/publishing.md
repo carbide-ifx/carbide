@@ -12,17 +12,17 @@ The public Maven surface is:
 - Core contracts: `ifx.context`, `ifx.logging`, `ifx.service`, `ifx.protocol.contract`,
   `ifx.host.contract`, and `ifx.gateway.contract`.
 - Runtime: `ifx.host`, `ifx.host.webapp`, `ifx.protocol.jsonrpc`, `ifx.protocol.rsocket`,
-  `ifx.proxy-factory`, `ifx.gateway`,
-  `ifx.gateway.ktor`, `ifx.gateway.typescript`, `ifx.actuator`, `ifx.service-explorer`,
+  `ifx.proxy.factory`, `ifx.gateway`,
+  `ifx.gateway.ktor`, `ifx.gateway.typescript`, `ifx.actuator`, `ifx.service.explorer`,
   `ifx.telemetry.otel` and `ifx.subsystem`.
 - Build-time libraries: `ifx.contract.ksp`, `ifx.rpc.schema.ksp`, `ifx.subsystem.ksp`,
-  `ifx.rpc.compiler-plugin`, and `ifx.rpc.typescript.ksp`.
-- Supporting libraries: `ifx.testing` and `utility.stdlib`.
+  `ifx.rpc.compiler`, and `ifx.rpc.typescript.ksp`.
+- Supporting libraries: `ifx.test` and `ifx.stdlib`.
 
 ## Deliberately excluded
 
 - `test.*` modules are executable specifications and examples, not supported dependencies.
-- `ifx.gateway.artifacts` and `ifx.jib` are Kotlin Toolchain plugins rather than Maven library
+- `ifx.build.gateway` and `ifx.build.jib` are Kotlin Toolchain plugins rather than Maven library
   modules. Their distribution needs a separate plugin publication path.
 - TypeScript packages under `typescript/` use npm publication rather than Maven Central.
 

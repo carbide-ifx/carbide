@@ -64,7 +64,7 @@ settings:
         - io.carbide-ifx:ifx.subsystem.ksp:0.1.0
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
+        dependency: io.carbide-ifx:ifx.rpc.compiler:0.1.0
 
 dependencies:
   - ../greeter.contract

@@ -79,7 +79,7 @@ settings:
         - io.carbide-ifx:ifx.subsystem.ksp:<version>
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:<version>
+        dependency: io.carbide-ifx:ifx.rpc.compiler:<version>
 ```
 
 The processor collects contracts from two sources and merges them:
@@ -138,7 +138,7 @@ In a multiplatform application, descriptors are emitted into each platform sourc
 plugin links them directly on JVM and Native. Host assembly belongs in the corresponding platform
 source sets.
 
-## Stage 3 — `ifx.rpc.compiler-plugin`: descriptor linking
+## Stage 3 — `ifx.rpc.compiler`: descriptor linking
 
 The reified conveniences are intrinsics with no body:
 
@@ -187,7 +187,7 @@ disagree about the wire schema.
 
 ## Build-plugin artifacts
 
-`ifx.gateway.artifacts` is an Amper plugin adding a `gatewayArtifacts` task to a module that already
+`ifx.build.gateway` is an Amper plugin adding a `gatewayArtifacts` task to a module that already
 runs `ifx.subsystem.ksp`. It loads the generated projection index from the module's own JAR and writes
 one deterministic directory per public gateway address — **without starting a host**:
 
@@ -200,7 +200,7 @@ gateway/
 That directory is the build/publishing boundary: npm and API-catalog jobs consume it without loading
 a runtime or duplicating the DSL in build configuration.
 
-`ifx.jib` is an unrelated Amper plugin producing container images (`jibTar`, `jibDocker`, `jibPush`)
+`ifx.build.jib` is an unrelated Amper plugin producing container images (`jibTar`, `jibDocker`, `jibPush`)
 from a runnable JVM subsystem module.
 
 ## Guarantees

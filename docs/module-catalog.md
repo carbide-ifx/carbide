@@ -98,7 +98,7 @@ installation, and `serviceCatalog()`.
 Validates at construction: at least one listener, unique listener ids, and no duplicate explicit
 ports. Extensions belong to their listener, so there is nothing to reconcile.
 
-### `ifx.proxy-factory`
+### `ifx.proxy.factory`
 Owns `IProxyFactory` — `create(descriptor)`, `at(endpoint)`, `addInterceptors`, `close` — plus the
 reified `create<T>()` intrinsic that fails with an explicit message when the compiler plugin is
 absent, and the one implementation behind it.
@@ -162,7 +162,7 @@ log-streaming endpoint.
 `WebApp` — a general host extension mounting a built web application directory on a listener. It
 knows nothing about RPC; it serves files an npm/Vite/esbuild build produced.
 
-### `ifx.service-explorer`
+### `ifx.service.explorer`
 `ServiceExplorer` — the host extension serving the bundled browser UI. Requires an **RSocket**
 listener, because the browser client invokes services and streams logs over RSocket. Reads the
 catalog from `IActuator.catalog()` and generates request controls from the runtime wire schema.
@@ -196,7 +196,7 @@ The single runtime dependency for an application. It adds one development conven
 and includes the actuator and Service Explorer; production applications compose `Host` explicitly.
 The factory only assembles the host; suspending lifecycle work begins when `start()` is called.
 
-### `ifx.testing`
+### `ifx.test`
 Shared test scaffolding: TestBalloon framework plus Kotest assertions, and Carbide-specific assertions.
 
 ---
@@ -211,16 +211,16 @@ produce. See [Code generation pipeline](code-generation.md).
 | `ifx.contract.ksp` | `jvm/lib` KSP processor | Emits one `@IfxServiceIndex` object per contract module |
 | `ifx.rpc.schema.ksp` | `jvm/lib` compiler library | Builds the one canonical service and wire-type model consumed by both KSP generators |
 | `ifx.subsystem.ksp` | `jvm/lib` KSP processor | Emits a `ServiceDescriptor` + proxy + server binding per reachable contract, and the gateway projection index |
-| `ifx.rpc.compiler-plugin` | `jvm/lib`, Kotlin IR plugin | Rewrites reified `registerService<T>` / `create<T>` to pass the generated descriptor; fills defaulted descriptor parameters |
+| `ifx.rpc.compiler` | `jvm/lib`, Kotlin IR plugin | Rewrites reified `registerService<T>` / `create<T>` to pass the generated descriptor; fills defaulted descriptor parameters |
 | `ifx.rpc.typescript.ksp` | `jvm/lib` KSP processor | Emits TypeScript service interfaces, request/response aliases, and all reachable serializable types |
-| `ifx.gateway.artifacts` | `jvm/amper-plugin` | `gatewayArtifacts` task: writes `sdk.ts` + `openapi.json` per public gateway address, without starting a host |
-| `ifx.jib` | `jvm/amper-plugin` | `jibTar` / `jibDocker` / `jibPush`; non-root Java 21 distroless base, configurable extra directories |
+| `ifx.build.gateway` | `jvm/amper-plugin` | `gatewayArtifacts` task: writes `sdk.ts` + `openapi.json` per public gateway address, without starting a host |
+| `ifx.build.jib` | `jvm/amper-plugin` | `jibTar` / `jibDocker` / `jibPush`; non-root Java 21 distroless base, configurable extra directories |
 
 ---
 
 ## Utilities
 
-### `utility.stdlib`
+### `ifx.stdlib`
 Small cross-project helpers with no Carbide dependency: `IdGenerator`, `TimeSpan`, `DbConfig`,
 `CriteriaExtensions`. Multiplatform.
 
@@ -234,8 +234,8 @@ These modules are the executable specification of the framework and its module r
 | --- | --- |
 | `test.service-contracts` | Contract-only module: `IProductAccess` (ResourceAccess), `IPricingEngine` (Engine), `ISalesManager` (Manager). Applies `ifx.contract.ksp` only |
 | `test.service-aggregation` | Proves multi-module descriptor aggregation, including per-platform source sets on JVM and Native |
-| `test.gateway` | Gateway projections plus RSocket and HTTP surface tests; enables the `ifx.gateway.artifacts` plugin |
-| `test.test-system` | Runnable `jvm/app` subsystem with implementations, RPC interaction tests, actuator and logging tests; enables `ifx.jib` |
+| `test.gateway` | Gateway projections plus RSocket and HTTP surface tests; enables the `ifx.build.gateway` plugin |
+| `test.test-system` | Runnable `jvm/app` subsystem with implementations, RPC interaction tests, actuator and logging tests; enables `ifx.build.jib` |
 
 ---
 
@@ -249,4 +249,4 @@ An npm workspace under `typescript/`. See [TypeScript SDK](typescript-sdk.md).
 | `@carbide-ifx/rpc-sdk-rsocket` | RSocket over WebSocket. All three interaction types |
 | `@carbide-ifx/rpc-sdk-jsonrpc` | JSON-RPC 2.0 over Fetch. Notifications and request/response; streams fail explicitly |
 | `@carbide-ifx/rpc-sdk-http` | Conventional HTTP binding for a **gateway projection**. Separate from JSON-RPC because URLs, envelopes, errors, and streaming differ |
-| `ifx-test-ui` | The Service Explorer frontend, bundled into `ifx.service-explorer` |
+| `ifx-test-ui` | The Service Explorer frontend, bundled into `ifx.service.explorer` |

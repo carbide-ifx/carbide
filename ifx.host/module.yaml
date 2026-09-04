@@ -13,5 +13,5 @@ dependencies:
   - io.ktor:ktor-server-cio:3.1.1: exported
 
 test-dependencies@jvm:
-  - ../ifx.testing
+  - ../ifx.test
   - io.ktor:ktor-server-test-host:3.1.1

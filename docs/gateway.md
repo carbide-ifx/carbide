@@ -168,7 +168,7 @@ projections (it must already run `ifx.subsystem.ksp`):
 
 ```yaml
 plugins:
-  ifx.gateway.artifacts:
+  ifx.build.gateway:
     enabled: true
 ```
 

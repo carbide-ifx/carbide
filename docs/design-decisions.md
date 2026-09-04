@@ -275,7 +275,7 @@ speaks HTTP and nothing else.
 
 ## Bundled frontend assets, two packaging strategies
 
-**Decision.** `ifx.service-explorer` ships the built UI: ordinary JAR resources on JVM, a generated
+**Decision.** `ifx.service.explorer` ships the built UI: ordinary JAR resources on JVM, a generated
 compressed asset projection on Native.
 
 **Why.** `Host.development()` should give a working explorer with no frontend configuration. Native library
@@ -301,7 +301,7 @@ published.
 
 ---
 
-## `ifx.jib` is vendored per repository
+## `ifx.build.jib` is vendored per repository
 
 **Decision.** The container-image plugin lives in this repository as a local Amper plugin.
 

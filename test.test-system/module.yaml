@@ -19,17 +19,17 @@ settings:
         - ../ifx.rpc.typescript.ksp
     compilerPlugins:
       - id: ifx.rpc.compiler
-        dependency: io.carbide-ifx:ifx-rpc-compiler-plugin:0.1.0
+        dependency: io.carbide-ifx:ifx.rpc.compiler:0.1.0
 
 dependencies:
   - ../test.service-contracts
   - ../ifx.subsystem
-  - ../utility.stdlib
+  - ../ifx.stdlib
 
 test-dependencies:
   - co.touchlab:kermit:2.1.0
 
 plugins:
-  ifx.jib:
+  ifx.build.jib:
     enabled: true
     image: ifx/test-system:dev

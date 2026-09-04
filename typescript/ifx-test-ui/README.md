@@ -1,6 +1,6 @@
 # iFX test UI
 
-Browser UI provided by the `ifx.service-explorer` module. Its `ServiceExplorer`
+Browser UI provided by the `ifx.service.explorer` module. Its `ServiceExplorer`
 serves bundled resources by default, delegates an optional development-directory
 override to the general `ifx.host.webapp` host, reads the registered service
 catalog from `IActuator.catalog()`, and invokes services with
@@ -8,7 +8,7 @@ catalog from `IActuator.catalog()`, and invokes services with
 
 The Service Explorer is a normal npm web application. Its build writes
 `index.html` and the bundled JavaScript to `dist/`, synchronizes JVM resources,
-and generates the compressed Native asset projection in `ifx.service-explorer`.
+and generates the compressed Native asset projection in `ifx.service.explorer`.
 Rebuild after changing the frontend:
 
 ```shell
