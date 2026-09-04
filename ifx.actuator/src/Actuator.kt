@@ -10,10 +10,6 @@ class Actuator(
     private val catalogProvider: () -> ServiceCatalog,
     private val healthProvider: suspend () -> HostHealth,
 ) : IActuator {
-    init {
-        LogTail.install()
-    }
-
     override suspend fun catalog(): ServiceCatalog = catalogProvider()
 
     override suspend fun health(): HostHealth = healthProvider()

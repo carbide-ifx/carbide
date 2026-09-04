@@ -154,17 +154,18 @@ class HostLifecycleTest {
     }
 
     @Test
-    fun `a startup failure after binding listeners closes them and restores requested addresses`() = runBlocking {
+    fun `an additional log writer failure does not fail host startup`() = runBlocking {
         val writer = FailNextHostLogWriter()
-        installLogWriter(writer)
+        val registration = installLogWriter(writer)
         val host = Host(EmptyServerProtocol)
+        try {
+            host.start()
 
-        assertFailsWith<IllegalStateException> { host.start() }
-
-        assertEquals(HostState.FAILED, host.state)
-        assertEquals(0, host.boundListeners.single().port)
-        host.stop()
-        Unit
+            assertEquals(HostState.READY, host.state)
+        } finally {
+            registration.remove()
+            host.stop()
+        }
     }
 
     @Test

@@ -28,7 +28,8 @@ Owns `Log`, `LogTag` (the emitted structured record identity), `ServiceLogScope`
 of the service currently executing), and the generic writer installation point `installLogWriter`.
 The host supplies the authoritative registered service identity; the inherited service logger and
 `withTag` add logger-specific paths while keeping a readable console tag such as
-`AwesomeServiceImpl.Repository`.
+`AwesomeServiceImpl.Repository`. Installing a writer returns an idempotent removal handle, and an
+additional writer failure is reported through the standard writer without escaping into application code.
 
 Does not own retention or the log tail — those belong to `ifx.actuator`.
 
@@ -151,6 +152,9 @@ Owns `IActuator : IUtility` (`catalog()`, `health()`, `logTail(serviceInterface)
 `LogTailWriter` (the Kermit writer that retains structured entries and drops plain framework tags),
 and `HealthEndpoints` — the host extension publishing `/ifx/health`, `/ifx/health/ready`,
 `/ifx/health/live`.
+
+The installed `LogTail` store is process-wide: multiple actuators in one process deliberately expose
+the same retained service logs. Registration installs its writer once for the lifetime of the process.
 
 The actuator is reached through the ordinary service transport. There is no separate HTTP catalog or
 log-streaming endpoint.

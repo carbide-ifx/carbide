@@ -471,7 +471,9 @@ standard writer but are not retained. `LogTail.logs(address)` returns the latest
 exposes the retained tail and future entries as a non-blocking
 `Flow<LogTailEntry>`. The writer, retention store, and entry model belong to the
 `ifx.actuator` module; `ifx.logging` only provides structured tags and the generic
-writer installation point.
+writer installation point. The retained tail is deliberately process-wide, so multiple
+actuators in one process expose the same entries. Additional writers receive a removable
+registration from `installLogWriter()` and are isolated so their failures cannot fail service code.
 
 Every hosted service also reports non-cancellation exceptions that escape its
 server invocation. The error log carries the service interface, implementation

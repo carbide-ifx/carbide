@@ -11,6 +11,44 @@ import kotlin.test.assertEquals
 
 class LogTest {
     @Test
+    fun `installed writer remains until every registration is removed`() {
+        val writer = RecordingLogWriter()
+        val first = installLogWriter(writer)
+        val second = installLogWriter(writer)
+        try {
+            Log("RegistrationTest").synchronous.info { "before-removal" }
+            first.remove()
+            first.remove()
+            Log("RegistrationTest").synchronous.info { "after-first-removal" }
+            second.close()
+            Log("RegistrationTest").synchronous.info { "after-final-removal" }
+        } finally {
+            first.remove()
+            second.remove()
+        }
+
+        assertEquals(
+            listOf("before-removal", "after-first-removal"),
+            writer.entries.map(RecordedLogEntry::message),
+        )
+    }
+
+    @Test
+    fun `one failing installed writer does not block logging or other writers`() {
+        val failing = installLogWriter(FailingLogWriter())
+        val recordingWriter = RecordingLogWriter()
+        val recording = installLogWriter(recordingWriter)
+        try {
+            Log("WriterIsolationTest").synchronous.info { "still-delivered" }
+        } finally {
+            failing.remove()
+            recording.remove()
+        }
+
+        assertEquals(listOf("still-delivered"), recordingWriter.entries.map(RecordedLogEntry::message))
+    }
+
+    @Test
     fun `structured service tags are readable on the console`() {
         val console = RecordingLogWriter()
         val logger = Logger(
@@ -73,12 +111,16 @@ class LogTest {
             traceFlags = "01",
         )
         val writer = CorrelationRecordingLogWriter()
-        installLogWriter(writer)
+        val registration = installLogWriter(writer)
 
-        assertEquals(null, LogCorrelation.currentOrNull())
-        withContext(correlation) {
-            assertEquals(correlation, LogCorrelation.currentOrNull())
-            Log("Application").info { "automatically-correlated-log" }
+        try {
+            assertEquals(null, LogCorrelation.currentOrNull())
+            withContext(correlation) {
+                assertEquals(correlation, LogCorrelation.currentOrNull())
+                Log("Application").info { "automatically-correlated-log" }
+            }
+        } finally {
+            registration.remove()
         }
 
         val tag = requireNotNull(LogTagCodec.decodeOrNull(writer.entries.single().tag))
@@ -95,12 +137,16 @@ class LogTest {
             serviceClassName = "engine.pricing.service.PricingEngine",
         )
         val writer = ServiceRecordingLogWriter()
-        installLogWriter(writer)
+        val registration = installLogWriter(writer)
 
-        withContext(scope) {
-            Log(LogTag(serviceClassName = "wrong.StandaloneIdentity"))
-                .withTag("Repository")
-                .info { "service-scoped-log" }
+        try {
+            withContext(scope) {
+                Log(LogTag(serviceClassName = "wrong.StandaloneIdentity"))
+                    .withTag("Repository")
+                    .info { "service-scoped-log" }
+            }
+        } finally {
+            registration.remove()
         }
 
         val tag = requireNotNull(LogTagCodec.decodeOrNull(writer.entries.single().tag))
@@ -119,6 +165,12 @@ class LogTest {
         )
 
         assertEquals(tag, LogTagCodec.decodeOrNull(LogTagCodec.encode(tag)))
+    }
+}
+
+private class FailingLogWriter : LogWriter() {
+    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
+        error("writer unavailable")
     }
 }
 

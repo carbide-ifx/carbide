@@ -5,29 +5,62 @@ import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.loggerConfigInit
+import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlinx.coroutines.currentCoroutineContext
 
-private val logConfig = loggerConfigInit(
-    DecodingLogWriter(CommonWriter()),
-    InstalledLogWriters,
-)
+private val fallbackLogWriter = DecodingLogWriter(CommonWriter())
+private val logConfig = loggerConfigInit(fallbackLogWriter, InstalledLogWriters)
+
+/** Ownership handle for one installed process-wide [LogWriter]. */
+interface LogWriterRegistration : AutoCloseable {
+    /** Removes this registration. Repeated calls are harmless. */
+    fun remove()
+
+    override fun close() = remove()
+}
 
 @OptIn(ExperimentalAtomicApi::class)
 private object InstalledLogWriters : LogWriter() {
-    private val writers = AtomicReference<List<LogWriter>>(emptyList())
+    private val writers = AtomicReference<List<InstalledWriter>>(emptyList())
 
-    fun install(writer: LogWriter) {
+    fun install(writer: LogWriter): LogWriterRegistration {
         while (true) {
             val current = writers.load()
-            if (current.any { it === writer }) return
-            if (writers.compareAndSet(current, current + writer)) return
+            val index = current.indexOfFirst { it.writer === writer }
+            val updated = if (index == -1) {
+                current + InstalledWriter(writer, references = 1)
+            } else {
+                current.toMutableList().apply {
+                    this[index] = this[index].copy(references = this[index].references + 1)
+                }
+            }
+            if (writers.compareAndSet(current, updated)) {
+                return InstalledWriterRegistration(writer, ::remove)
+            }
+        }
+    }
+
+    private fun remove(writer: LogWriter) {
+        while (true) {
+            val current = writers.load()
+            val index = current.indexOfFirst { it.writer === writer }
+            if (index == -1) return
+            val installed = current[index]
+            val updated = if (installed.references == 1) {
+                current.filterIndexed { currentIndex, _ -> currentIndex != index }
+            } else {
+                current.toMutableList().apply {
+                    this[index] = installed.copy(references = installed.references - 1)
+                }
+            }
+            if (writers.compareAndSet(current, updated)) return
         }
     }
 
     override fun isLoggable(tag: String, severity: Severity): Boolean =
-        writers.load().any { it.isLoggable(tag, severity) }
+        writers.load().any { installed -> safely(false) { installed.writer.isLoggable(tag, severity) } }
 
     override fun log(
         severity: Severity,
@@ -35,14 +68,51 @@ private object InstalledLogWriters : LogWriter() {
         tag: String,
         throwable: Throwable?,
     ) {
-        writers.load().forEach { writer ->
-            if (writer.isLoggable(tag, severity)) writer.log(severity, message, tag, throwable)
+        writers.load().forEach { installed ->
+            safely(Unit) {
+                val writer = installed.writer
+                if (writer.isLoggable(tag, severity)) writer.log(severity, message, tag, throwable)
+            }
         }
+    }
+
+    private inline fun <T> safely(fallback: T, action: () -> T): T = try {
+        action()
+    } catch (failure: Exception) {
+        runCatching {
+            fallbackLogWriter.log(
+                Severity.Error,
+                "Additional log writer failed",
+                "Logging",
+                failure,
+            )
+        }
+        fallback
     }
 }
 
-/** Installs an additional process-wide writer without replacing existing service loggers. */
-fun installLogWriter(writer: LogWriter) = InstalledLogWriters.install(writer)
+private data class InstalledWriter(
+    val writer: LogWriter,
+    val references: Int,
+)
+
+@OptIn(ExperimentalAtomicApi::class)
+private class InstalledWriterRegistration(
+    private val writer: LogWriter,
+    private val removeWriter: (LogWriter) -> Unit,
+) : LogWriterRegistration {
+    private val active = AtomicBoolean(true)
+
+    override fun remove() {
+        if (active.compareAndSet(expectedValue = true, newValue = false)) removeWriter(writer)
+    }
+}
+
+/**
+ * Installs an additional process-wide writer without replacing existing service loggers.
+ * The caller owns the returned registration and may remove it when the writer is no longer needed.
+ */
+fun installLogWriter(writer: LogWriter): LogWriterRegistration = InstalledLogWriters.install(writer)
 
 open class Log internal constructor(
     private val structuredTag: LogTag?,

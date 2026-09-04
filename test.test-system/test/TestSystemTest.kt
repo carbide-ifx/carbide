@@ -70,7 +70,7 @@ class TestSystemTest {
     @Test
     fun `test system logs its service explorer address on startup`() = runBlocking {
         val logWriter = HostLogWriter()
-        installLogWriter(logWriter)
+        val logWriterRegistration = installLogWriter(logWriter)
         val system = startTestSystem(emptyList())
         try {
             assertContains(
@@ -79,6 +79,7 @@ class TestSystemTest {
             )
         } finally {
             system.stop()
+            logWriterRegistration.remove()
         }
     }
 

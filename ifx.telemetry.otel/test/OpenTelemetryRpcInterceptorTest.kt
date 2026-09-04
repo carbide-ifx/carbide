@@ -398,7 +398,7 @@ class OpenTelemetryRpcInterceptorTest {
     fun `RPC logs use the active span correlation`() = runBlocking {
         val exporter = RecordingExporter()
         val logWriter = CorrelationLogWriter()
-        installLogWriter(logWriter)
+        val logWriterRegistration = installLogWriter(logWriter)
         var downstreamCorrelation: LogCorrelation? = null
         val interceptor = OpenTelemetryRpcInterceptor(
             exporter = exporter,
@@ -441,12 +441,13 @@ class OpenTelemetryRpcInterceptorTest {
         assertEquals("Loading products", logWriter.entries[1].message)
         assertEquals(true, logWriter.entries[1].retained)
         assertEquals(true, logWriter.entries[2].message.startsWith("IPricingEngine <- Service.call(): "))
+        logWriterRegistration.remove()
     }
 
     @Test
     fun `server RPC logs distinguish receive from send`() = runBlocking {
         val logWriter = CorrelationLogWriter()
-        installLogWriter(logWriter)
+        val logWriterRegistration = installLogWriter(logWriter)
         val interceptor = OpenTelemetryRpcInterceptor(
             exporter = RecordingExporter(),
             serviceName = "test-server",
@@ -469,6 +470,7 @@ class OpenTelemetryRpcInterceptorTest {
 
         assertEquals(true, logWriter.entries[0].message.startsWith("-> Service.call(): "))
         assertEquals(true, logWriter.entries[1].message.startsWith("Service.call() -> Message"))
+        logWriterRegistration.remove()
     }
 }
 

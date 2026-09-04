@@ -4,6 +4,7 @@ package ifx.actuator
 
 import co.touchlab.kermit.Severity
 import ifx.logging.LogTag
+import ifx.logging.LogWriterRegistration
 import ifx.logging.installLogWriter
 import kotlin.concurrent.atomics.AtomicArray
 import kotlin.concurrent.atomics.AtomicLong
@@ -99,11 +100,18 @@ private fun Severity.toLogTailSeverity(): LogTailSeverity = when (this) {
     Severity.Assert -> LogTailSeverity.Assert
 }
 
+/** Process-wide retained service logs shared by every actuator in this application process. */
 object LogTail {
     private val store = LogTailStore()
     private val writer = LogTailWriter(store)
+    private val registration = AtomicReference<LogWriterRegistration?>(null)
 
-    fun install() = installLogWriter(writer)
+    /** Installs the retention writer once for the lifetime of this process. */
+    fun install() {
+        if (registration.load() != null) return
+        val candidate = installLogWriter(writer)
+        if (!registration.compareAndSet(expectedValue = null, newValue = candidate)) candidate.remove()
+    }
 
     fun logs(serviceInterface: String): List<LogTailEntry> = store.logs(serviceInterface)
 
