@@ -1,4 +1,4 @@
-package ifx.subsystem.ksp
+package ifx.rpc.schema.ksp
 
 internal data class ServiceMethodShape(
     val name: String,
@@ -47,16 +47,4 @@ internal fun validateServiceMethods(methods: List<ServiceMethodShape>): List<Ser
                 ),
             )
         }
-}
-
-internal fun operationPropertyNames(
-    methodNames: List<String>,
-    reservedNames: Set<String>,
-): List<String> {
-    val allocated = reservedNames.toMutableSet()
-    return methodNames.map { name ->
-        var propertyName = name
-        while (!allocated.add(propertyName)) propertyName += "Operation"
-        propertyName
-    }
 }

@@ -6,4 +6,5 @@ product:
   type: jvm/lib
 
 dependencies:
+  - ../ifx.rpc.schema.ksp
   - com.google.devtools.ksp:symbol-processing-api:2.3.6: compile-only

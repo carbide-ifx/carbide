@@ -1,5 +1,12 @@
 package ifx.rpc.typescript.ksp
 
+import ifx.rpc.schema.ksp.Interaction
+import ifx.rpc.schema.ksp.OperationModel
+import ifx.rpc.schema.ksp.ServiceKind
+import ifx.rpc.schema.ksp.ServiceModel
+import ifx.rpc.schema.ksp.TypeDeclaration
+import ifx.rpc.schema.ksp.TypeRef
+
 internal class TypeScriptRenderer {
     fun render(service: ServiceModel): String {
         val names = allocateNames(service)
@@ -34,9 +41,9 @@ internal class TypeScriptRenderer {
             appendLine("export interface ${identifier(service.name)} {")
             service.operations.forEach { operation ->
                 val parameter = operation.parameterName?.let {
-                    "${identifier(it)}${if (operation.requestOptional) "?" else ""}: ${identifier(service.name)}.${identifier(operation.typeName)}Request"
+                    "${identifier(it)}: ${identifier(service.name)}.${operation.typeName()}Request"
                 }.orEmpty()
-                val response = "${identifier(service.name)}.${identifier(operation.typeName)}Response"
+                val response = "${identifier(service.name)}.${operation.typeName()}Response"
                 val result = when (operation.interaction) {
                     Interaction.REQUEST_STREAM -> "AsyncIterable<$response>"
                     Interaction.FIRE_AND_FORGET, Interaction.REQUEST_RESPONSE -> "Promise<$response>"
@@ -137,10 +144,10 @@ internal class TypeScriptRenderer {
     private fun renderSdkMethod(service: ServiceModel, operation: OperationModel): String {
         val serviceName = identifier(service.name)
         val parameter = operation.parameterName?.let {
-            "${identifier(it)}: $serviceName.${identifier(operation.typeName)}Request"
+            "${identifier(it)}: $serviceName.${operation.typeName()}Request"
         }.orEmpty()
         val argument = operation.parameterName?.let { ", ${identifier(it)}" }.orEmpty()
-        val response = "$serviceName.${identifier(operation.typeName)}Response"
+        val response = "$serviceName.${operation.typeName()}Response"
         val invocation = when (operation.interaction) {
             Interaction.FIRE_AND_FORGET -> "this.binding.fireAndForget(${stringLiteral(operation.route)}$argument)"
             Interaction.REQUEST_RESPONSE -> "this.binding.requestResponse<$response>(${stringLiteral(operation.route)}$argument)"
@@ -204,8 +211,8 @@ internal class TypeScriptRenderer {
     private fun operationAliases(service: ServiceModel): List<OperationAlias> =
         service.operations.flatMap { operation ->
             listOf(
-                OperationAlias("${identifier(operation.typeName)}Request", operation.request),
-                OperationAlias("${identifier(operation.typeName)}Response", operation.response),
+                OperationAlias("${operation.typeName()}Request", operation.request),
+                OperationAlias("${operation.typeName()}Response", operation.response),
             )
         }
 
@@ -292,6 +299,10 @@ internal class TypeScriptRenderer {
             "with", "yield",
         )
     }
+
+    private fun OperationModel.typeName(): String = identifier(name.replaceFirstChar { character ->
+        if (character.isLowerCase()) character.titlecase() else character.toString()
+    })
 
     private data class OperationAlias(
         val name: String,

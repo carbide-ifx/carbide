@@ -701,7 +701,9 @@ The optional `ifx.rpc.typescript.ksp` processor generates a TypeScript service
 interface, operation request/response aliases, and all reachable serializable
 types. User-defined request and response types must use `@Serializable` and
 custom or contextual serializers are rejected because their wire shape cannot
-be inferred from KSP symbols.
+be inferred from KSP symbols. It shares the canonical `ifx.rpc.schema.ksp` model
+with descriptor generation, so Kotlin descriptors, TypeScript SDKs, gateway SDKs,
+and OpenAPI documents do not maintain competing interpretations of the contract.
 
 ## Webapp hosting and interactive service explorer
 

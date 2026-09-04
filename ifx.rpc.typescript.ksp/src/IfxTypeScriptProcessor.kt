@@ -12,6 +12,8 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.validate
+import ifx.rpc.schema.ksp.ModelException
+import ifx.rpc.schema.ksp.ServiceModelBuilder
 import java.io.OutputStreamWriter
 
 internal class IfxTypeScriptProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor {

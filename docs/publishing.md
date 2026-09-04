@@ -15,8 +15,8 @@ The public Maven surface is:
   `ifx.proxy-factory`, `ifx.proxy-factory.jsonrpc`, `ifx.proxy-factory.rsocket`, `ifx.gateway`,
   `ifx.gateway.ktor`, `ifx.gateway.typescript`, `ifx.actuator`, `ifx.service-explorer`,
   `ifx.telemetry.otel`, `ifx.telemetry.otel.ktor-client`, and `ifx.subsystem`.
-- Build-time libraries: `ifx.contract.ksp`, `ifx.subsystem.ksp`, `ifx.rpc.compiler-plugin`, and
-  `ifx.rpc.typescript.ksp`.
+- Build-time libraries: `ifx.contract.ksp`, `ifx.rpc.schema.ksp`, `ifx.subsystem.ksp`,
+  `ifx.rpc.compiler-plugin`, and `ifx.rpc.typescript.ksp`.
 - Supporting libraries: `ifx.testing`, `utility.stdlib`, and `utility.db`.
 
 ## Deliberately excluded

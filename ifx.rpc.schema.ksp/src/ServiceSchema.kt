@@ -1,6 +1,6 @@
-package ifx.rpc.typescript.ksp
+package ifx.rpc.schema.ksp
 
-internal data class ServiceModel(
+data class ServiceModel(
     val name: String,
     val address: String,
     val kind: ServiceKind,
@@ -8,29 +8,27 @@ internal data class ServiceModel(
     val declarations: List<TypeDeclaration>,
 )
 
-internal enum class ServiceKind {
+enum class ServiceKind {
     SERVICE,
     UTILITY,
 }
 
-internal data class OperationModel(
+data class OperationModel(
     val name: String,
-    val typeName: String,
     val route: String,
     val parameterName: String?,
     val request: TypeRef,
-    val requestOptional: Boolean,
     val response: TypeRef,
     val interaction: Interaction,
 )
 
-internal enum class Interaction {
+enum class Interaction {
     FIRE_AND_FORGET,
     REQUEST_RESPONSE,
     REQUEST_STREAM,
 }
 
-internal sealed interface TypeRef {
+sealed interface TypeRef {
     data object StringType : TypeRef
     data object NumberType : TypeRef
     data object BooleanType : TypeRef
@@ -42,7 +40,7 @@ internal sealed interface TypeRef {
     data class Nullable(val value: TypeRef) : TypeRef
 }
 
-internal sealed interface TypeDeclaration {
+sealed interface TypeDeclaration {
     val qualifiedName: String
     val typeParameters: List<String>
 
@@ -72,13 +70,13 @@ internal sealed interface TypeDeclaration {
     ) : TypeDeclaration
 }
 
-internal data class PropertyModel(
+data class PropertyModel(
     val name: String,
     val type: TypeRef,
     val optional: Boolean,
 )
 
-internal data class SealedVariant(
+data class SealedVariant(
     val serialName: String,
     val type: TypeRef.Named,
 )

@@ -15,6 +15,7 @@ flowchart LR
     end
 
     subgraph sm["Subsystem module<br/>(applies ifx.subsystem.ksp + ifx.rpc.compiler)"]
+        schema["canonical ServiceModel<br/><i>ifx.rpc.schema.ksp</i>"]
         desc["object IProductAccessDescriptor<br/>class IProductAccessProxy<br/>server binding"]
         gwidx["object …GatewayProjectionProvider<br/><i>package ifx.gateway.index</i>"]
         tsc["generated/IProductAccess.ts"]
@@ -24,9 +25,17 @@ flowchart LR
         desc -.-> linked
     end
 
-    index -->|"read from dependency artifacts"| desc
-    iface --> tsc
+    index -->|"read from dependency artifacts"| schema
+    iface --> schema
+    schema --> desc
+    schema --> tsc
 ```
+
+`ifx.rpc.schema.ksp` is the single symbol-to-wire-schema implementation shared by both generators.
+It validates operations and serialization shapes, then produces one compiler model. The subsystem
+processor renders that model into the runtime `ServiceDescription`; the optional TypeScript
+processor renders the same model into TypeScript. Gateway TypeScript and OpenAPI generation consume
+the resulting runtime description and never reinterpret Kotlin symbols.
 
 ## Stage 1 — `ifx.contract.ksp`: the contract index
 
@@ -173,7 +182,8 @@ SDKs and gateway projections; use distinct operation names instead.
 
 Request and response types must be `@Serializable`. Custom and contextual serializers are **rejected**,
 because their wire shape cannot be inferred from KSP symbols — the generator refuses rather than
-guessing.
+guessing. These rules come from `ifx.rpc.schema.ksp`, so descriptor and TypeScript generation cannot
+disagree about the wire schema.
 
 ## Build-plugin artifacts
 

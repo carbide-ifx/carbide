@@ -11,11 +11,12 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
+import ifx.rpc.schema.ksp.ModelException
+import ifx.rpc.schema.ksp.ServiceModelBuilder
 import java.io.OutputStreamWriter
 
 class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProcessor {
@@ -51,7 +52,7 @@ class IfxServiceProcessor(environment: SymbolProcessorEnvironment) : SymbolProce
             .distinctBy { it.qualifiedName?.asString() }
             .sortedBy { it.qualifiedName?.asString() }
             .toList()
-        if (contracts.any { !it.validateContract() }) return contracts
+        if (contracts.any { !it.validate() }) return contracts
         contracts
             .filter { contract ->
                 resolver.getClassDeclarationByName(
@@ -140,27 +141,6 @@ internal object $anchorName
                 }
             }
 
-    private fun KSClassDeclaration.validateContract(): Boolean {
-        val functions = getAllFunctions().filterNot(::isAnyMethod).toList()
-        if (functions.any { !it.validate() }) return false
-        val diagnostics = validateServiceMethods(functions.map { function ->
-            val returnDeclaration = function.returnType?.resolve()?.declaration?.qualifiedName?.asString()
-            ServiceMethodShape(
-                name = function.simpleName.asString(),
-                parameterCount = function.parameters.size,
-                hasTypeParameters = function.typeParameters.isNotEmpty(),
-                isSuspending = Modifier.SUSPEND in function.modifiers,
-                returnsFlow = returnDeclaration == "kotlinx.coroutines.flow.Flow",
-                returnsUnit = returnDeclaration == "kotlin.Unit",
-                isFireAndForget = function.isFireAndForget(),
-            )
-        })
-        diagnostics.forEach { diagnostic ->
-            logger.error(diagnostic.message, functions[diagnostic.methodIndex])
-        }
-        return diagnostics.isEmpty()
-    }
-
     private fun generate(contract: KSClassDeclaration, dependencies: Dependencies) {
         val packageName = contract.packageName.asString()
         val contractName = contract.simpleName.asString()
@@ -169,7 +149,13 @@ internal object $anchorName
         val operationProperties = operationProperties(functions)
         val address = contract.qualifiedName!!.asString()
         val packageDeclaration = packageName.takeIf { it.isNotBlank() }?.let { "package $it\n" }.orEmpty()
-        val description = ServiceDescriptionRenderer().render(contract)
+        val schema = try {
+            ServiceModelBuilder().build(contract)
+        } catch (exception: ModelException) {
+            logger.error(exception.message.orEmpty(), exception.node)
+            return
+        }
+        val description = ServiceDescriptionRenderer().render(schema)
         val output = codeGenerator.createNewFile(
             dependencies,
             packageName,

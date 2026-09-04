@@ -1,10 +1,9 @@
 apply: [ ../publishing.module-template.yaml ]
 
-description: KSP processor that generates Carbide service descriptors, proxies, bindings, and gateway indexes.
+description: Canonical KSP service schema model and symbol interpretation for Carbide generators.
 
 product:
   type: jvm/lib
 
 dependencies:
-  - ../ifx.rpc.schema.ksp
   - com.google.devtools.ksp:symbol-processing-api:2.3.6: compile-only

@@ -27,10 +27,14 @@ Carbide splits into three planes that touch each other only through generated co
 flowchart TB
     subgraph build["Build plane — runs in the compiler"]
         idx["ifx.contract.ksp<br/>contract index"]
+        schema["ifx.rpc.schema.ksp<br/>canonical service schema"]
         desc["ifx.subsystem.ksp<br/>descriptors + proxies"]
         ir["ifx.rpc.compiler-plugin<br/>descriptor linking"]
         ts["ifx.rpc.typescript.ksp<br/>TypeScript contracts"]
         art["ifx.gateway.artifacts / ifx.jib<br/>Amper build plugins"]
+        idx --> schema
+        schema --> desc
+        schema --> ts
     end
 
     subgraph contract["Contract plane — pure interfaces"]

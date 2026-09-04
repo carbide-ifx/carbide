@@ -1,4 +1,4 @@
-package ifx.subsystem.ksp
+package ifx.rpc.schema.ksp
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,17 +29,6 @@ class ServiceMethodValidationTest {
                 "IFX service method overloads are not supported: lookup. Use distinct operation names.",
             ),
             diagnostics.map(ServiceMethodDiagnostic::message),
-        )
-    }
-
-    @Test
-    fun `allocates stable descriptor members around reserved names`() {
-        assertEquals(
-            listOf("lookup", "addressOperation"),
-            operationPropertyNames(
-                listOf("lookup", "address"),
-                setOf("address"),
-            ),
         )
     }
 

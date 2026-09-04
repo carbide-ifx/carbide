@@ -1,4 +1,4 @@
-package ifx.rpc.typescript.ksp
+package ifx.rpc.schema.ksp
 
 import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.symbol.ClassKind
@@ -15,7 +15,7 @@ import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.Nullability
 
-internal class ServiceModelBuilder {
+class ServiceModelBuilder {
     private val declarations = linkedMapOf<String, TypeDeclaration>()
     private val collecting = mutableSetOf<String>()
 
@@ -23,14 +23,22 @@ internal class ServiceModelBuilder {
         declarations.clear()
         collecting.clear()
         val functions = contract.getAllFunctions().filterNot(::isAnyMethod).toList()
-        val functionNames = functions.map { it.simpleName.asString() }
-        firstOverloadedOperationName(functionNames)?.let { overload ->
-            fail(overloadDiagnostic(overload), functions.first { it.simpleName.asString() == overload })
+        val diagnostics = validateServiceMethods(functions.map { function ->
+            val returnName = function.returnType?.resolve()?.declaration?.qualifiedName?.asString()
+            ServiceMethodShape(
+                name = function.simpleName.asString(),
+                parameterCount = function.parameters.size,
+                hasTypeParameters = function.typeParameters.isNotEmpty(),
+                isSuspending = Modifier.SUSPEND in function.modifiers,
+                returnsFlow = returnName == FLOW,
+                returnsUnit = returnName == "kotlin.Unit",
+                isFireAndForget = function.isFireAndForget(),
+            )
+        })
+        diagnostics.firstOrNull()?.let { diagnostic ->
+            fail(diagnostic.message, functions[diagnostic.methodIndex])
         }
-        val operations = functions.map { function ->
-            val name = function.simpleName.asString()
-            operation(function, name.upperCamelCase())
-        }
+        val operations = functions.map(::operation)
         return ServiceModel(
             name = contract.simpleName.asString(),
             address = contract.qualifiedName!!.asString(),
@@ -43,10 +51,7 @@ internal class ServiceModelBuilder {
     private fun KSClassDeclaration.isUtility(): Boolean =
         getAllSuperTypes().any { it.declaration.qualifiedName?.asString() == UTILITY }
 
-    private fun operation(function: KSFunctionDeclaration, typeName: String): OperationModel {
-        if (function.typeParameters.isNotEmpty() || function.parameters.size > 1) {
-            fail("Service operation ${function.simpleName.asString()} must have at most one parameter and no type parameters", function)
-        }
+    private fun operation(function: KSFunctionDeclaration): OperationModel {
         val returnType = function.returnType?.resolve()
             ?: fail("Service operation ${function.simpleName.asString()} has no return type", function)
         val returnName = returnType.declaration.qualifiedName?.asString()
@@ -54,13 +59,6 @@ internal class ServiceModelBuilder {
             function.isFireAndForget() -> Interaction.FIRE_AND_FORGET
             returnName == FLOW -> Interaction.REQUEST_STREAM
             else -> Interaction.REQUEST_RESPONSE
-        }
-        val isSuspend = Modifier.SUSPEND in function.modifiers
-        if ((interaction == Interaction.REQUEST_STREAM && isSuspend) || (interaction != Interaction.REQUEST_STREAM && !isSuspend)) {
-            fail("Service operation ${function.simpleName.asString()} has an invalid suspend/Flow combination", function)
-        }
-        if (function.isFireAndForget() && (returnName != "kotlin.Unit" || !isSuspend)) {
-            fail("@FireAndForget may only be used on suspending IFX service methods returning Unit", function)
         }
         val parameter = function.parameters.singleOrNull()
         val response = if (interaction == Interaction.REQUEST_STREAM) {
@@ -71,13 +69,9 @@ internal class ServiceModelBuilder {
         }
         return OperationModel(
             name = function.simpleName.asString(),
-            typeName = typeName,
             route = operationRoute(function),
             parameterName = parameter?.name?.asString(),
             request = parameter?.type?.resolve()?.let(::typeRef) ?: TypeRef.VoidType,
-            // Kotlin callers evaluate parameter defaults before invoking the generated proxy.
-            // TypeScript cannot reproduce an arbitrary Kotlin default expression, so RPC inputs stay required.
-            requestOptional = false,
             response = response,
             interaction = interaction,
         )
@@ -347,10 +341,6 @@ internal class ServiceModelBuilder {
         annotation.annotationType.resolve().declaration.qualifiedName?.asString() == FIRE_AND_FORGET
     }
 
-    private fun String.upperCamelCase(): String = replaceFirstChar { character ->
-        if (character.isLowerCase()) character.titlecase() else character.toString()
-    }
-
     private companion object {
         const val UTILITY = "ifx.service.IUtility"
         const val FIRE_AND_FORGET = "ifx.service.FireAndForget"
@@ -390,10 +380,4 @@ internal class ServiceModelBuilder {
     }
 }
 
-internal fun firstOverloadedOperationName(names: List<String>): String? =
-    names.groupingBy { it }.eachCount().entries.firstOrNull { it.value > 1 }?.key
-
-internal fun overloadDiagnostic(name: String): String =
-    "Service operation overloads are not supported: $name. Use distinct operation names."
-
-internal class ModelException(message: String, val node: KSNode) : RuntimeException(message)
+class ModelException(message: String, val node: KSNode) : RuntimeException(message)

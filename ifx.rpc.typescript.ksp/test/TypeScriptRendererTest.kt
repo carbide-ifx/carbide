@@ -1,19 +1,18 @@
 package ifx.rpc.typescript.ksp
 
+import ifx.rpc.schema.ksp.Interaction
+import ifx.rpc.schema.ksp.OperationModel
+import ifx.rpc.schema.ksp.PropertyModel
+import ifx.rpc.schema.ksp.SealedVariant
+import ifx.rpc.schema.ksp.ServiceKind
+import ifx.rpc.schema.ksp.ServiceModel
+import ifx.rpc.schema.ksp.TypeDeclaration
+import ifx.rpc.schema.ksp.TypeRef
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 class TypeScriptRendererTest {
-    @Test
-    fun `reports a stable diagnostic for overloads`() {
-        assertEquals("lookup", firstOverloadedOperationName(listOf("find", "lookup", "lookup")))
-        assertEquals(
-            "Service operation overloads are not supported: lookup. Use distinct operation names.",
-            overloadDiagnostic("lookup"),
-        )
-    }
-
     @Test
     fun `renders operations and reachable wire types`() {
         val model = ServiceModel(
@@ -23,11 +22,9 @@ class TypeScriptRendererTest {
             operations = listOf(
                 OperationModel(
                     name = "find",
-                    typeName = "Find",
                     route = "find(example.Criteria)",
                     parameterName = "criteria",
                     request = TypeRef.Named("example.Criteria"),
-                    requestOptional = false,
                     response = TypeRef.Named("example.Product"),
                     interaction = Interaction.REQUEST_STREAM,
                 ),
@@ -135,21 +132,17 @@ class TypeScriptRendererTest {
             operations = listOf(
                 OperationModel(
                     name = "store",
-                    typeName = "Store",
                     route = "store(example.Command)",
                     parameterName = "command",
                     request = TypeRef.Named("example.Command"),
-                    requestOptional = false,
                     response = TypeRef.VoidType,
                     interaction = Interaction.REQUEST_RESPONSE,
                 ),
                 OperationModel(
                     name = "notify",
-                    typeName = "Notify",
                     route = "notify(example.Command)",
                     parameterName = "command",
                     request = TypeRef.Named("example.Command"),
-                    requestOptional = false,
                     response = TypeRef.VoidType,
                     interaction = Interaction.FIRE_AND_FORGET,
                 ),

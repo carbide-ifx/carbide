@@ -207,6 +207,7 @@ produce. See [Code generation pipeline](code-generation.md).
 | Module | Product | Role |
 | --- | --- | --- |
 | `ifx.contract.ksp` | `jvm/lib` KSP processor | Emits one `@IfxServiceIndex` object per contract module |
+| `ifx.rpc.schema.ksp` | `jvm/lib` compiler library | Builds the one canonical service and wire-type model consumed by both KSP generators |
 | `ifx.subsystem.ksp` | `jvm/lib` KSP processor | Emits a `ServiceDescriptor` + proxy + server binding per reachable contract, and the gateway projection index |
 | `ifx.rpc.compiler-plugin` | `jvm/lib`, Kotlin IR plugin | Rewrites reified `registerService<T>` / `create<T>` to pass the generated descriptor; fills defaulted descriptor parameters |
 | `ifx.rpc.typescript.ksp` | `jvm/lib` KSP processor | Emits TypeScript service interfaces, request/response aliases, and all reachable serializable types |

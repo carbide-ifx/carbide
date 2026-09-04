@@ -126,7 +126,9 @@ const sdk = await HttpSdk.connect(ProductWebSdk, "https://api.example.com", {
 | `ifx.rpc.typescript.ksp` | every reachable `IService` contract | one file per service: interface, request/response aliases, all reachable types, `{Service}Description`, `{Service}Sdk` | internal tools and first-party clients that may call any service |
 | `renderTypeScriptSdk()` / `gatewayArtifacts` | one `GatewayProjection` | one SDK with manager namespaces and only the projected operations | a public or partner-facing surface |
 
-Both preserve the same generated DTO shapes, so the two can coexist in one codebase.
+Both consume the canonical service schema built by `ifx.rpc.schema.ksp`, directly during KSP for
+per-service SDKs and through compiled `ServiceDescription` values for gateway SDKs. They can coexist
+without independently interpreting Kotlin wire types.
 
 ## Constraints on generated types
 

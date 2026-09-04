@@ -282,11 +282,14 @@ flowchart TB
 
     subgraph m2["Subsystem module — applies ifx.subsystem.ksp + ifx.rpc.compiler"]
         b0["TestSystem.kt<br/><i>hand-written</i>"]
+        bs["canonical service schema<br/><i>ifx.rpc.schema.ksp</i>"]
         b1["IProductAccessDescriptor<br/>+ proxy + server binding"]
         b2["GatewayProjectionProvider<br/><i>package ifx.gateway.index</i>"]
         b3["generated/IProductAccess.ts"]
         b4["IR rewrite:<br/>registerService&lt;T&gt; → registerService(TDescriptor)"]
         b0 --> b4
+        bs --> b1
+        bs --> b3
         b1 -.-> b4
     end
 
@@ -296,8 +299,8 @@ flowchart TB
         o3["container image"]
     end
 
-    a2 -->|"read from dependency artifacts"| b1
-    a1 --> b3
+    a2 -->|"read from dependency artifacts"| bs
+    a1 --> bs
     b4 --> o1
     b2 -->|"ifx.gateway.artifacts · gatewayArtifacts"| o2
     o1 -->|"ifx.jib · jibTar / jibDocker / jibPush"| o3
