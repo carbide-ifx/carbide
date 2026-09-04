@@ -217,7 +217,6 @@ produce. See [Code generation pipeline](code-generation.md).
 | `ifx.rpc.typescript.ksp` | `jvm/lib` KSP processor | Emits TypeScript service interfaces, request/response aliases, and all reachable serializable types |
 | `ifx.gateway.artifacts` | `jvm/amper-plugin` | `gatewayArtifacts` task: writes `sdk.ts` + `openapi.json` per public gateway address, without starting a host |
 | `ifx.jib` | `jvm/amper-plugin` | `jibTar` / `jibDocker` / `jibPush`; non-root Java 21 distroless base, configurable extra directories |
-| `terpal.compiler-plugin` | bootstrap build | Kotlin 2.4 compatibility rebuild of the upstream Terpal plugin used by `utility.db`; published to Maven Local before a clean build |
 
 ---
 
@@ -226,12 +225,6 @@ produce. See [Code generation pipeline](code-generation.md).
 ### `utility.stdlib`
 Small cross-project helpers with no Carbide dependency: `IdGenerator`, `TimeSpan`, `DbConfig`,
 `CriteriaExtensions`. Multiplatform.
-
-### `utility.db`
-**JVM only.** PostgreSQL access built on Terpal SQL, HikariCP, and Flyway, with Testcontainers for
-tests. Owns connection management, `TimestampTz`, Kotlin `Instant` serialization for Postgres, and
-TOML-based configuration. Requires the Terpal compiler plugin; hence the `terpal.compiler-plugin`
-bootstrap.
 
 ### `utility.event`
 **Not part of the Amper build.** A legacy Gradle module (in-memory and Azure Service Bus event bus)
@@ -243,8 +236,7 @@ either ported or removed.
 
 ## Reference and test systems
 
-These modules are the executable specification of the framework and the worked example of the
-[design methodology](../ai.methodology/README.md)'s module roles.
+These modules are the executable specification of the framework and its module roles.
 
 | Module | Role |
 | --- | --- |

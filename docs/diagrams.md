@@ -32,7 +32,7 @@ flowchart TB
         s2["Subsystem B<br/><i>Engines, ResourceAccess</i>"]
     end
 
-    db[("PostgreSQL<br/><i>utility.db</i>")]
+    db[("PostgreSQL")]
 
     browser -->|"RSocket / WS · JSON-RPC"| gw
     partner -->|"POST /api/{surface}/…"| gw

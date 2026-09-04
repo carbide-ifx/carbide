@@ -289,8 +289,7 @@ serving any web build.
 
 ## Multiplatform targets JVM and macosArm64
 
-**Decision.** Runtime modules publish for JVM and macOS ARM64. Build-time tooling and `utility.db` are
-JVM-only.
+**Decision.** Runtime modules publish for JVM and macOS ARM64. Build-time tooling is JVM-only.
 
 **Why.** JVM is the deployment target; macosArm64 keeps the Native code path honest and gives fast
 local Native builds on developer machines.
@@ -299,20 +298,6 @@ local Native builds on developer machines.
 Ktor client engines, the two-round KSP protocol, the compressed asset projection — for a target that is
 currently a correctness proof rather than a deployment platform. Linux ARM/x64 Native targets are not
 published.
-
----
-
-## Terpal is vendored and rebuilt
-
-**Decision.** `terpal.compiler-plugin` downloads checksum-pinned upstream sources, applies a one-line
-Kotlin compiler API compatibility change, and publishes to Maven Local before a clean build.
-
-**Why.** Amper resolves third-party compiler plugins from Maven repositories, and no upstream release
-is compatible with Kotlin 2.4. Two explicit build phases are honest about that; a hidden bootstrap
-would not be.
-
-**Cost.** A manual `./terpal.compiler-plugin/publish-local` before the first build, and a patch to carry
-until upstream catches up. Only `utility.db` depends on it.
 
 ---
 

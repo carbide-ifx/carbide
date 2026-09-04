@@ -269,11 +269,9 @@ Carbide RPC calls.
 
 ## 7. Build and run this repository's example
 
-The checked-in executable example is `test.test-system`. A clean source build first needs the
-repository's Kotlin 2.4-compatible Terpal plugin in Maven Local:
+The checked-in executable example is `test.test-system`:
 
 ```shell
-./terpal.compiler-plugin/publish-local
 ./kotlin build
 ./kotlin run -m test.test-system
 ```

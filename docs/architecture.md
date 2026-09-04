@@ -214,13 +214,10 @@ directly with the builder and expose only their intended protocols and utilities
 | Public API surface | Gateway projection → RSocket, HTTP, OpenAPI, TS SDK | `ifx.gateway.*` |
 | Container image | Jib build plugin, distroless base | `ifx.jib` |
 
-## Relationship to the design methodology
+## Reference architecture roles
 
-`ai.methodology/` in this repository is a separate artifact: a volatility-based system design process
-(Business Process → System Interaction → Static Architecture → Module Catalog → Call Chain). It
-classifies modules as **Client, Manager, Engine, ResourceAccess, Utility, Resource**.
-
-Carbide is the runtime that method targets, and the mapping is direct:
+The reference system classifies modules as **Client, Manager, Engine, ResourceAccess, Utility, Resource**.
+The mapping to Carbide is direct:
 
 | Methodology role | Carbide expression |
 | --- | --- |
@@ -230,5 +227,5 @@ Carbide is the runtime that method targets, and the mapping is direct:
 | Allowed dependency | Which descriptors a subsystem's dependency graph makes reachable |
 | Published API | A `GatewayProjection` over Manager operations |
 
-The reference modules under `test.*` are laid out in exactly these terms
-(`manager/sales`, `engine/pricing`, `access/product`) and are the executable example of the method.
+The modules under `test.*` are laid out in exactly these terms
+(`manager/sales`, `engine/pricing`, `access/product`) and are the executable example.

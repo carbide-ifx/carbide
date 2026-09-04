@@ -17,13 +17,11 @@ The public Maven surface is:
   `ifx.telemetry.otel`, `ifx.telemetry.otel.ktor-client`, and `ifx.subsystem`.
 - Build-time libraries: `ifx.contract.ksp`, `ifx.rpc.schema.ksp`, `ifx.subsystem.ksp`,
   `ifx.rpc.compiler-plugin`, and `ifx.rpc.typescript.ksp`.
-- Supporting libraries: `ifx.testing`, `utility.stdlib`, and `utility.db`.
+- Supporting libraries: `ifx.testing` and `utility.stdlib`.
 
 ## Deliberately excluded
 
 - `test.*` modules are executable specifications and examples, not supported dependencies.
-- `terpal.compiler-plugin` is a local bootstrap artifact. It publishes only to Maven Local and is
-  not part of Carbide's Central namespace.
 - `ifx.gateway.artifacts` and `ifx.jib` are Kotlin Toolchain plugins rather than Maven library
   modules. Their distribution needs a separate plugin publication path.
 - TypeScript packages under `typescript/` use npm publication and are versioned separately.
@@ -34,7 +32,6 @@ The public Maven surface is:
 After the Central namespace and credentials are configured, publish a manually reviewed deployment:
 
 ```shell
-./terpal.compiler-plugin/publish-local
 ./kotlin publish mavenCentral
 ```
 

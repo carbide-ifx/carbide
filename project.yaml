@@ -28,12 +28,10 @@ modules:
   - ifx.telemetry.otel
   - ifx.telemetry.otel.ktor-client
   - ifx.testing
-  - terpal.compiler-plugin
   - test.gateway
   - test.service-aggregation
   - test.service-contracts
   - test.test-system
-  - utility.db
   - utility.stdlib
 
 plugins:

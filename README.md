@@ -14,18 +14,9 @@ The sections below are reference documentation for individual capabilities.
 
 ## Building from source
 
-The repository includes a Kotlin 2.4 compatibility build for the Terpal compiler plugin. Amper
-resolves third-party compiler plugins from Maven repositories, so bootstrap and publish it to Maven
-Local once before a clean build:
-
 ```shell
-./terpal.compiler-plugin/publish-local
 ./kotlin build
 ```
-
-The bootstrap downloads checksum-pinned upstream sources and applies the one-line Kotlin compiler
-API compatibility change. See [`terpal.compiler-plugin`](terpal.compiler-plugin/README.md) for its
-provenance and why the two build phases are explicit.
 
 ## RPC service contracts
 
