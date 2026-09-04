@@ -247,8 +247,8 @@ call suspending `telemetry.shutdown()` after stopping the host; this drains queu
 final cumulative RPC histograms, and closes both exporters. Use `telemetry.flush()` when current
 telemetry must be exported without stopping.
 
-For ordinary HTTP clients, add `ifx.telemetry.otel.ktor-client` and install
-`OpenTelemetryClientPlugin` with `tracer = telemetry.tracer`. The plugin creates client spans and
+For ordinary HTTP clients, install `OpenTelemetryClientPlugin` from `ifx.telemetry.otel` with
+`tracer = telemetry.tracer`. The plugin creates client spans and
 injects `traceparent` / `tracestate`; keep it off the OTLP exporter's own client. Its spans end after
 response headers are received and do not include later response-body consumption.
 

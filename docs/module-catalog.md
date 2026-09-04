@@ -185,8 +185,7 @@ application-defined resource identity shared by traces and metrics. `RpcMetrics`
 client and server duration histograms and `OtlpHttpMetricExporter` exports cumulative OTLP metrics
 outside the RPC path.
 
-### `ifx.telemetry.otel.ktor-client`
-Optional Ktor client instrumentation built on `Tracer`. `OpenTelemetryClientPlugin` creates a client
+Optional Ktor client instrumentation is included in the module. `OpenTelemetryClientPlugin` creates a client
 span around each selected logical request, injects W3C trace context, and records low-cardinality
 method, server, port, scheme, status, and error attributes. It is installed explicitly, so OTLP
 export clients can remain uninstrumented and avoid recursive telemetry. Spans end after response

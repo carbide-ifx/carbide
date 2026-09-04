@@ -564,8 +564,8 @@ when a relationship is discovered later. Each tracer retains at most 128 links p
 configure `TelemetryRuntime(maxLinksPerSpan = ...)` to change the bound. Additional links are reported
 through the OTLP `droppedLinksCount` field.
 
-Install the optional `ifx.telemetry.otel.ktor-client` plugin on application HTTP clients to create
-client spans and inject W3C trace context automatically:
+Install the optional `OpenTelemetryClientPlugin` from `ifx.telemetry.otel` on application HTTP
+clients to create client spans and inject W3C trace context automatically:
 
 ```kotlin
 val httpClient = HttpClient {

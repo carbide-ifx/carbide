@@ -235,10 +235,9 @@ path. Its `onDroppedSpans` callback reports queue overflow, shutdown rejection, 
 failure without changing the RPC outcome. The processor does not retry; application shutdown must
 call its suspending `shutdown()` to drain queued spans and close the exporter.
 
-`TelemetryRuntime.tracer` is the common span primitive used by the RPC interceptor and manual
-`tracer.span {}` / `Flow.inSpan(...)` instrumentation. The optional
-`ifx.telemetry.otel.ktor-client` module builds on that tracer to create HTTP client spans and inject
-W3C trace context.
+`TelemetryRuntime.tracer` is the common span primitive used by the RPC interceptor, manual
+`tracer.span {}` / `Flow.inSpan(...)` instrumentation, and the optional
+`OpenTelemetryClientPlugin`, which creates HTTP client spans and injects W3C trace context.
 
 An optional `RpcMetrics` recorder measures client and server call duration independently of trace
 sampling. It aggregates low-cardinality method, interaction, and error series in memory and exports
