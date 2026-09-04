@@ -8,10 +8,10 @@ protocol package** that knows the wire.
 flowchart LR
     ksp["ifx.rpc.typescript.ksp<br/><i>or</i> gateway renderTypeScriptSdk()"]
     gen["generated/ISalesManager.ts<br/><i>ISalesManagerSdk, ISalesManagerDescription</i>"]
-    core["@ifx/rpc-sdk<br/><i>IfxBinding, headers, interceptors</i>"]
-    rs["@ifx/rpc-sdk-rsocket"]
-    jr["@ifx/rpc-sdk-jsonrpc"]
-    http["@ifx/rpc-sdk-http"]
+    core["@carbide-ifx/rpc-sdk<br/><i>IfxBinding, headers, interceptors</i>"]
+    rs["@carbide-ifx/rpc-sdk-rsocket"]
+    jr["@carbide-ifx/rpc-sdk-jsonrpc"]
+    http["@carbide-ifx/rpc-sdk-http"]
 
     ksp --> gen
     gen --> core
@@ -24,7 +24,7 @@ flowchart LR
 
 An npm workspace under `typescript/`.
 
-### `@ifx/rpc-sdk`
+### `@carbide-ifx/rpc-sdk`
 
 The protocol-neutral runtime. It contains **no network code**, which is why choosing a protocol is an
 explicit second install rather than a hidden default.
@@ -58,20 +58,20 @@ export interface IfxBindingOptions {
 `IfxHeaderProvider` is a function returning headers, possibly asynchronously — the intended hook for a
 token that must be refreshed per call rather than captured once at connect time.
 
-### `@ifx/rpc-sdk-rsocket`
+### `@carbide-ifx/rpc-sdk-rsocket`
 
 RSocket over WebSocket. Owns the RSocket and WebSocket dependencies and supports **all three**
 interaction types, including request streams. This is what the Service Explorer uses.
 
 Upstream RSocket dependencies are pinned to `1.0.0-alpha.3`; that API is still alpha.
 
-### `@ifx/rpc-sdk-jsonrpc`
+### `@carbide-ifx/rpc-sdk-jsonrpc`
 
 JSON-RPC 2.0 over Fetch. Supports notifications (fire-and-forget) and request/response. A request
 stream **fails explicitly** — JSON-RPC over HTTP has no standard streaming interaction, so the SDK
 refuses rather than emulating one.
 
-### `@ifx/rpc-sdk-http`
+### `@carbide-ifx/rpc-sdk-http`
 
 The conventional HTTP binding for a **gateway projection**, not for JSON-RPC. Kept separate on purpose:
 URLs, envelopes, error shapes, fire-and-forget responses, and streaming all differ between the two.
@@ -91,8 +91,8 @@ The protocol entrypoint appends the generated service address to its base URL; t
 sends the exact Kotlin operation signatures through the chosen binding.
 
 ```ts
-import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
-import { JsonRpcSdk } from "@ifx/rpc-sdk-jsonrpc";
+import { RSocketSdk } from "@carbide-ifx/rpc-sdk-rsocket";
+import { JsonRpcSdk } from "@carbide-ifx/rpc-sdk-jsonrpc";
 import { ISalesManagerSdk } from "./generated/ISalesManager";
 
 const streamingSdk = await RSocketSdk.connect(ISalesManagerSdk, "ws://localhost:7000");
@@ -111,7 +111,7 @@ try {
 For a gateway surface, connect the projection's SDK instead:
 
 ```ts
-import { HttpSdk } from "@ifx/rpc-sdk-http";
+import { HttpSdk } from "@carbide-ifx/rpc-sdk-http";
 import { ProductWebSdk } from "./ProductWeb";
 
 const sdk = await HttpSdk.connect(ProductWebSdk, "https://api.example.com", {

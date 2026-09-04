@@ -1,5 +1,5 @@
-import { JsonRpcSdk } from "@ifx/rpc-sdk-jsonrpc";
-import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
+import { JsonRpcSdk } from "@carbide-ifx/rpc-sdk-jsonrpc";
+import { RSocketSdk } from "@carbide-ifx/rpc-sdk-rsocket";
 import {
   type Bike,
   type Car,

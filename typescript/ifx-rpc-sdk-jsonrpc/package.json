@@ -1,8 +1,17 @@
 {
-  "name": "@ifx/rpc-sdk-jsonrpc",
-  "version": "0.0.9",
-  "description": "JSON-RPC transport for the iFX TypeScript SDK",
-  "license": "UNLICENSED",
+  "name": "@carbide-ifx/rpc-sdk-jsonrpc",
+  "version": "0.1.0",
+  "description": "JSON-RPC transport for the Carbide TypeScript SDK",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/carbide-ifx/carbide",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carbide-ifx/carbide.git",
+    "directory": "typescript/ifx-rpc-sdk-jsonrpc"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -13,7 +22,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.9"
+    "@carbide-ifx/rpc-sdk": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

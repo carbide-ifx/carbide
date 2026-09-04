@@ -24,7 +24,13 @@ The public Maven surface is:
 - `test.*` modules are executable specifications and examples, not supported dependencies.
 - `ifx.gateway.artifacts` and `ifx.jib` are Kotlin Toolchain plugins rather than Maven library
   modules. Their distribution needs a separate plugin publication path.
-- TypeScript packages under `typescript/` use npm publication and are versioned separately.
+- TypeScript packages under `typescript/` use npm publication rather than Maven Central.
+
+## npm packages
+
+The public npm surface is `@carbide-ifx/rpc-sdk`, `@carbide-ifx/rpc-sdk-rsocket`,
+`@carbide-ifx/rpc-sdk-jsonrpc`, and `@carbide-ifx/rpc-sdk-http`. Publish the protocol-neutral runtime
+first because every transport depends on that exact version.
 
 ## Release command
 
@@ -36,3 +42,14 @@ After the Central namespace and credentials are configured, publish a manually r
 
 The default Maven Central publishing mode is manual. Do not enable automatic release until a manual
 deployment has been validated in the Central Portal.
+
+After authenticating npm with access to the `@carbide-ifx` scope, publish the TypeScript runtime and
+transports:
+
+```shell
+cd typescript
+npm publish --workspace @carbide-ifx/rpc-sdk
+npm publish --workspace @carbide-ifx/rpc-sdk-rsocket
+npm publish --workspace @carbide-ifx/rpc-sdk-jsonrpc
+npm publish --workspace @carbide-ifx/rpc-sdk-http
+```

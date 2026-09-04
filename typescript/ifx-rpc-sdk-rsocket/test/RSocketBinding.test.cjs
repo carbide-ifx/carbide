@@ -6,7 +6,7 @@ const {
   encodeCompositeMetadata,
   WellKnownMimeType,
 } = require("rsocket-composite-metadata");
-const { GatewayError } = require("@ifx/rpc-sdk");
+const { GatewayError } = require("@carbide-ifx/rpc-sdk");
 const { RSocketBinding } = require("../dist");
 
 globalThis.Buffer ??= Buffer;

@@ -1,14 +1,14 @@
 {
-  "name": "@ifx/test-ui",
-  "version": "0.0.9",
+  "name": "@carbide-ifx/test-ui",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit && node build.mjs",
     "dev": "tsc -p tsconfig.json --noEmit && node dev.mjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.9",
-    "@ifx/rpc-sdk-rsocket": "0.0.9"
+    "@carbide-ifx/rpc-sdk": "0.1.0",
+    "@carbide-ifx/rpc-sdk-rsocket": "0.1.0"
   },
   "devDependencies": {
     "esbuild": "0.25.8",

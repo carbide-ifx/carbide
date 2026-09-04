@@ -1,9 +1,9 @@
-# @ifx/rpc-sdk-jsonrpc
+# @carbide-ifx/rpc-sdk-jsonrpc
 
 JSON-RPC 2.0 over HTTP transport for generated iFX TypeScript SDKs.
 
 ```ts
-import { JsonRpcSdk } from "@ifx/rpc-sdk-jsonrpc";
+import { JsonRpcSdk } from "@carbide-ifx/rpc-sdk-jsonrpc";
 import { IProductAccessSdk } from "./generated/IProductAccess";
 
 const sdk = await JsonRpcSdk.connect(

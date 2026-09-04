@@ -18,7 +18,7 @@ import {
   type IfxOutboundCall,
   type IfxServiceConstructor,
   type IfxMessage,
-} from "@ifx/rpc-sdk";
+} from "@carbide-ifx/rpc-sdk";
 
 const IFX_HEADER_MIME_TYPE = "application/x-ifx-header";
 

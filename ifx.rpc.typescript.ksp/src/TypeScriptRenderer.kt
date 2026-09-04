@@ -20,7 +20,7 @@ internal class TypeScriptRenderer {
             appendLine("import {")
             appendLine("  type IfxBinding as __IfxBinding,")
             appendLine("  type IfxServiceDescription as __IfxServiceDescription,")
-            appendLine("} from \"@ifx/rpc-sdk\";")
+            appendLine("} from \"@carbide-ifx/rpc-sdk\";")
             appendLine()
             appendLine("export const ${identifier(service.name)}Address = ${stringLiteral(service.address)};")
             appendLine()

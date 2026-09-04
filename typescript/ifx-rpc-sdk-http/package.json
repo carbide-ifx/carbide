@@ -1,8 +1,17 @@
 {
-  "name": "@ifx/rpc-sdk-http",
-  "version": "0.0.9",
-  "description": "Conventional HTTP transport for iFX gateway SDKs",
-  "license": "UNLICENSED",
+  "name": "@carbide-ifx/rpc-sdk-http",
+  "version": "0.1.0",
+  "description": "Conventional HTTP transport for Carbide gateway SDKs",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/carbide-ifx/carbide",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carbide-ifx/carbide.git",
+    "directory": "typescript/ifx-rpc-sdk-http"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -13,7 +22,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.9"
+    "@carbide-ifx/rpc-sdk": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "26.1.2",

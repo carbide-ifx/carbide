@@ -245,8 +245,8 @@ An npm workspace under `typescript/`. See [TypeScript SDK](typescript-sdk.md).
 
 | Package | Role |
 | --- | --- |
-| `@ifx/rpc-sdk` | Protocol-neutral runtime: `IfxBinding`, generated-SDK contract, service descriptions, JSON serialization, headers, outbound interceptors. No network code |
-| `@ifx/rpc-sdk-rsocket` | RSocket over WebSocket. All three interaction types |
-| `@ifx/rpc-sdk-jsonrpc` | JSON-RPC 2.0 over Fetch. Notifications and request/response; streams fail explicitly |
-| `@ifx/rpc-sdk-http` | Conventional HTTP binding for a **gateway projection**. Separate from JSON-RPC because URLs, envelopes, errors, and streaming differ |
+| `@carbide-ifx/rpc-sdk` | Protocol-neutral runtime: `IfxBinding`, generated-SDK contract, service descriptions, JSON serialization, headers, outbound interceptors. No network code |
+| `@carbide-ifx/rpc-sdk-rsocket` | RSocket over WebSocket. All three interaction types |
+| `@carbide-ifx/rpc-sdk-jsonrpc` | JSON-RPC 2.0 over Fetch. Notifications and request/response; streams fail explicitly |
+| `@carbide-ifx/rpc-sdk-http` | Conventional HTTP binding for a **gateway projection**. Separate from JSON-RPC because URLs, envelopes, errors, and streaming differ |
 | `ifx-test-ui` | The Service Explorer frontend, bundled into `ifx.service-explorer` |

@@ -224,8 +224,8 @@ NDJSON streams, and is a different protocol from `JsonRpcServerProtocol`.
 **Why.** URLs, envelopes, error shapes, fire-and-forget responses, and streaming semantics genuinely
 differ. Merging them would produce a protocol that satisfies neither audience.
 
-**Cost.** Two HTTP protocols, two TypeScript packages (`@ifx/rpc-sdk-http` and
-`@ifx/rpc-sdk-jsonrpc`), and a choice a newcomer has to understand.
+**Cost.** Two HTTP protocols, two TypeScript packages (`@carbide-ifx/rpc-sdk-http` and
+`@carbide-ifx/rpc-sdk-jsonrpc`), and a choice a newcomer has to understand.
 
 ---
 

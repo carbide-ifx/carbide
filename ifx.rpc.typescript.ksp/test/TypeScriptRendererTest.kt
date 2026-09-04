@@ -60,7 +60,7 @@ class TypeScriptRendererTest {
             import {
               type IfxBinding as __IfxBinding,
               type IfxServiceDescription as __IfxServiceDescription,
-            } from "@ifx/rpc-sdk";
+            } from "@carbide-ifx/rpc-sdk";
 
             export const CatalogServiceAddress = "example.CatalogService";
 

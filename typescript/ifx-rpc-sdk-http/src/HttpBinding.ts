@@ -6,9 +6,9 @@ import {
   type IfxOutboundCall,
   type IfxServiceConstructor,
   type IfxMessage,
-} from "@ifx/rpc-sdk";
+} from "@carbide-ifx/rpc-sdk";
 
-export type { GatewayFailure } from "@ifx/rpc-sdk";
+export type { GatewayFailure } from "@carbide-ifx/rpc-sdk";
 
 export type HttpRequestHeaders = HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
 

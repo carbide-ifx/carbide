@@ -157,8 +157,8 @@ val openApiJson = ProductWebApi.renderOpenApi(
 ### TypeScript SDK
 
 `renderTypeScriptSdk()` produces a protocol-neutral SDK with manager namespaces, only the projected
-operations, and the generated DTO shapes preserved. Bind it with `@ifx/rpc-sdk-rsocket` for streaming,
-or `@ifx/rpc-sdk-http` for the conventional HTTP surface — the latter takes ordinary Fetch request
+operations, and the generated DTO shapes preserved. Bind it with `@carbide-ifx/rpc-sdk-rsocket` for streaming,
+or `@carbide-ifx/rpc-sdk-http` for the conventional HTTP surface — the latter takes ordinary Fetch request
 headers for browser authentication and decodes NDJSON incrementally.
 
 ## Build-time artifacts

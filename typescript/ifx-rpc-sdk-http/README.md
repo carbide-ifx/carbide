@@ -1,11 +1,11 @@
-# `@ifx/rpc-sdk-http`
+# `@carbide-ifx/rpc-sdk-http`
 
 Conventional HTTP binding for an iFX gateway projection. It is intentionally
-separate from `@ifx/rpc-sdk-jsonrpc`: URLs, envelopes, errors,
+separate from `@carbide-ifx/rpc-sdk-jsonrpc`: URLs, envelopes, errors,
 fire-and-forget responses, and streaming semantics differ.
 
 ```ts
-import { HttpSdk } from "@ifx/rpc-sdk-http";
+import { HttpSdk } from "@carbide-ifx/rpc-sdk-http";
 import { ProductWebSdk } from "./ProductWeb";
 
 const sdk = await HttpSdk.connect(ProductWebSdk, "https://api.example.com", {

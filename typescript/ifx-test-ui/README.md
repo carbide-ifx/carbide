@@ -4,7 +4,7 @@ Browser UI provided by the `ifx.service-explorer` module. Its `ServiceExplorer`
 serves bundled resources by default, delegates an optional development-directory
 override to the general `ifx.host.webapp` host, reads the registered service
 catalog from `IActuator.catalog()`, and invokes services with
-`@ifx/rpc-sdk-rsocket`. There is no separate HTTP catalog endpoint.
+`@carbide-ifx/rpc-sdk-rsocket`. There is no separate HTTP catalog endpoint.
 
 The Service Explorer is a normal npm web application. Its build writes
 `index.html` and the bundled JavaScript to `dist/`, synchronizes JVM resources,

@@ -1,9 +1,9 @@
-# @ifx/rpc-sdk-rsocket
+# @carbide-ifx/rpc-sdk-rsocket
 
 RSocket over WebSocket transport for generated iFX TypeScript SDKs.
 
 ```ts
-import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
+import { RSocketSdk } from "@carbide-ifx/rpc-sdk-rsocket";
 import { ISalesManagerSdk } from "./generated/ISalesManager";
 
 const sdk = await RSocketSdk.connect(

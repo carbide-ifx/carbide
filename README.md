@@ -267,8 +267,8 @@ val openApiJson = ProductWebApi.renderOpenApi(
 
 `renderTypeScriptSdk()` generates a protocol-neutral SDK with manager
 namespaces and only the projected operations while preserving the generated DTO
-shapes. Use it with either `@ifx/rpc-sdk-rsocket` or the separate
-`@ifx/rpc-sdk-http` binding. The latter accepts ordinary Fetch request headers
+shapes. Use it with either `@carbide-ifx/rpc-sdk-rsocket` or the separate
+`@carbide-ifx/rpc-sdk-http` binding. The latter accepts ordinary Fetch request headers
 for browser authentication and decodes NDJSON incrementally.
 
 The `ifx.subsystem` bundle provides an opinionated development host with RSocket,
@@ -757,8 +757,8 @@ while the generated service SDK sends the exact Kotlin operation signatures
 through the selected binding:
 
 ```typescript
-import { RSocketSdk } from "@ifx/rpc-sdk-rsocket";
-import { JsonRpcSdk } from "@ifx/rpc-sdk-jsonrpc";
+import { RSocketSdk } from "@carbide-ifx/rpc-sdk-rsocket";
+import { JsonRpcSdk } from "@carbide-ifx/rpc-sdk-jsonrpc";
 import { ISalesManagerSdk } from "./generated/ISalesManager";
 
 const streamingSdk = await RSocketSdk.connect(
@@ -780,10 +780,10 @@ try {
 }
 ```
 
-`@ifx/rpc-sdk` contains only the shared binding, generated SDK, service
-description, header, and interceptor contracts. `@ifx/rpc-sdk-rsocket` owns
+`@carbide-ifx/rpc-sdk` contains only the shared binding, generated SDK, service
+description, header, and interceptor contracts. `@carbide-ifx/rpc-sdk-rsocket` owns
 RSocket/WebSocket dependencies and supports all interaction types.
-`@ifx/rpc-sdk-jsonrpc` uses Fetch and supports notifications and
+`@carbide-ifx/rpc-sdk-jsonrpc` uses Fetch and supports notifications and
 request/response; request streams fail explicitly because JSON-RPC over HTTP
 has no standard streaming interaction. The RSocket dependencies remain pinned
 to `1.0.0-alpha.3`; this upstream API is still an alpha.

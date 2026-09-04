@@ -1,8 +1,17 @@
 {
-  "name": "@ifx/rpc-sdk",
-  "version": "0.0.9",
-  "description": "Protocol-neutral TypeScript SDK runtime for iFX RPC services",
-  "license": "UNLICENSED",
+  "name": "@carbide-ifx/rpc-sdk",
+  "version": "0.1.0",
+  "description": "Protocol-neutral TypeScript SDK runtime for Carbide RPC services",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/carbide-ifx/carbide",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carbide-ifx/carbide.git",
+    "directory": "typescript/ifx-rpc-sdk"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

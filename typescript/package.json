@@ -1,6 +1,6 @@
 {
-  "name": "@ifx/typescript",
-  "version": "0.0.9",
+  "name": "@carbide-ifx/typescript",
+  "version": "0.1.0",
   "private": true,
   "workspaces": [
     "ifx-rpc-sdk",
@@ -12,6 +12,6 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "test:generated": "npm run test:generated --workspace @ifx/rpc-sdk"
+    "test:generated": "npm run test:generated --workspace @carbide-ifx/rpc-sdk"
   }
 }

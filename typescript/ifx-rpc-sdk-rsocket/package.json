@@ -1,8 +1,17 @@
 {
-  "name": "@ifx/rpc-sdk-rsocket",
-  "version": "0.0.9",
-  "description": "RSocket transport for the iFX TypeScript SDK",
-  "license": "UNLICENSED",
+  "name": "@carbide-ifx/rpc-sdk-rsocket",
+  "version": "0.1.0",
+  "description": "RSocket transport for the Carbide TypeScript SDK",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/carbide-ifx/carbide",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carbide-ifx/carbide.git",
+    "directory": "typescript/ifx-rpc-sdk-rsocket"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -13,7 +22,7 @@
     "test": "npm run build && node --test test/*.test.cjs"
   },
   "dependencies": {
-    "@ifx/rpc-sdk": "0.0.9",
+    "@carbide-ifx/rpc-sdk": "0.1.0",
     "buffer": "6.0.3",
     "rsocket-composite-metadata": "1.0.0-alpha.3",
     "rsocket-core": "1.0.0-alpha.3",
