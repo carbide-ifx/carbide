@@ -11,7 +11,7 @@ import ifx.protocol.contract.ServiceKind
 import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.proxy.factory.create
-import ifx.proxy.factory.RSocketProxyFactory
+import ifx.protocol.rsocket.RSocketProxyFactory
 import ifx.telemetry.otel.OpenTelemetryRpcInterceptor
 import ifx.telemetry.otel.trace.SpanExporter
 import kotlinx.coroutines.flow.first

@@ -16,8 +16,6 @@ modules:
   - ifx.protocol.jsonrpc
   - ifx.protocol.rsocket
   - ifx.proxy-factory
-  - ifx.proxy-factory.jsonrpc
-  - ifx.proxy-factory.rsocket
   - ifx.rpc.compiler-plugin
   - ifx.rpc.schema.ksp
   - ifx.rpc.typescript.ksp

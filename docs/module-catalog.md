@@ -117,16 +117,15 @@ anything the client supplied), metadata encoding, keep-alive defaults, and Kermi
 
 One RSocket route per service address. `SUBSYSTEM_KEEP_ALIVE` is the backend-to-backend default;
 each connection carries its own window, so browsers keep a more generous one.
+`RSocketProxyFactory.forHost(host)` reads the resolved RSocket port and copies the host's interceptors
+onto the client.
 
 ### `ifx.protocol.jsonrpc`
 JSON-RPC 2.0 over HTTP, server and client. Id `"json-rpc"`. Supports notifications
 (fire-and-forget) and request/response. A `Flow`-returning operation **fails explicitly** — JSON-RPC
 has no standard streaming interaction.
-
-### `ifx.proxy-factory.rsocket` / `ifx.proxy-factory.jsonrpc`
-Thin delegating factories over `ProxyFactoryBase` binding the respective client protocol. Each exposes
-`forHost(host)`, which reads the host's resolved port for its protocol id and copies the host's
-interceptors onto the client — the mechanism that keeps a client onion symmetric with the server's.
+`JsonRpcProxyFactory.forHost(host)` reads the resolved JSON-RPC port and copies the host's interceptors
+onto the client.
 
 ### `ifx.gateway`
 `GatewayProjection.bind(resolve)` turns a projection into a single `Endpoint` whose `IBinding` routes

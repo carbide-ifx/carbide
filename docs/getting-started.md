@@ -85,7 +85,7 @@ import example.greeter.contract.IGreeter
 import ifx.host.Host
 import ifx.host.IHost.Companion.registerService
 import ifx.proxy.factory.create
-import ifx.proxy.factory.RSocketProxyFactory
+import ifx.protocol.rsocket.RSocketProxyFactory
 import ifx.subsystem.development
 import kotlinx.coroutines.runBlocking
 

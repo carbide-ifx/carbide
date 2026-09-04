@@ -19,7 +19,5 @@ dependencies:
   - ../ifx.protocol.contract: exported
   - ../ifx.protocol.jsonrpc: exported
   - ../ifx.protocol.rsocket: exported
-  - ../ifx.proxy-factory.jsonrpc: exported
-  - ../ifx.proxy-factory.rsocket: exported
   - ../ifx.service: exported
   - ../ifx.telemetry.otel: exported

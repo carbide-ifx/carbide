@@ -80,7 +80,7 @@ flowchart TB
     L2["<b>ifx.protocol.contract</b> — IBinding, Message, interceptors, ServiceDescriptor"]
     L3["<b>ifx.host.contract</b> · <b>ifx.proxy-factory</b> · <b>ifx.gateway.contract</b>"]
     L4["<b>ifx.host</b> · <b>ifx.gateway</b>"]
-    L5["<b>ifx.protocol.rsocket</b> · <b>ifx.protocol.jsonrpc</b><br/><b>ifx.proxy-factory.rsocket</b> · <b>ifx.proxy-factory.jsonrpc</b><br/><b>ifx.gateway.ktor</b> · <b>ifx.gateway.typescript</b>"]
+    L5["<b>ifx.protocol.rsocket</b> · <b>ifx.protocol.jsonrpc</b><br/><b>ifx.gateway.ktor</b> · <b>ifx.gateway.typescript</b>"]
     L6["<b>ifx.actuator</b> · <b>ifx.host.webapp</b> · <b>ifx.service-explorer</b> · <b>ifx.telemetry.otel*</b>"]
     L7["<b>ifx.subsystem</b> — the single aggregate dependency"]
 

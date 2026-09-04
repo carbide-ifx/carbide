@@ -1,11 +1,9 @@
-package ifx.proxy.factory
+package ifx.protocol.rsocket
 
 import ifx.host.IHost
 import ifx.protocol.contract.IClientProtocol
-import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
-import ifx.protocol.rsocket.RSocketClientProtocol
-import ifx.protocol.rsocket.SUBSYSTEM_KEEP_ALIVE
 import ifx.proxy.factory.IProxyFactory
+import ifx.proxy.factory.ProxyFactoryBase
 import io.rsocket.kotlin.keepalive.KeepAlive
 
 /**
@@ -42,5 +40,3 @@ class RSocketProxyFactory private constructor(
                 .apply { addInterceptors(host.interceptors) }
     }
 }
-
-typealias ProxyFactory = RSocketProxyFactory

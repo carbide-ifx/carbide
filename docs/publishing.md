@@ -12,7 +12,7 @@ The public Maven surface is:
 - Core contracts: `ifx.context`, `ifx.logging`, `ifx.service`, `ifx.protocol.contract`,
   `ifx.host.contract`, and `ifx.gateway.contract`.
 - Runtime: `ifx.host`, `ifx.host.webapp`, `ifx.protocol.jsonrpc`, `ifx.protocol.rsocket`,
-  `ifx.proxy-factory`, `ifx.proxy-factory.jsonrpc`, `ifx.proxy-factory.rsocket`, `ifx.gateway`,
+  `ifx.proxy-factory`, `ifx.gateway`,
   `ifx.gateway.ktor`, `ifx.gateway.typescript`, `ifx.actuator`, `ifx.service-explorer`,
   `ifx.telemetry.otel` and `ifx.subsystem`.
 - Build-time libraries: `ifx.contract.ksp`, `ifx.rpc.schema.ksp`, `ifx.subsystem.ksp`,

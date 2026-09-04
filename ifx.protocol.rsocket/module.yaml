@@ -10,6 +10,7 @@ dependencies:
   - ../ifx.context: exported
   - ../ifx.protocol.contract: exported
   - ../ifx.host.contract: exported
+  - ../ifx.proxy-factory: exported
   - ../ifx.logging
   - io.rsocket.kotlin:ktor-server-rsocket:0.20.0: exported
   - io.rsocket.kotlin:ktor-client-rsocket:0.20.0: exported
@@ -23,5 +24,4 @@ dependencies@macosArm64:
   - io.ktor:ktor-client-darwin:3.1.1: exported
 
 test-dependencies@jvm:
-  - ../ifx.proxy-factory
   - ../ifx.testing

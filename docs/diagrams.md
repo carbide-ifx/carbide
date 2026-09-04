@@ -53,7 +53,7 @@ public goes through a projection; everything internal is a typed proxy over the 
 
 ## 2. Module dependency graph
 
-The **transitive reduction** of the real `ifx.*` production graph: 30 of the 67 declared
+The **transitive reduction** of the real `ifx.*` production graph: 30 of the 64 declared
 `ifx.* → ifx.*` dependencies. The other 37 are implied transitively — a module naming a grandparent
 explicitly, which Amper modules do routinely — and are omitted for legibility. Generated from the
 `module.yaml` files, not from memory.
@@ -78,8 +78,6 @@ flowchart BT
         ifx_gateway["ifx.gateway"]
         ifx_protocol_rsocket["ifx.protocol.rsocket"]
         ifx_protocol_jsonrpc["ifx.protocol.jsonrpc"]
-        ifx_proxy_factory_rsocket["ifx.proxy-factory.rsocket"]
-        ifx_proxy_factory_jsonrpc["ifx.proxy-factory.jsonrpc"]
         ifx_gateway_ktor["ifx.gateway.ktor"]
         ifx_gateway_typescript["ifx.gateway.typescript"]
     end
@@ -105,10 +103,8 @@ flowchart BT
     ifx_gateway --> ifx_host_contract
     ifx_protocol_rsocket --> ifx_host_contract
     ifx_protocol_jsonrpc --> ifx_host_contract
-    ifx_proxy_factory_rsocket --> ifx_protocol_rsocket
-    ifx_proxy_factory_rsocket --> ifx_proxy_factory
-    ifx_proxy_factory_jsonrpc --> ifx_protocol_jsonrpc
-    ifx_proxy_factory_jsonrpc --> ifx_proxy_factory
+    ifx_protocol_rsocket --> ifx_proxy_factory
+    ifx_protocol_jsonrpc --> ifx_proxy_factory
     ifx_gateway_ktor --> ifx_gateway
     ifx_gateway_typescript --> ifx_gateway_contract
     ifx_actuator --> ifx_host_contract
@@ -120,8 +116,6 @@ flowchart BT
     ifx_testing --> ifx_service
     ifx_subsystem --> ifx_actuator
     ifx_subsystem --> ifx_service_explorer
-    ifx_subsystem --> ifx_proxy_factory_rsocket
-    ifx_subsystem --> ifx_proxy_factory_jsonrpc
     ifx_subsystem --> ifx_telemetry_otel
 ```
 
@@ -155,7 +149,7 @@ flowchart LR
 | Concern | Contract | Base | Technologies |
 | --- | --- | --- | --- |
 | Serving | `ifx.host.contract`<br/>`IHost`, `IServerProtocol` | `ifx.host`<br/>`Host` | `ifx.protocol.rsocket`, `ifx.protocol.jsonrpc`, `ifx.gateway.ktor` |
-| Calling | `ifx.proxy-factory`<br/>`IProxyFactory` + binding cache | — | `ifx.proxy-factory.rsocket`, `ifx.proxy-factory.jsonrpc` |
+| Calling | `ifx.proxy-factory`<br/>`IProxyFactory` + binding cache | — | `ifx.protocol.rsocket`, `ifx.protocol.jsonrpc` |
 | Wire | `ifx.protocol.contract`<br/>`IBinding`, `Message` | — | any `IBinding` implementation |
 | Public API | `ifx.gateway.contract`<br/>`GatewayProjection` | `ifx.gateway`<br/>`GatewayBinding` | `ifx.gateway.ktor`, `ifx.gateway.typescript` |
 

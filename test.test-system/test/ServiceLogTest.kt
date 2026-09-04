@@ -9,7 +9,7 @@ import ifx.host.Host
 import ifx.protocol.contract.ProtocolException
 import ifx.protocol.jsonrpc.JsonRpcServerProtocol
 import ifx.proxy.factory.create
-import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
+import ifx.protocol.jsonrpc.JsonRpcProxyFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking

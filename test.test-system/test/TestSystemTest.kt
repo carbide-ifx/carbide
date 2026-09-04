@@ -25,8 +25,8 @@ import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.protocol.rsocket.RSocketClientProtocol
 import ifx.protocol.rsocket.RSocketServerProtocol
 import ifx.proxy.factory.create
-import ifx.proxy.factory.RSocketProxyFactory
-import ifx.proxy.factory.jsonrpc.JsonRpcProxyFactory
+import ifx.protocol.rsocket.RSocketProxyFactory
+import ifx.protocol.jsonrpc.JsonRpcProxyFactory
 import ifx.service.explorer.ServiceExplorer
 import ifx.subsystem.development
 import io.ktor.client.HttpClient

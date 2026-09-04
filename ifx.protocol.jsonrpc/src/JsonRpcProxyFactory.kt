@@ -1,9 +1,7 @@
-package ifx.proxy.factory.jsonrpc
+package ifx.protocol.jsonrpc
 
 import ifx.host.IHost
 import ifx.protocol.contract.IClientProtocol
-import ifx.protocol.jsonrpc.JSON_RPC_PROTOCOL_ID
-import ifx.protocol.jsonrpc.JsonRpcClientProtocol
 import ifx.proxy.factory.IProxyFactory
 import ifx.proxy.factory.ProxyFactoryBase
 

@@ -9,7 +9,7 @@ import ifx.logging.Log
 import ifx.protocol.contract.IInterceptor
 import ifx.protocol.rsocket.RSOCKET_PROTOCOL_ID
 import ifx.proxy.factory.create
-import ifx.proxy.factory.RSocketProxyFactory
+import ifx.protocol.rsocket.RSocketProxyFactory
 import ifx.subsystem.development
 import ifx.telemetry.otel.TelemetryResource
 import ifx.telemetry.otel.TelemetryRuntime
