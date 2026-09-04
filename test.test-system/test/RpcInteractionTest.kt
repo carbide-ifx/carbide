@@ -24,7 +24,7 @@ class RpcInteractionTest {
                 return Unit.encodeToMessage()
             }
 
-            override suspend fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
+            override fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
         })
 
         client.store(ProductTestData.car)

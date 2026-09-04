@@ -89,7 +89,7 @@ private class GatewayBinding(
         return safely { route.target.requestResponse(route.operation.description.route, message) }
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
+    override fun requestStream(operation: String, message: Message): Flow<Message> {
         val route = route(operation, InteractionType.REQUEST_STREAM)
         return flow {
             safely { emitAll(route.target.requestStream(route.operation.description.route, message)) }

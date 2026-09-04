@@ -174,5 +174,5 @@ private fun reference(name: String): JsonObject = buildJsonObject {
 private object OpenApiOnlyBinding : IBinding {
     override suspend fun fireAndForget(operation: String, message: Message) = Unit
     override suspend fun requestResponse(operation: String, message: Message): Message = message
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
+    override fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
 }

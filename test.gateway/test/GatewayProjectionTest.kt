@@ -165,7 +165,7 @@ private class RecordingBinding : IBinding {
         return Message("{}", "{\"accepted\":true}")
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
+    override fun requestStream(operation: String, message: Message): Flow<Message> {
         lastCall = RecordedCall(operation, message)
         return emptyFlow()
     }
@@ -174,7 +174,7 @@ private class RecordingBinding : IBinding {
 private object FailingBinding : IBinding {
     override suspend fun fireAndForget(operation: String, message: Message) = error("database-password")
     override suspend fun requestResponse(operation: String, message: Message): Message = error("database-password")
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = error("database-password")
+    override fun requestStream(operation: String, message: Message): Flow<Message> = error("database-password")
 }
 
 private class RecordingClientProtocol : IClientProtocol {

@@ -22,11 +22,11 @@ class Actuator(
         LogTail.latest(serviceInterface)
 }
 
-suspend fun IHost.registerActuator(
+fun IHost.registerActuator(
     descriptor: ServiceDescriptor<IActuator> = missingActuatorDescriptor(),
 ): IHost {
     LogTail.install()
-    return registerService(descriptor) { Actuator(::serviceCatalog, ::health) }
+    return registerService(descriptor, Actuator(::serviceCatalog, ::health))
 }
 
 private fun missingActuatorDescriptor(): Nothing = error(

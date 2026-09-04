@@ -31,7 +31,7 @@ class InterceptorPipeline(
     override suspend fun requestResponse(operation: String, message: Message): Message =
         invoke(InteractionType.REQUEST_RESPONSE, operation, message).single()
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> =
+    override fun requestStream(operation: String, message: Message): Flow<Message> =
         invoke(InteractionType.REQUEST_STREAM, operation, message)
 
     private fun invoke(

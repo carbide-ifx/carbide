@@ -18,7 +18,7 @@ import kotlin.time.Duration.Companion.seconds
  * the actuator service, Kubernetes health endpoints, and the bundled browser-based service
  * explorer. The returned host is not started.
  */
-suspend fun Host.Companion.development(
+fun Host.Companion.development(
     name: String = "Service Host",
     rsocketPort: Int = 0,
     jsonRpcPort: Int = 0,

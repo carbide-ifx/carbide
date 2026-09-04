@@ -336,8 +336,8 @@ This is a workaround with a known expiry, not a design position.
 composition should be privileged. Constructing `Host` directly must remain a first-class path.
 
 **Cost.** The export list is hand-maintained and deliberately explicit — see the comment in
-`ifx.subsystem/module.yaml`. `Host.development()` is suspending because registering the actuator is, which
-surprises callers who expect a plain factory.
+`ifx.subsystem/module.yaml`. The synchronous `Host.development()` factory only assembles the host;
+callers remain responsible for starting and stopping it from coroutine-aware lifecycle code.
 
 ---
 

@@ -136,7 +136,7 @@ class InterceptorPipelineTest {
         val contextInterceptor = ContextInterceptor()
         val observed = mutableListOf<Pair<Caller?, RequestMetadata?>>()
         val binding = object : EmptyBinding() {
-            override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flow {
+            override fun requestStream(operation: String, message: Message): Flow<Message> = flow {
                 observed += Context.current().getOrNull<Caller>() to
                     Context.current().getOrNull<RequestMetadata>()
                 emit(Message("{}", "response"))
@@ -224,7 +224,7 @@ private class RecordingBinding(private val events: MutableList<String>) : EmptyB
         return Message("{}", "response").also { events += "binding after" }
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flow {
+    override fun requestStream(operation: String, message: Message): Flow<Message> = flow {
         events += "binding before"
         emit(Message("{}", "one"))
         emit(Message("{}", "two"))
@@ -238,6 +238,6 @@ private abstract class EmptyBinding : IBinding {
     override suspend fun requestResponse(operation: String, message: Message): Message =
         error("Unexpected request/response")
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> =
+    override fun requestStream(operation: String, message: Message): Flow<Message> =
         error("Unexpected request stream")
 }

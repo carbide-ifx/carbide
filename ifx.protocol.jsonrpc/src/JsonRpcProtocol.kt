@@ -191,7 +191,7 @@ private class JsonRpcClient(
         )
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flow {
+    override fun requestStream(operation: String, message: Message): Flow<Message> = flow {
         throw ProtocolException("Streaming is not supported by JSON-RPC over HTTP: $operation", null)
     }
 }

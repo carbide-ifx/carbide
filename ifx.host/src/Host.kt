@@ -126,7 +126,7 @@ class Host(
         requestDrainTimeout = requestDrainTimeout,
     )
 
-    override suspend fun <T : IService> registerService(
+    override fun <T : IService> registerService(
         descriptor: ServiceDescriptor<T>,
         instance: T,
     ): IHost = apply {

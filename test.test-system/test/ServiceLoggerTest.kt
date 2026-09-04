@@ -35,5 +35,5 @@ class ServiceLoggerTest {
 private object UnusedBinding : IBinding {
     override suspend fun fireAndForget(operation: String, message: Message): Nothing = error("Not used")
     override suspend fun requestResponse(operation: String, message: Message): Nothing = error("Not used")
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = error("Not used")
+    override fun requestStream(operation: String, message: Message): Flow<Message> = error("Not used")
 }

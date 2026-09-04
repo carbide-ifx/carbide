@@ -49,7 +49,7 @@ class OpenTelemetryRpcInterceptorTest {
             override suspend fun requestResponse(operation: String, message: Message): Message =
                 Message("{}", "response")
 
-            override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flowOf()
+            override fun requestStream(operation: String, message: Message): Flow<Message> = flowOf()
         }
         val server = InterceptorPipeline(
             service = "manager.sales.contract.ISalesManager",

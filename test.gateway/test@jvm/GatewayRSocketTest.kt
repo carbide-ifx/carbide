@@ -74,7 +74,7 @@ private class ContextRecordingBinding : IBinding {
         return Message("{}", "{}")
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
+    override fun requestStream(operation: String, message: Message): Flow<Message> {
         this.message = message
         return emptyFlow()
     }

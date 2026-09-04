@@ -56,7 +56,7 @@ interface IHost {
     val name: String
     val state: HostState
 
-    suspend fun <T : IService> registerService(descriptor: ServiceDescriptor<T>, instance: T): IHost
+    fun <T : IService> registerService(descriptor: ServiceDescriptor<T>, instance: T): IHost
     suspend fun <T : IService> registerService(
         descriptor: ServiceDescriptor<T>,
         factory: suspend () -> T,
@@ -74,7 +74,7 @@ interface IHost {
     fun onStop(action: () -> Unit): IHost
 
     companion object {
-        suspend inline fun <reified T : IService> IHost.registerService(instance: T): IHost =
+        inline fun <reified T : IService> IHost.registerService(instance: T): IHost =
             missingIfxCompilerPlugin()
 
         suspend inline fun <reified T : IService> IHost.registerService(noinline factory: suspend () -> T): IHost =

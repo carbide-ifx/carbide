@@ -103,5 +103,5 @@ private class RecordingProtocol : IClientProtocol {
 private object RecordingBinding : IBinding {
     override suspend fun fireAndForget(operation: String, message: Message) = Unit
     override suspend fun requestResponse(operation: String, message: Message): Message = Message("{}", "")
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
+    override fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
 }

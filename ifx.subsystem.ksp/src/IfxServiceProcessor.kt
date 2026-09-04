@@ -166,8 +166,6 @@ internal object $anchorName
 
 import ifx.protocol.contract.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 
 private class ${contractName}Proxy(
@@ -193,7 +191,7 @@ ${functions.filter { it.isFireAndForget() }.joinToString("\n") { serverUnitBranc
 ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() != "kotlinx.coroutines.flow.Flow" && !it.isFireAndForget() }.joinToString("\n") { serverResponseBranch(it) }}
             else -> error("No request-response operation: ${'$'}operation")
         }
-        override suspend fun requestStream(operation: String, message: Message): Flow<Message> = when (operation) {
+        override fun requestStream(operation: String, message: Message): Flow<Message> = when (operation) {
 ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asString() == "kotlinx.coroutines.flow.Flow" }.joinToString("\n") { serverStreamBranch(it) }}
             else -> error("No request-stream operation: ${'$'}operation")
         }
@@ -248,7 +246,7 @@ ${functions.filter { it.returnType!!.resolve().declaration.qualifiedName?.asStri
             }
             "kotlinx.coroutines.flow.Flow" -> {
                 val element = function.returnType!!.resolve().arguments.single().type!!.resolve()
-                "    override fun $name($params): ${typeName(function.returnType!!.resolve())} = flow { emitAll(binding.requestStream(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).map { it.decode<${typeName(element)}>() }) }"
+                "    override fun $name($params): ${typeName(function.returnType!!.resolve())} = binding.requestStream(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).map { it.decode<${typeName(element)}>() }"
             }
             else -> "    override suspend fun $name($params): ${typeName(function.returnType!!.resolve())} = binding.requestResponse(\"$signature\", ${argument?.let { "$it.encodeToMessage()" } ?: "emptyMessage()" }).decode()"
         }

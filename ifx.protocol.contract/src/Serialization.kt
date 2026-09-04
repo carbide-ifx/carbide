@@ -11,12 +11,12 @@ val RpcFormat = kotlinx.serialization.json.Json {
     ignoreUnknownKeys = true
 }
 
-suspend inline fun <reified T> T.encodeToMessage(): Message = Message(
+inline fun <reified T> T.encodeToMessage(): Message = Message(
     header = "{}",
     body = RpcFormat.encodeToString(this),
 )
 
-suspend fun emptyMessage(): Message = Message(
+fun emptyMessage(): Message = Message(
     header = "{}",
     body = "",
 )

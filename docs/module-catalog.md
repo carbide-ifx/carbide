@@ -192,7 +192,7 @@ headers are received rather than asynchronously following response-body consumpt
 The single runtime dependency for an application. It adds one development convenience —
 `Host.development()` — and re-exports the standard runtime set. The convenience host is unauthenticated
 and includes the actuator and Service Explorer; production applications compose `Host` explicitly.
-Being a suspending factory (it registers the actuator), it must be called from a coroutine.
+The factory only assembles the host; suspending lifecycle work begins when `start()` is called.
 
 ### `ifx.testing`
 Shared test scaffolding: TestBalloon framework plus Kotest assertions, and Carbide-specific assertions.

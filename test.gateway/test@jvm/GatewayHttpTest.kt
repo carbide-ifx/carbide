@@ -83,7 +83,7 @@ private class HttpRecordingBinding(
         return Message("{}", "{\"accepted\":true}")
     }
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> {
+    override fun requestStream(operation: String, message: Message): Flow<Message> {
         this.operation = operation
         return stream
     }

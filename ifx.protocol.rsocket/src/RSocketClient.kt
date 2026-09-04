@@ -125,7 +125,7 @@ class RSocketClient(
      * flow with an exception that must not be mistaken for a transport failure, so failures raised
      * by the collector are tracked and excluded.
      */
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flow {
+    override fun requestStream(operation: String, message: Message): Flow<Message> = flow {
         val connection = connection()
         var fromCollector: Throwable? = null
         try {

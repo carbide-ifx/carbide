@@ -45,7 +45,7 @@ class UnhandledExceptionInterceptorTest {
         val pipeline = pipeline(
             interceptor = UnhandledExceptionInterceptor { _, exception -> reported += exception },
             binding = object : ExceptionTestBinding() {
-                override suspend fun requestStream(operation: String, message: Message): Flow<Message> = flow {
+                override fun requestStream(operation: String, message: Message): Flow<Message> = flow {
                     emit(Message("{}", "first"))
                     throw failure
                 }
@@ -113,6 +113,6 @@ private abstract class ExceptionTestBinding : IBinding {
     override suspend fun requestResponse(operation: String, message: Message): Message =
         error("Unexpected request/response")
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> =
+    override fun requestStream(operation: String, message: Message): Flow<Message> =
         error("Unexpected request stream")
 }

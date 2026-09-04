@@ -251,7 +251,7 @@ private object SecondRecordingServiceDescriptor : ServiceDescriptor<IRecordingSe
 private object EmptyServiceBinding : IBinding {
     override suspend fun fireAndForget(operation: String, message: Message) = Unit
     override suspend fun requestResponse(operation: String, message: Message): Message = message
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
+    override fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
 }
 
 private object EmptyServerProtocol : IServerProtocol {

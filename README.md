@@ -282,8 +282,8 @@ for browser authentication and decodes NDJSON incrementally.
 
 The `ifx.subsystem` bundle provides an opinionated development host with RSocket,
 JSON-RPC, `IActuator`, and the browser Service Explorer. Passing `0` for either
-port selects an available port. Because registering the actuator is suspending,
-`Host.development()` must be called from a coroutine:
+port selects an available port. `Host.development()` only assembles the host;
+suspending lifecycle work begins when `start()` is called:
 
 ```kotlin
 import ifx.subsystem.development

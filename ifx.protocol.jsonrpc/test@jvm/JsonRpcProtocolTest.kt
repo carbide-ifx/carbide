@@ -59,5 +59,5 @@ private object CancellingBinding : IBinding {
     override suspend fun requestResponse(operation: String, message: Message): Message =
         throw CancellationException("cancelled")
 
-    override suspend fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
+    override fun requestStream(operation: String, message: Message): Flow<Message> = emptyFlow()
 }

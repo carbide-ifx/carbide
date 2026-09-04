@@ -17,10 +17,10 @@ val dependencyStreamOperation = IProductAccessDescriptor.generateRandowProduct
 val dependencyFireAndForgetOperation = IProductAccessDescriptor.notifyProductViewed
 
 /** Compile-time proof that the standard development host is available for Native. */
-suspend fun developmentSubsystemHost(): Host = Host.development()
+fun developmentSubsystemHost(): Host = Host.development()
 
 /** Compile-time proof that the compiler plugin links typed service registration on Native. */
-suspend fun registerDependencyService(host: Host, service: IProductAccess) =
+fun registerDependencyService(host: Host, service: IProductAccess) =
     host.registerService<IProductAccess>(service)
 
 /** Compile-time proof that the compiler plugin links typed proxy creation on Native. */
