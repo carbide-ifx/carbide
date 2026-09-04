@@ -145,6 +145,23 @@ class TestSystemTest {
     }
 
     @Test
+    fun `host copies caller-owned interceptor configuration`() {
+        val first = IInterceptor { call, next -> next(call) }
+        val late = IInterceptor { call, next -> next(call) }
+        val configured = mutableListOf(first)
+        val host = Host(
+            listeners = listOf(ProtocolListener(RSocketServerProtocol())),
+            interceptors = configured,
+        )
+
+        configured += late
+
+        assertEquals(2, host.interceptors.size)
+        assertIs<ContextInterceptor>(host.interceptors.first())
+        assertSame(first, host.interceptors.last())
+    }
+
+    @Test
     fun `service explorer requires an rsocket listener`() {
         val exception = assertFailsWith<IllegalArgumentException> {
             Host {

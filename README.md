@@ -331,6 +331,10 @@ val productAccess = proxyFactory
     .create<IProductAccess>()
 ```
 
+Add interceptors before creating the first proxy. The first `create` call freezes interceptor
+configuration across the factory and all destination-bound views, so every proxy observes the same
+pipeline. Caller-owned interceptor lists are copied.
+
 Bindings are cached by destination and service address, so repeated `at(endpoint).create<T>()`
 calls do not create additional transport clients or connections. They remain cached until the
 factory closes, so the set of destinations should be stable and bounded. Keep endpoint construction

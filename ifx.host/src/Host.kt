@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 class Host(
     private val listeners: List<ProtocolListener>,
     override val name: String = "Service Host",
-    interceptors: MutableList<IInterceptor> = mutableListOf(),
+    interceptors: List<IInterceptor> = emptyList(),
     private val healthCheckTimeout: Duration = 5.seconds,
     private val drainDelay: Duration = ZERO,
     private val requestDrainTimeout: Duration = 20.seconds,
@@ -52,7 +52,7 @@ class Host(
     private val startedServiceLifecycles = mutableListOf<IServiceLifecycle>()
     private val runningServers = mutableListOf<RunningServer>()
     private val stopActions = mutableListOf<() -> Unit>()
-    private val additionalInterceptors = interceptors
+    private val additionalInterceptors = interceptors.toMutableList()
     private val contextInterceptor = ContextInterceptor()
     private val callTracker = HostCallTracker()
 

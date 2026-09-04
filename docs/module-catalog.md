@@ -102,10 +102,10 @@ Owns `IProxyFactory` — `create(descriptor)`, `at(endpoint)`, `addInterceptors`
 reified `create<T>()` intrinsic that fails with an explicit message when the compiler plugin is
 absent, and the one implementation behind it.
 
-`ProxyFactoryBase` is the protocol-independent factory. Its substance is the lock-free binding cache
-keyed by `(ServiceEndpoint?, address)` using a CAS loop over an `AtomicReference<Map<..>>`, and the
-`at(endpoint)` view that shares that cache. A binding that loses the race is discarded before it
-connects, so no connection leaks.
+`ProxyFactoryBase` is the protocol-independent factory. One atomic state is shared by every
+`at(endpoint)` view. The first proxy creation freezes copied interceptor configuration; the same
+state also owns the binding cache and terminal, idempotent close lifecycle. The cache is keyed by
+`(ServiceEndpoint?, address)`, so every destination and service pair reuses one binding.
 
 ### `ifx.protocol.rsocket`
 RSocket over WebSocket, server and client. Supports all three interaction types.
