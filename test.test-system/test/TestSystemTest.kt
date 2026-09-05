@@ -704,6 +704,8 @@ private class TcpProxy(
 
         fun close() {
             if (!closed.compareAndSet(false, true)) return
+            client.setSoLinger(true, 0)
+            target.setSoLinger(true, 0)
             client.close()
             target.close()
             synchronized(connectionsLock) { connections -= this }

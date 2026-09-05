@@ -40,6 +40,11 @@ After the Central namespace and credentials are configured, publish a manually r
 ./kotlin publish mavenCentral
 ```
 
+Use `./kotlin publish local` to validate the complete signed publication locally. Keep these
+commands unqualified: Kotlin Toolchain `0.12.0-dev-4235` correctly discovers all enabled publication
+tasks, while its module-filtered Maven Central path does not recognize the built-in Central Portal
+repository.
+
 The default Maven Central publishing mode is manual. Do not enable automatic release until a manual
 deployment has been validated in the Central Portal.
 
